@@ -55,6 +55,10 @@ struct ReaderView: View {
     @State private var pendingRestorePercent: Double? = nil
     @State private var pendingRestorePageIndex: Int? = nil
 
+    // 边界提示（第一章/最后一章）
+    @State private var showEdgeAlert: Bool = false
+    @State private var edgeAlertMessage: String = ""
+
     init(chapter: Chapter) {
         _currentChapter = State(initialValue: chapter)
     }
@@ -98,6 +102,12 @@ struct ReaderView: View {
                     paragraphSpacing: $paragraphSpacing,
                     bgColor: $bgColor,
                     textColor: $textColor
+                )
+            }
+            .alert(isPresented: $showEdgeAlert) {
+                Alert(
+                    title: Text(edgeAlertMessage),
+                    dismissButton: .default(Text("我知道了"))
                 )
             }
             .gesture(horizontalSwipeGesture(geo.size))
@@ -517,6 +527,8 @@ struct ReaderView: View {
         containerWidth: CGFloat
     ) {
         guard let target = fetchAdjacentChapter(isNext: isNext) else {
+            edgeAlertMessage = isNext ? "已是最后一章。" : "已是第一章。"
+            showEdgeAlert = true
             withAnimation(.easeInOut) { dragOffset = 0 }
             return
         }
