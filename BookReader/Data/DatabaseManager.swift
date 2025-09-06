@@ -27,6 +27,8 @@ final class DatabaseManager: ObservableObject {
             config.prepareDatabase { db in
                 try db.execute(sql: "PRAGMA journal_mode=WAL;")
                 try db.execute(sql: "PRAGMA synchronous=NORMAL;")
+                // 开启增量自动回收，配合 incremental_vacuum 使用
+                try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
             }
             dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
         } catch {
@@ -53,6 +55,7 @@ final class DatabaseManager: ObservableObject {
             config.prepareDatabase { db in
                 try db.execute(sql: "PRAGMA journal_mode=WAL;")
                 try db.execute(sql: "PRAGMA synchronous=NORMAL;")
+                try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
             }
             dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
         }
@@ -285,6 +288,7 @@ final class DatabaseManager: ObservableObject {
             config.prepareDatabase { db in
                 try db.execute(sql: "PRAGMA journal_mode=WAL;")
                 try db.execute(sql: "PRAGMA synchronous=NORMAL;")
+                try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
             }
             dbQueue = try DatabaseQueue(
                 path: dstURL.path,
@@ -294,5 +298,32 @@ final class DatabaseManager: ObservableObject {
             fatalError("打开数据库失败: \(error)")
         }
 
+    }
+
+    // MARK: - 维护：压缩与回收空间
+    /// 压缩数据库文件并回收空闲页。
+    /// - Parameter hard: 为 true 时执行完整 VACUUM（最慢、回收最彻底）；
+    ///                   为 false 时执行 checkpoint(TRUNCATE)+incremental_vacuum(0)（快、足够释放空闲页并截断 WAL）。
+    func compactDatabase(hard: Bool = false) {
+        guard let dbQueue = dbQueue else { return }
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                try dbQueue.inDatabase { db in
+                    // 截断 WAL，避免 -wal 文件膨胀
+                    try db.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE);")
+                    // 确保使用增量回收模式
+                    try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
+                    if hard {
+                        // 完整重建文件，释放到操作系统
+                        try db.execute(sql: "VACUUM;")
+                    } else {
+                        // 回收所有 freelist 页到操作系统
+                        try db.execute(sql: "PRAGMA incremental_vacuum(0);")
+                    }
+                }
+            } catch {
+                // 忽略清理失败
+            }
+        }
     }
 }

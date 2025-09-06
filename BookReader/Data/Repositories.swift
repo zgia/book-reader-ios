@@ -168,6 +168,8 @@ extension DatabaseManager {
                     arguments: [bookId]
                 )
             }
+            // 删除完成后做轻量压缩（异步执行，不阻塞 UI）
+            compactDatabase(hard: true)
         } catch {
             // 静默失败即可
         }
