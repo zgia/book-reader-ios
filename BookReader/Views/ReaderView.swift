@@ -54,6 +54,8 @@ struct ReaderView: View {
     @State private var needsInitialRestore: Bool = true
     @State private var pendingRestorePercent: Double? = nil
     @State private var pendingRestorePageIndex: Int? = nil
+    // 触达书籍更新时间节流
+    @State private var lastBookUpdatedAtTouchUnixTime: Int = 0
 
     // 边界提示（第一章/最后一章）
     @State private var showEdgeAlert: Bool = false
@@ -86,6 +88,8 @@ struct ReaderView: View {
                             onSelect: { ch in
                                 currentChapter = ch
                                 loadContent(for: ch)
+                                // 从目录跳转时立即触达
+                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
                                 showCatalog = false
                             },
                             initialChapterId: currentChapter.id
@@ -126,6 +130,8 @@ struct ReaderView: View {
                 if needsInitialRestore {
                     restoreLastProgressIfNeeded()
                 }
+                // 进入阅读页即触达一次（节流保护）
+                touchCurrentBookUpdatedAt(throttleSeconds: 30)
             }
         }
     }
@@ -552,6 +558,8 @@ struct ReaderView: View {
                 prefetchAroundCurrent()
                 // 重置偏移（无动画），此时右侧/左侧预览已参与过滑动，不再二次滑入
                 dragOffset = 0
+                // 按钮切章也触达
+                touchCurrentBookUpdatedAt(throttleSeconds: 0)
             }
         }
     }
@@ -671,7 +679,7 @@ struct ReaderView: View {
         currentBook = try? dbQueue.read { db in
             let sql = """
                     SELECT b.id, b.title, a.name AS author, c.title AS category,
-                           b.latest AS latest, b.wordcount AS wordcount, b.isfinished AS isfinished
+                           b.latest, b.wordcount, b.isfinished, b.updatedat
                     FROM book b
                     LEFT JOIN category c ON c.id = b.categoryid
                     LEFT JOIN book_author a ON a.id = b.authorid
@@ -689,6 +697,7 @@ struct ReaderView: View {
                 let latest: String = (row["latest"] as String?) ?? ""
                 let wordcount: Int = (row["wordcount"] as Int?) ?? 0
                 let isfinished: Int = (row["isfinished"] as Int?) ?? 0
+                let updatedat: Int = (row["updatedat"] as Int?) ?? 0
 
                 return Book(
                     id: id,
@@ -697,7 +706,8 @@ struct ReaderView: View {
                     author: author,
                     latest: latest,
                     wordcount: wordcount,
-                    isfinished: isfinished
+                    isfinished: isfinished,
+                    updatedat: updatedat
                 )
             } else {
                 return Book(
@@ -707,7 +717,8 @@ struct ReaderView: View {
                     author: "",
                     latest: "",
                     wordcount: 0,
-                    isfinished: 0
+                    isfinished: 0,
+                    updatedat: 0
                 )
             }
         }
@@ -812,6 +823,8 @@ struct ReaderView: View {
             "📝 onPageAppear pageIndex=\(pageIndex) percent=\(percent) pages=\(pages.count) chapterId=\(currentChapter.id)"
         )
         saveProgress(percent: percent, pageIndex: pageIndex)
+        // 阅读中触达更新时间（节流）
+        touchCurrentBookUpdatedAt(throttleSeconds: 30)
     }
 
     private func pageAnchorId(_ index: Int) -> String { "page-\(index)" }
@@ -855,6 +868,8 @@ struct ReaderView: View {
                                 prefetchAroundCurrent()
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
+                                // 切章立即触达一次
+                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
@@ -876,6 +891,8 @@ struct ReaderView: View {
                                 prefetchAroundCurrent()
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
+                                // 切章立即触达一次
+                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
@@ -885,6 +902,20 @@ struct ReaderView: View {
                     withAnimation(.easeInOut) { dragOffset = 0 }
                 }
             }
+    }
+
+    // 触达当前书籍的 updatedat（节流）
+    private func touchCurrentBookUpdatedAt(throttleSeconds: Int) {
+        let now = Int(Date().timeIntervalSince1970)
+        if throttleSeconds <= 0
+            || now - lastBookUpdatedAtTouchUnixTime >= throttleSeconds
+        {
+            DatabaseManager.shared.touchBookUpdatedAt(
+                bookId: currentChapter.bookid,
+                at: now
+            )
+            lastBookUpdatedAtTouchUnixTime = now
+        }
     }
 
     private func dlog(_ message: String) {

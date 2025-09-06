@@ -18,6 +18,7 @@ struct Book: Codable, FetchableRecord, PersistableRecord, Identifiable,
     var latest: String  // 本书最后一章的标题
     var wordcount: Int  // 本书总字数
     var isfinished: Int  // 0: 未完本，1: 完本
+    var updatedat: Int  // 时间戳，记录图书的最后更新时间
 }
 
 struct Volume: Codable, FetchableRecord, PersistableRecord, Identifiable,

@@ -11,6 +11,7 @@ extension DatabaseManager {
         let latest: String?
         let wordcount: Int?
         let isfinished: Int?
+        let updatedat: Int?
     }
 
     // 书籍列表（带分类名 & 进度）
@@ -20,7 +21,7 @@ extension DatabaseManager {
             (try? dbQueue.read { db in
                 var sql = """
                         SELECT b.id, b.title, a.name AS author, c.title AS category,
-                               b.latest AS latest, b.wordcount AS wordcount, b.isfinished AS isfinished
+                               b.latest, b.wordcount, b.isfinished, b.updatedat
                         FROM book b
                         LEFT JOIN category c ON c.id = b.categoryid
                         LEFT JOIN book_author a ON a.id = b.authorid
@@ -57,7 +58,8 @@ extension DatabaseManager {
                 author: r.author ?? "",
                 latest: r.latest ?? "",
                 wordcount: r.wordcount ?? 0,
-                isfinished: r.isfinished ?? 0
+                isfinished: r.isfinished ?? 0,
+                updatedat: r.updatedat ?? 0
             )
             return BookRow(
                 book: book,
@@ -101,5 +103,21 @@ extension DatabaseManager {
                 .filter(Column("bookid") == bookId)
                 .fetchCount(db)
         }) ?? 0
+    }
+
+    // 将某本书的 updatedat 触达为当前时间戳
+    func touchBookUpdatedAt(bookId: Int, at timestamp: Int? = nil) {
+        let ts = timestamp ?? Int(Date().timeIntervalSince1970)
+        guard let dbQueue = dbQueue else { return }
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql: "UPDATE book SET updatedat = ? WHERE id = ?",
+                    arguments: [ts, bookId]
+                )
+            }
+        } catch {
+            // 静默失败即可
+        }
     }
 }
