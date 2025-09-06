@@ -8,6 +8,13 @@ struct Category: Codable, FetchableRecord, PersistableRecord, Identifiable,
     var title: String  // 分类标题
 }
 
+struct BookAuthor: Codable, FetchableRecord, PersistableRecord, Identifiable,
+    Equatable
+{
+    var id: Int
+    var title: String  // 作者名称
+}
+
 struct Book: Codable, FetchableRecord, PersistableRecord, Identifiable,
     Equatable
 {
@@ -27,7 +34,7 @@ struct Volume: Codable, FetchableRecord, PersistableRecord, Identifiable,
     var id: Int
     var bookid: Int
     var title: String  // 卷名
-    var summary: String  // 卷简介
+    var summary: String?  // 卷简介（可空）
 }
 
 struct Chapter: Codable, FetchableRecord, PersistableRecord, Identifiable,

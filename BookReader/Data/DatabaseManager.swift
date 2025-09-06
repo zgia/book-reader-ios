@@ -34,6 +34,218 @@ final class DatabaseManager: ObservableObject {
         }
     }
 
+    // MARK: - Import helpers
+    func ensureDatabaseReadyForImport() throws {
+        // 若 dbQueue 未初始化（例如首次运行且用户未导入），则尝试在文档目录创建空库并初始化连接
+        if dbQueue == nil {
+            let fm = FileManager.default
+            let documents = fm.urls(
+                for: .documentDirectory,
+                in: .userDomainMask
+            )
+            .first!
+            let dbURL = documents.appendingPathComponent("novel.sqlite")
+            if !fm.fileExists(atPath: dbURL.path) {
+                // 创建空文件（GRDB 会初始化）
+                fm.createFile(atPath: dbURL.path, contents: nil)
+            }
+            var config = Configuration()
+            config.prepareDatabase { db in
+                try db.execute(sql: "PRAGMA journal_mode=WAL;")
+                try db.execute(sql: "PRAGMA synchronous=NORMAL;")
+            }
+            dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
+        }
+        // 确保表结构存在（如果用户是空库）
+        try dbQueue.write { db in
+            // 最小建表，按 Resources/book.sql 的字段
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS book (
+                            id         BIGINT,
+                            categoryid BIGINT,
+                            title      TEXT,
+                            alias      TEXT,
+                            authorid   BIGINT,
+                            summary    TEXT,
+                            source     TEXT,
+                            latest     TEXT,
+                            rate       BIGINT,
+                            wordcount  BIGINT,
+                            isfinished BIGINT,
+                            cover      TEXT,
+                            createdat  BIGINT,
+                            updatedat  BIGINT,
+                            deletedat  BIGINT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS book_author (
+                            id          BIGINT,
+                            name        TEXT,
+                            former_name TEXT,
+                            createdat   BIGINT,
+                            updatedat   BIGINT,
+                            deletedat   BIGINT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS category (
+                            id       BIGINT,
+                            parentid BIGINT,
+                            title    TEXT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS volume (
+                            id        BIGINT,
+                            bookid    BIGINT,
+                            title     TEXT,
+                            summary   TEXT,
+                            cover     TEXT,
+                            createdat BIGINT,
+                            updatedat BIGINT,
+                            deletedat BIGINT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS chapter (
+                            id        BIGINT,
+                            bookid    BIGINT,
+                            volumeid  BIGINT,
+                            title     TEXT,
+                            wordcount BIGINT,
+                            createdat BIGINT,
+                            updatedat BIGINT,
+                            deletedat BIGINT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS content (
+                            chapterid BIGINT,
+                            txt       TEXT
+                        );
+                    """
+            )
+        }
+        // 数据库已就绪，不再提示缺少导入
+        DispatchQueue.main.async { [weak self] in
+            self?.needsDatabaseImport = false
+        }
+    }
+
+    func nextId(_ table: String, in db: Database) throws -> Int {
+        let sql = "SELECT IFNULL(MAX(id), 0) + 1 FROM \(table)"
+        return try Int.fetchOne(db, sql: sql) ?? 1
+    }
+
+    func findOrCreateAuthorId(name: String?, in db: Database) throws -> Int? {
+        guard let n = name?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !n.isEmpty
+        else { return nil }
+        if let existing: Int = try Int.fetchOne(
+            db,
+            sql: "SELECT id FROM book_author WHERE name = ? LIMIT 1",
+            arguments: [n]
+        ) {
+            return existing
+        }
+        let newId = try nextId("book_author", in: db)
+        let ts = Int(Date().timeIntervalSince1970)
+        try db.execute(
+            sql:
+                "INSERT INTO book_author(id, name, createdat, updatedat, deletedat) VALUES(?, ?, ?, ?, 0)",
+            arguments: [newId, n, ts, ts]
+        )
+        return newId
+    }
+
+    func insertBook(title: String, authorId: Int, in db: Database) throws
+        -> Int
+    {
+        if let existing: Int = try Int.fetchOne(
+            db,
+            sql:
+                "SELECT id FROM book WHERE title = ? LIMIT 1",
+            arguments: [title]
+        ) {
+            return existing
+        }
+        let newId = try nextId("book", in: db)
+        let ts = Int(Date().timeIntervalSince1970)
+        // 插入时若 authorId 为空，则写入 0
+        let args: StatementArguments = [
+            "id": newId,
+            "title": title,
+            "authorid": authorId,
+            "created": ts,
+            "updated": ts,
+        ]
+        try db.execute(
+            sql:
+                "INSERT INTO book(id, title, authorid, categoryid, summary, source, rate, wordcount, isfinished, createdat, updatedat, deletedat) VALUES(:id, :title, :authorid, 0, '', '', 0, 0, 0, :created, :updated, 0)",
+            arguments: args
+        )
+        return newId
+    }
+
+    func updateBookAuthorId(bookId: Int, authorId: Int, in db: Database) throws
+    {
+        try db.execute(
+            sql: "UPDATE book SET authorid = ?, updatedat = ? WHERE id = ?",
+            arguments: [authorId, Int(Date().timeIntervalSince1970), bookId]
+        )
+    }
+
+    func insertVolume(bookId: Int, title: String, in db: Database) throws -> Int
+    {
+        let newId = try nextId("volume", in: db)
+        let ts = Int(Date().timeIntervalSince1970)
+        try db.execute(
+            sql:
+                "INSERT INTO volume(id, bookid, title, summary, cover, createdat, updatedat, deletedat) VALUES(?, ?, ?, '','', ?, ?, 0)",
+            arguments: [newId, bookId, title, ts, ts]
+        )
+        return newId
+    }
+
+    func insertChapter(
+        bookId: Int,
+        volumeId: Int,
+        title: String,
+        in db: Database
+    ) throws -> Int {
+        let newId = try nextId("chapter", in: db)
+        let ts = Int(Date().timeIntervalSince1970)
+        try db.execute(
+            sql:
+                "INSERT INTO chapter(id, bookid, volumeid, title, createdat, updatedat, deletedat) VALUES(?, ?, ?, ?, ?, ?, 0)",
+            arguments: [newId, bookId, volumeId, title, ts, ts]
+        )
+        return newId
+    }
+
+    func insertContent(chapterId: Int, text: String, in db: Database) throws {
+        try db.execute(
+            sql: "INSERT INTO content(chapterid, txt) VALUES(?, ?)",
+            arguments: [chapterId, text]
+        )
+        try db.execute(
+            sql: "UPDATE chapter SET wordcount = ? WHERE id = ?",
+            arguments: [text.count, chapterId]
+        )
+    }
+
     private func fromBundle() {
         let fm = FileManager.default
 

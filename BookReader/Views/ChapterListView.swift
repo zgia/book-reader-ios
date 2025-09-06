@@ -31,8 +31,9 @@ struct ChapterListView: View {
                                                 spacing: 4
                                             ) {
                                                 Text(v.title).font(.headline)
-                                                if !v.summary.isEmpty {
-                                                    Text(v.summary)
+                                                if let s = v.summary, !s.isEmpty
+                                                {
+                                                    Text(s)
                                                         .font(.caption)
                                                         .foregroundColor(
                                                             .secondary
