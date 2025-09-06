@@ -10,6 +10,8 @@ struct BookListView: View {
     @State private var searchDebounceTask: Task<Void, Never>? = nil
     @State private var renamingBook: BookRow? = nil
     @State private var newTitleText: String = ""
+    @State private var deletingBook: BookRow? = nil
+    @State private var showDeleteConfirm: Bool = false
 
     var body: some View {
         Group {
@@ -56,6 +58,12 @@ struct BookListView: View {
                                     newTitleText = bookRow.book.title
                                 }
                                 .tint(.blue)
+                                Button(role: .destructive) {
+                                    deletingBook = bookRow
+                                    showDeleteConfirm = true
+                                } label: {
+                                    Text("删除")
+                                }
                             }
                         } else {
                             // 若没有可用章节，禁用跳转但仍显示条目
@@ -82,6 +90,12 @@ struct BookListView: View {
                                     newTitleText = bookRow.book.title
                                 }
                                 .tint(.blue)
+                                Button(role: .destructive) {
+                                    deletingBook = bookRow
+                                    showDeleteConfirm = true
+                                } label: {
+                                    Text("删除")
+                                }
                             }
                         }
                     }
@@ -133,6 +147,28 @@ struct BookListView: View {
                             .transition(.opacity)
                             .zIndex(1)
                         }
+                    }
+                    .confirmationDialog(
+                        "删除确认",
+                        isPresented: $showDeleteConfirm,
+                        presenting: deletingBook
+                    ) { target in
+                        Button("删除", role: .destructive) {
+                            db.deleteBook(bookId: target.book.id)
+                            progressStore.clear(forBook: target.book.id)
+                            loadBooks(search: searchText)
+                            deletingBook = nil
+                        }
+                        Button("取消", role: .cancel) {
+                            deletingBook = nil
+                        }
+                    } message: { target in
+                        Text(
+                            "此操作将删除《\(target.book.title)》的所有内容与阅读进度，且不可恢复。是否继续？"
+                        )
+                    }
+                    .onChange(of: showDeleteConfirm) { oldValue, newValue in
+                        if !newValue { deletingBook = nil }
                     }
                 }
             }

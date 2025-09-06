@@ -48,4 +48,10 @@ final class ProgressStore: ObservableObject {
             UserDefaults.standard.set(data, forKey: key)
         }
     }
+
+    // 清除某本书的阅读进度
+    func clear(forBook id: Int) {
+        map.removeValue(forKey: id)
+        save()
+    }
 }

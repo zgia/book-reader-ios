@@ -140,4 +140,36 @@ extension DatabaseManager {
             // 静默失败即可
         }
     }
+
+    // 删除整本书及其相关数据：content、chapter、volume、book
+    func deleteBook(bookId: Int) {
+        guard let dbQueue = dbQueue else { return }
+        do {
+            try dbQueue.write { db in
+                // 先删除内容表中属于该书的章节内容
+                try db.execute(
+                    sql:
+                        "DELETE FROM content WHERE chapterid IN (SELECT id FROM chapter WHERE bookid = ?)",
+                    arguments: [bookId]
+                )
+                // 删除章节
+                try db.execute(
+                    sql: "DELETE FROM chapter WHERE bookid = ?",
+                    arguments: [bookId]
+                )
+                // 删除分卷
+                try db.execute(
+                    sql: "DELETE FROM volume WHERE bookid = ?",
+                    arguments: [bookId]
+                )
+                // 最后删除书籍
+                try db.execute(
+                    sql: "DELETE FROM book WHERE id = ?",
+                    arguments: [bookId]
+                )
+            }
+        } catch {
+            // 静默失败即可
+        }
+    }
 }
