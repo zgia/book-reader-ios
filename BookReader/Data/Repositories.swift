@@ -120,4 +120,24 @@ extension DatabaseManager {
             // 静默失败即可
         }
     }
+
+    // 更新书名
+    func updateBookTitle(bookId: Int, title: String) {
+        guard let dbQueue = dbQueue else { return }
+        let newTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newTitle.isEmpty else { return }
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql:
+                        "UPDATE book SET title = ?, updatedat = ? WHERE id = ?",
+                    arguments: [
+                        newTitle, Int(Date().timeIntervalSince1970), bookId,
+                    ]
+                )
+            }
+        } catch {
+            // 静默失败即可
+        }
+    }
 }

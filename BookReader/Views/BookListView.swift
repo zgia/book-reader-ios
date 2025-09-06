@@ -8,6 +8,8 @@ struct BookListView: View {
     @State private var books: [BookRow] = []
     @State private var searchText = ""
     @State private var searchDebounceTask: Task<Void, Never>? = nil
+    @State private var renamingBook: BookRow? = nil
+    @State private var newTitleText: String = ""
 
     var body: some View {
         Group {
@@ -45,6 +47,16 @@ struct BookListView: View {
                                     .foregroundColor(.secondary)
                                 }
                             }
+                            .swipeActions(
+                                edge: .trailing,
+                                allowsFullSwipe: false
+                            ) {
+                                Button("重命名") {
+                                    renamingBook = bookRow
+                                    newTitleText = bookRow.book.title
+                                }
+                                .tint(.blue)
+                            }
                         } else {
                             // 若没有可用章节，禁用跳转但仍显示条目
                             VStack(alignment: .leading) {
@@ -60,6 +72,16 @@ struct BookListView: View {
                                 Text("无可阅读章节").font(.caption).foregroundColor(
                                     .secondary
                                 )
+                            }
+                            .swipeActions(
+                                edge: .trailing,
+                                allowsFullSwipe: false
+                            ) {
+                                Button("重命名") {
+                                    renamingBook = bookRow
+                                    newTitleText = bookRow.book.title
+                                }
+                                .tint(.blue)
                             }
                         }
                     }
@@ -83,6 +105,34 @@ struct BookListView: View {
                     .onAppear { loadBooks(search: searchText) }
                     .navigationDestination(for: Chapter.self) { ch in
                         ReaderView(chapter: ch)
+                    }
+                    .overlay {
+                        if let renaming = renamingBook {
+                            TextFieldDialog(
+                                title: "重命名",
+                                placeholder: "请输入新的书名",
+                                text: $newTitleText,
+                                onCancel: { renamingBook = nil },
+                                onSave: {
+                                    let trimmed =
+                                        newTitleText.trimmingCharacters(
+                                            in: .whitespacesAndNewlines
+                                        )
+                                    guard !trimmed.isEmpty else {
+                                        renamingBook = nil
+                                        return
+                                    }
+                                    db.updateBookTitle(
+                                        bookId: renaming.book.id,
+                                        title: trimmed
+                                    )
+                                    loadBooks(search: searchText)
+                                    renamingBook = nil
+                                }
+                            )
+                            .transition(.opacity)
+                            .zIndex(1)
+                        }
                     }
                 }
             }

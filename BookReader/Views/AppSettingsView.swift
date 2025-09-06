@@ -5,6 +5,7 @@ struct AppSettingsView: View {
     @EnvironmentObject private var appAppearance: AppAppearanceSettings
     @EnvironmentObject private var dbManager: DatabaseManager
 
+    @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
     @State private var showingWriteImporter: Bool = false
     @State private var importInProgress: Bool = false
@@ -29,14 +30,16 @@ struct AppSettingsView: View {
                 }
 
                 Section(header: Text("数据")) {
-                    //                    Button(action: onPreviewButtonTapped) {
-                    //                        Text("预览解析（不入库）")
-                    //                    }
-                    //                    .fileImporter(
-                    //                        isPresented: $showingPreviewImporter,
-                    //                        allowedContentTypes: [.plainText],
-                    //                        allowsMultipleSelection: false
-                    //                    ) { handlePreviewFileImport($0) }
+                    if showPreviewButton {
+                        Button(action: onPreviewButtonTapped) {
+                            Text("预览解析（不入库）")
+                        }
+                        .fileImporter(
+                            isPresented: $showingPreviewImporter,
+                            allowedContentTypes: [.plainText],
+                            allowsMultipleSelection: false
+                        ) { handlePreviewFileImport($0) }
+                    }
 
                     Button(action: onImportButtonTapped) {
                         HStack {
@@ -52,6 +55,25 @@ struct AppSettingsView: View {
                         allowedContentTypes: [.plainText],
                         allowsMultipleSelection: false
                     ) { handleWriteFileImport($0) }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("TXT 格式说明：").font(.footnote).bold()
+                        Text("· 书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("· 作者：建议以“作者：xxx”独立一行。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("· 卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("· 章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Text("· 章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
 
                     if let msg = importMessage {
                         Text(msg).font(.footnote).foregroundColor(.secondary)
@@ -114,4 +136,10 @@ struct AppSettingsView: View {
             importMessage = "选择文件失败：\(error.localizedDescription)"
         }
     }
+}
+
+#Preview("设置") {
+    AppSettingsView()
+        .environmentObject(AppAppearanceSettings())
+        .environmentObject(DatabaseManager.shared)
 }

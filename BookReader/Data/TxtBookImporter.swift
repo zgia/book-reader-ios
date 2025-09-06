@@ -28,11 +28,12 @@ final class TxtBookImporter {
             String($0)
         }
 
-        // 预检测：必须能解析到书名
+        // 预检测：优先解析书名；若失败则使用文件名作为书名
         let detected = Self.detectTitleAndAuthor(from: lines)
-        guard let presetTitle = detected.title, !presetTitle.isEmpty else {
-            throw TxtImportError.missingTitle
-        }
+        let presetTitle: String = {
+            if let t = detected.title, !t.isEmpty { return t }
+            return fileURL.deletingPathExtension().lastPathComponent
+        }()
 
         let volumeRegex = try NSRegularExpression(
             pattern: "^第([一二三四五六七八九十百零〇两\\d]+)卷[ \t]*(\\S.*)$"
@@ -41,7 +42,7 @@ final class TxtBookImporter {
             pattern: "^第([一二三四五六七八九十百零〇两\\d]+)章[ \t]*(\\S.*)$"
         )
 
-        let bookTitle: String? = detected.title
+        let bookTitle: String? = presetTitle
         let authorName: String? = detected.author
 
         var bookId: Int?
@@ -188,11 +189,12 @@ final class TxtBookImporter {
             String($0)
         }
 
-        // 预检测：必须能解析到书名
+        // 预检测：优先解析书名；若失败则使用文件名作为书名
         let detected = Self.detectTitleAndAuthor(from: lines)
-        guard let presetTitle = detected.title, !presetTitle.isEmpty else {
-            throw TxtImportError.missingTitle
-        }
+        let presetTitle: String = {
+            if let t = detected.title, !t.isEmpty { return t }
+            return fileURL.deletingPathExtension().lastPathComponent
+        }()
 
         let volumeRegex = try NSRegularExpression(
             pattern: "^第([一二三四五六七八九十百零〇两\\d]+)卷[ \t]*(\\S.*)$"
@@ -230,6 +232,9 @@ final class TxtBookImporter {
         let titleRegex = try! NSRegularExpression(
             pattern: "^书名[:：]\\s*《?(.+?)》?\\s*$"
         )
+        let bracketTitleRegex = try! NSRegularExpression(
+            pattern: "^[《〈]\\s*(.+?)\\s*[》〉]\\s*$"
+        )
         let authorRegex = try! NSRegularExpression(
             pattern: "^作者[:：]\\s*(.+?)\\s*$"
         )
@@ -238,6 +243,22 @@ final class TxtBookImporter {
         for line in lines.prefix(10) {
             if title == nil,
                 let m = titleRegex.firstMatch(
+                    in: line,
+                    options: [],
+                    range: NSRange(
+                        location: 0,
+                        length: (line as NSString).length
+                    )
+                ),
+                let r = Range(m.range(at: 1), in: line)
+            {
+                title = String(line[r]).trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+            }
+            // 支持仅出现《标题》格式
+            if title == nil,
+                let m = bracketTitleRegex.firstMatch(
                     in: line,
                     options: [],
                     range: NSRange(
