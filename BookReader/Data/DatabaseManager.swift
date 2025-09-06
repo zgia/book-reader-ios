@@ -5,6 +5,7 @@ final class DatabaseManager: ObservableObject {
     static let shared = DatabaseManager()
     @Published var dbQueue: DatabaseQueue!
     @Published var needsDatabaseImport: Bool = false
+    @Published var isCompacting: Bool = false
 
     init() {
         setupDatabase()
@@ -304,9 +305,11 @@ final class DatabaseManager: ObservableObject {
     /// 压缩数据库文件并回收空闲页。
     /// - Parameter hard: 为 true 时执行完整 VACUUM（最慢、回收最彻底）；
     ///                   为 false 时执行 checkpoint(TRUNCATE)+incremental_vacuum(0)（快、足够释放空闲页并截断 WAL）。
-    func compactDatabase(hard: Bool = false) {
+    func compactDatabase(hard: Bool = false, completion: (() -> Void)? = nil) {
         guard let dbQueue = dbQueue else { return }
         DispatchQueue.global(qos: .utility).async {
+            DispatchQueue.main.async { [weak self] in self?.isCompacting = true
+            }
             do {
                 try dbQueue.inDatabase { db in
                     // 截断 WAL，避免 -wal 文件膨胀
@@ -324,6 +327,72 @@ final class DatabaseManager: ObservableObject {
             } catch {
                 // 忽略清理失败
             }
+            DispatchQueue.main.async { [weak self] in
+                self?.isCompacting = false
+                completion?()
+            }
         }
+    }
+
+    // MARK: - 维护：统计信息
+    struct DatabaseStats {
+        let dbSize: Int64
+        let walSize: Int64
+        let shmSize: Int64
+        let pageSize: Int
+        let freelistCount: Int
+        var estimatedReclaimableBytes: Int64 {
+            Int64(pageSize) * Int64(freelistCount)
+        }
+        var totalSize: Int64 { dbSize + walSize + shmSize }
+    }
+
+    /// 获取当前数据库文件统计（主库、WAL、SHM）及可回收空间估算
+    func getDatabaseStats() -> DatabaseStats? {
+        let fm = FileManager.default
+        guard
+            let documents = fm.urls(
+                for: .documentDirectory,
+                in: .userDomainMask
+            )
+            .first
+        else { return nil }
+        let dbURL = documents.appendingPathComponent("novel.sqlite")
+        let walURL = URL(fileURLWithPath: dbURL.path + "-wal")
+        let shmURL = URL(fileURLWithPath: dbURL.path + "-shm")
+
+        let dbSize =
+            (try? fm.attributesOfItem(atPath: dbURL.path)[.size] as? NSNumber)?
+            .int64Value ?? 0
+        let walSize =
+            (try? fm.attributesOfItem(atPath: walURL.path)[.size] as? NSNumber)?
+            .int64Value ?? 0
+        let shmSize =
+            (try? fm.attributesOfItem(atPath: shmURL.path)[.size] as? NSNumber)?
+            .int64Value ?? 0
+
+        var pageSize: Int = 0
+        var freelistCount: Int = 0
+        if let dbQueue = dbQueue {
+            do {
+                try dbQueue.read { db in
+                    pageSize =
+                        (try Int.fetchOne(db, sql: "PRAGMA page_size;") ?? 0)
+                    freelistCount =
+                        (try Int.fetchOne(db, sql: "PRAGMA freelist_count;")
+                            ?? 0)
+                }
+            } catch {
+                // 忽略统计失败
+            }
+        }
+
+        return DatabaseStats(
+            dbSize: dbSize,
+            walSize: walSize,
+            shmSize: shmSize,
+            pageSize: pageSize,
+            freelistCount: freelistCount
+        )
     }
 }

@@ -10,6 +10,9 @@ struct AppSettingsView: View {
     @State private var showingWriteImporter: Bool = false
     @State private var importInProgress: Bool = false
     @State private var importMessage: String?
+    @State private var compressionMessage: String?
+    @State private var showingCompactConfirm: Bool = false
+    @State private var statsText: String = ""
 
     var body: some View {
         NavigationView {
@@ -79,8 +82,58 @@ struct AppSettingsView: View {
                         Text(msg).font(.footnote).foregroundColor(.secondary)
                     }
                 }
+
+                // 新的“数据库维护”分区
+                Section(header: Text("数据库维护")) {
+                    HStack {
+                        Text("数据库统计")
+                        Spacer()
+                        Button("刷新") { refreshStats() }
+                            .font(.footnote)
+                    }
+                    if !statsText.isEmpty {
+                        Text(statsText)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Button(action: { showingCompactConfirm = true }) {
+                        HStack {
+                            if dbManager.isCompacting {
+                                ProgressView().scaleEffect(0.8)
+                            }
+                            Text(
+                                dbManager.isCompacting
+                                    ? "正在全量压缩…" : "释放空间（全量压缩）"
+                            )
+                        }
+                    }
+                    .disabled(dbManager.isCompacting)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .alert("确认执行全量压缩？", isPresented: $showingCompactConfirm) {
+                        Button("取消", role: .cancel) {}
+                        Button("确定", role: .destructive) {
+                            onCompactButtonTapped()
+                        }
+                    } message: {
+                        Text("该操作将执行 VACUUM，可能耗时较长，请在空闲时进行。")
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("说明：").font(.footnote).bold()
+                        Text("删除图书时，可能不会自动释放空间，需求在这里手动释放。")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if let cmsg = compressionMessage {
+                        Text(cmsg).font(.footnote).foregroundColor(.secondary)
+                    }
+                }
             }
             .navigationTitle("设置")
+            .onAppear { refreshStatsAsync() }
         }
     }
 
@@ -90,6 +143,65 @@ struct AppSettingsView: View {
 
     private func onImportButtonTapped() {
         showingWriteImporter = true
+    }
+
+    private func onCompactButtonTapped() {
+        dbManager.compactDatabase(hard: true) {
+            compressionMessage = "全量压缩完成。"
+            refreshStats()
+        }
+        compressionMessage = "已开始全量压缩（VACUUM），将在后台执行。"
+    }
+
+    private func refreshStats() {
+        if let s = dbManager.getDatabaseStats() {
+            func fmt(_ bytes: Int64) -> String {
+                let kb = Double(bytes) / 1024
+                let mb = kb / 1024
+                if mb >= 1 { return String(format: "%.2f MB", mb) }
+                if kb >= 1 { return String(format: "%.2f KB", kb) }
+                return "\(bytes) B"
+            }
+            let lines = [
+                "数据库: \(fmt(s.dbSize))",
+                "WAL: \(fmt(s.walSize))",
+                "SHM: \(fmt(s.shmSize))",
+                "页大小: \(s.pageSize) B",
+                "空闲页: \(s.freelistCount)",
+                "估算可回收: \(fmt(s.estimatedReclaimableBytes))",
+            ]
+            statsText = lines.joined(separator: "\n")
+        } else {
+            statsText = ""
+        }
+    }
+
+    private func refreshStatsAsync() {
+        DispatchQueue.global(qos: .utility).async {
+            let result = dbManager.getDatabaseStats()
+            DispatchQueue.main.async {
+                if let s = result {
+                    func fmt(_ bytes: Int64) -> String {
+                        let kb = Double(bytes) / 1024
+                        let mb = kb / 1024
+                        if mb >= 1 { return String(format: "%.2f MB", mb) }
+                        if kb >= 1 { return String(format: "%.2f KB", kb) }
+                        return "\(bytes) B"
+                    }
+                    let lines = [
+                        "数据库: \(fmt(s.dbSize))",
+                        "WAL: \(fmt(s.walSize))",
+                        "SHM: \(fmt(s.shmSize))",
+                        "页大小: \(s.pageSize) B",
+                        "空闲页: \(s.freelistCount)",
+                        "估算可回收: \(fmt(s.estimatedReclaimableBytes))",
+                    ]
+                    statsText = lines.joined(separator: "\n")
+                } else {
+                    statsText = ""
+                }
+            }
+        }
     }
 
     private func handlePreviewFileImport(_ result: Result<[URL], Error>) {
