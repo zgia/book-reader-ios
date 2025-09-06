@@ -37,6 +37,8 @@ struct ReaderView: View {
 
     // 拖拽偏移（用于左右滑动动画）
     @State private var dragOffset: CGFloat = 0
+    // 是否处于左右滑动中（用于临时隐藏滚动条）
+    @State private var isHorizontalSwiping: Bool = false
 
     // 段落渲染与缓存
     @State private var paragraphs: [String] = []
@@ -177,7 +179,7 @@ struct ReaderView: View {
                     loadingView
                 }
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(isHorizontalSwiping ? .hidden : .visible)
             .id(currentChapter.id)
             .offset(x: dragOffset)
             .onChange(of: pages) { oldPages, newPages in
@@ -840,6 +842,7 @@ struct ReaderView: View {
             .onChanged { value in
                 if abs(value.translation.width) > abs(value.translation.height)
                 {
+                    if !isHorizontalSwiping { isHorizontalSwiping = true }
                     let limit = size.width
                     let proposed = value.translation.width
                     dragOffset = max(-limit, min(limit, proposed))
@@ -850,6 +853,7 @@ struct ReaderView: View {
                 if abs(value.translation.width) <= abs(value.translation.height)
                 {
                     withAnimation(.easeInOut) { dragOffset = 0 }
+                    isHorizontalSwiping = false
                     return
                 }
                 if value.translation.width < -threshold {
@@ -868,12 +872,14 @@ struct ReaderView: View {
                                 prefetchAroundCurrent()
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
+                                isHorizontalSwiping = false
                                 // 切章立即触达一次
                                 touchCurrentBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
                         withAnimation(.easeInOut) { dragOffset = 0 }
+                        isHorizontalSwiping = false
                     }
                 } else if value.translation.width > threshold {
                     // 右滑：上一章
@@ -891,15 +897,18 @@ struct ReaderView: View {
                                 prefetchAroundCurrent()
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
+                                isHorizontalSwiping = false
                                 // 切章立即触达一次
                                 touchCurrentBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
                         withAnimation(.easeInOut) { dragOffset = 0 }
+                        isHorizontalSwiping = false
                     }
                 } else {
                     withAnimation(.easeInOut) { dragOffset = 0 }
+                    isHorizontalSwiping = false
                 }
             }
     }
