@@ -62,11 +62,14 @@ struct TextFieldDialog: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     HStack {
-                        Button("取消", action: onCancel)
-                        Spacer()
+                        Button("取消") {
+                            onCancel()
+                        }
+                        .frame(maxWidth: .infinity)
                         Button("保存") {
                             onSave()
                         }
+                        .frame(maxWidth: .infinity)
                         .disabled(
                             text.trimmingCharacters(in: .whitespacesAndNewlines)
                                 .isEmpty

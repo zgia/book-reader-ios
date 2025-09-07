@@ -53,17 +53,17 @@ struct BookListView: View {
                                 edge: .trailing,
                                 allowsFullSwipe: false
                             ) {
+                                Button(role: .destructive) {
+                                    deletingBook = bookRow
+                                    showDeleteConfirm = true
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
                                 Button("重命名") {
                                     renamingBook = bookRow
                                     newTitleText = bookRow.book.title
                                 }
                                 .tint(.blue)
-                                Button(role: .destructive) {
-                                    deletingBook = bookRow
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Text("删除")
-                                }
                             }
                         } else {
                             // 若没有可用章节，禁用跳转但仍显示条目
@@ -85,20 +85,21 @@ struct BookListView: View {
                                 edge: .trailing,
                                 allowsFullSwipe: false
                             ) {
+                                Button(role: .destructive) {
+                                    deletingBook = bookRow
+                                    showDeleteConfirm = true
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
                                 Button("重命名") {
                                     renamingBook = bookRow
                                     newTitleText = bookRow.book.title
                                 }
                                 .tint(.blue)
-                                Button(role: .destructive) {
-                                    deletingBook = bookRow
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Text("删除")
-                                }
                             }
                         }
                     }
+                    .animation(.default, value: books)
                     .searchable(text: $searchText)
                     .onChange(of: searchText) { oldValue, newValue in
                         // 防抖：避免输入法组合期间频繁刷新
@@ -154,10 +155,12 @@ struct BookListView: View {
                         presenting: deletingBook
                     ) { target in
                         Button("删除", role: .destructive) {
-                            db.deleteBook(bookId: target.book.id)
-                            progressStore.clear(forBook: target.book.id)
-                            loadBooks(search: searchText)
-                            deletingBook = nil
+                            withAnimation {
+                                db.deleteBook(bookId: target.book.id)
+                                progressStore.clear(forBook: target.book.id)
+                                loadBooks(search: searchText)
+                                deletingBook = nil
+                            }
                         }
                         Button("取消", role: .cancel) {
                             deletingBook = nil

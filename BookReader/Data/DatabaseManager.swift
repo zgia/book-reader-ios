@@ -250,6 +250,7 @@ final class DatabaseManager: ObservableObject {
         )
     }
 
+    // MARK: 已被 setupDatabase 替代
     private func fromBundle() {
         let fm = FileManager.default
 
@@ -341,6 +342,7 @@ final class DatabaseManager: ObservableObject {
         let shmSize: Int64
         let pageSize: Int
         let freelistCount: Int
+        let bookCount: Int
         var estimatedReclaimableBytes: Int64 {
             Int64(pageSize) * Int64(freelistCount)
         }
@@ -373,6 +375,7 @@ final class DatabaseManager: ObservableObject {
 
         var pageSize: Int = 0
         var freelistCount: Int = 0
+        var bookCount: Int = 0
         if let dbQueue = dbQueue {
             do {
                 try dbQueue.read { db in
@@ -380,6 +383,9 @@ final class DatabaseManager: ObservableObject {
                         (try Int.fetchOne(db, sql: "PRAGMA page_size;") ?? 0)
                     freelistCount =
                         (try Int.fetchOne(db, sql: "PRAGMA freelist_count;")
+                            ?? 0)
+                    bookCount =
+                        (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM book;")
                             ?? 0)
                 }
             } catch {
@@ -392,7 +398,8 @@ final class DatabaseManager: ObservableObject {
             walSize: walSize,
             shmSize: shmSize,
             pageSize: pageSize,
-            freelistCount: freelistCount
+            freelistCount: freelistCount,
+            bookCount: bookCount
         )
     }
 }
