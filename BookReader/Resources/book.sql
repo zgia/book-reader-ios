@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS book (
 );
 
 
--- 表：book_author
-DROP TABLE IF EXISTS book_author;
+-- 表：author
+DROP TABLE IF EXISTS author;
 
-CREATE TABLE IF NOT EXISTS book_author (
+CREATE TABLE IF NOT EXISTS author (
     id          BIGINT,
     name        TEXT,
     former_name TEXT,
@@ -67,6 +67,20 @@ DROP TABLE IF EXISTS content;
 CREATE TABLE IF NOT EXISTS content (
     chapterid BIGINT,
     txt       TEXT
+);
+
+-- favorite
+DROP TABLE IF EXISTS favorite;
+
+CREATE TABLE IF NOT EXISTS favorite (
+    id        BIGINT,
+    bookid    BIGINT,
+    chapterid BIGINT,
+    postion   BIGINT,
+    content   TEXT,
+    createdat BIGINT,
+    updatedat BIGINT,
+    deletedat BIGINT
 );
 
 

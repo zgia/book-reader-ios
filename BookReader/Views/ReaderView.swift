@@ -684,7 +684,7 @@ struct ReaderView: View {
                            b.latest, b.wordcount, b.isfinished, b.updatedat
                     FROM book b
                     LEFT JOIN category c ON c.id = b.categoryid
-                    LEFT JOIN book_author a ON a.id = b.authorid
+                    LEFT JOIN author a ON a.id = b.authorid
                     WHERE b.id = ?
                 """
             if let row = try Row.fetchOne(

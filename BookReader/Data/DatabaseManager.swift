@@ -86,7 +86,7 @@ final class DatabaseManager: ObservableObject {
             )
             try db.execute(
                 sql: """
-                        CREATE TABLE IF NOT EXISTS book_author (
+                        CREATE TABLE IF NOT EXISTS author (
                             id          BIGINT,
                             name        TEXT,
                             former_name TEXT,
@@ -159,16 +159,16 @@ final class DatabaseManager: ObservableObject {
         else { return nil }
         if let existing: Int = try Int.fetchOne(
             db,
-            sql: "SELECT id FROM book_author WHERE name = ? LIMIT 1",
+            sql: "SELECT id FROM author WHERE name = ? LIMIT 1",
             arguments: [n]
         ) {
             return existing
         }
-        let newId = try nextId("book_author", in: db)
+        let newId = try nextId("author", in: db)
         let ts = Int(Date().timeIntervalSince1970)
         try db.execute(
             sql:
-                "INSERT INTO book_author(id, name, createdat, updatedat, deletedat) VALUES(?, ?, ?, ?, 0)",
+                "INSERT INTO author(id, name, createdat, updatedat, deletedat) VALUES(?, ?, ?, ?, 0)",
             arguments: [newId, n, ts, ts]
         )
         return newId
