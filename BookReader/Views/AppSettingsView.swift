@@ -20,143 +20,170 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("外观")) {
-                    Picker(
-                        "应用外观",
-                        selection: Binding(
-                            get: { appAppearance.option },
-                            set: { appAppearance.setOption($0) }
-                        )
-                    ) {
-                        ForEach(AppAppearanceOption.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+                // 外观
+                appAppearanceView()
 
                 // 隐私与安全
-                Section(
-                    header: Text("隐私与安全"),
-                    footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(
-                        .footnote
-                    ).foregroundColor(.secondary)
-                ) {
-                    Toggle("启用安全遮罩（启动/前台需解锁）", isOn: $securityOverlayEnabled)
-                }
+                securityView()
 
-                Section(
-                    header: Text("数据"),
-                    footer: Button(action: { showingFormatHelp = true }) {
-                        Text("小说格式说明...")
-                            .font(.footnote)
-                            .foregroundColor(.accentColor)
-                    }
-                    .buttonStyle(.plain)
-                ) {
-                    if showPreviewButton {
-                        Button(action: onPreviewButtonTapped) {
-                            Text("预览解析（不入库）")
-                        }
-                        .fileImporter(
-                            isPresented: $showingPreviewImporter,
-                            allowedContentTypes: [.plainText],
-                            allowsMultipleSelection: false
-                        ) { handlePreviewFileImport($0) }
-                    }
-
-                    Button(action: onImportButtonTapped) {
-                        HStack {
-                            if importInProgress {
-                                ProgressView().scaleEffect(0.8)
-                            }
-                            Text(importInProgress ? "正在导入…" : "导入小说")
-                        }
-                    }
-                    .disabled(importInProgress)
-                    .fileImporter(
-                        isPresented: $showingWriteImporter,
-                        allowedContentTypes: [.plainText],
-                        allowsMultipleSelection: false
-                    ) { handleWriteFileImport($0) }
-
-                    if let msg = importMessage {
-                        Text(msg).font(.footnote).foregroundColor(.secondary)
-                    }
-                }
+                // 导入小说
+                bookImporterView()
 
                 // 新的“数据库维护”分区
-                Section(
-                    header: Text("数据库维护"),
-                    footer: VStack(alignment: .leading, spacing: 6) {
-                        Text("删除图书时，可能不会自动释放空间，需要手动释放。")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    }
-                ) {
-                    HStack {
-                        Text("数据库统计")
-                        Spacer()
-                        Button("刷新") { refreshStats() }
-                            .font(.footnote)
-                    }
-                    if !statsText.isEmpty {
-                        Text(statsText)
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                    }
-
-                    Button(action: { showingCompactConfirm = true }) {
-                        HStack {
-                            if dbManager.isCompacting {
-                                ProgressView().scaleEffect(0.8)
-                            }
-                            Text(
-                                dbManager.isCompacting
-                                    ? "正在全量压缩…" : "释放空间（全量压缩）"
-                            )
-                        }
-                    }
-                    .disabled(dbManager.isCompacting)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .alert("确认执行全量压缩？", isPresented: $showingCompactConfirm) {
-                        Button("取消", role: .cancel) {}
-                        Button("确定", role: .destructive) {
-                            onCompactButtonTapped()
-                        }
-                    } message: {
-                        Text("该操作将执行 VACUUM，可能耗时较长，请在空闲时进行。")
-                    }
-                    if let cmsg = compressionMessage {
-                        Text(cmsg).font(.footnote).foregroundColor(.secondary)
-                    }
-                }
+                databaseMaintainerView()
             }
             .navigationTitle("设置")
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
-                NavigationStack {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("· 仅支持文本格式：*.txt。")
-                            Text("· 书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
-                            Text("· 作者：建议以“作者：xxx”独立一行。")
-                            Text("· 卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
-                            Text("· 章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
-                            Text("· 章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
-                        }
-                        .padding()
-                    }
-                    .navigationTitle("小说格式说明")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("完成") { showingFormatHelp = false }
-                        }
-                    }
+                textBookFormatHelpView()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func textBookFormatHelpView() -> some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("· 仅支持文本格式：*.txt。")
+                    Text("· 书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
+                    Text("· 作者：建议以“作者：xxx”独立一行。")
+                    Text("· 卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                    Text("· 章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                    Text("· 章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
+                }
+                .padding()
+            }
+            .navigationTitle("小说格式说明")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完成") { showingFormatHelp = false }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func databaseMaintainerView() -> some View {
+        Section(
+            header: Text("数据库维护"),
+            footer: VStack(alignment: .leading, spacing: 6) {
+                Text("删除图书时，可能不会自动释放空间，需要手动释放。")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+        ) {
+            HStack {
+                Text("数据库统计")
+                Spacer()
+                Button("刷新") { refreshStats() }
+                    .font(.footnote)
+            }
+            if !statsText.isEmpty {
+                Text(statsText)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+
+            Button(action: { showingCompactConfirm = true }) {
+                HStack {
+                    if dbManager.isCompacting {
+                        ProgressView().scaleEffect(0.8)
+                    }
+                    Text(
+                        dbManager.isCompacting
+                            ? "正在全量压缩…" : "释放空间（全量压缩）"
+                    )
+                }
+            }
+            .disabled(dbManager.isCompacting)
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .alert("确认执行全量压缩？", isPresented: $showingCompactConfirm) {
+                Button("取消", role: .cancel) {}
+                Button("确定", role: .destructive) {
+                    onCompactButtonTapped()
+                }
+            } message: {
+                Text("该操作将执行 VACUUM，可能耗时较长，请在空闲时进行。")
+            }
+            if let cmsg = compressionMessage {
+                Text(cmsg).font(.footnote).foregroundColor(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func bookImporterView() -> some View {
+        Section(
+            header: Text("数据"),
+            footer: Button(action: { showingFormatHelp = true }) {
+                Text("小说格式说明...")
+                    .font(.footnote)
+                    .foregroundColor(.accentColor)
+            }
+            .buttonStyle(.plain)
+        ) {
+            if showPreviewButton {
+                Button(action: onPreviewButtonTapped) {
+                    Text("预览解析（不入库）")
+                }
+                .fileImporter(
+                    isPresented: $showingPreviewImporter,
+                    allowedContentTypes: [.plainText],
+                    allowsMultipleSelection: false
+                ) { handlePreviewFileImport($0) }
+            }
+
+            Button(action: onImportButtonTapped) {
+                HStack {
+                    if importInProgress {
+                        ProgressView().scaleEffect(0.8)
+                    }
+                    Text(importInProgress ? "正在导入…" : "导入小说")
+                }
+            }
+            .disabled(importInProgress)
+            .fileImporter(
+                isPresented: $showingWriteImporter,
+                allowedContentTypes: [.plainText],
+                allowsMultipleSelection: false
+            ) { handleWriteFileImport($0) }
+
+            if let msg = importMessage {
+                Text(msg).font(.footnote).foregroundColor(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func securityView() -> some View {
+        Section(
+            header: Text("隐私与安全"),
+            footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(
+                .footnote
+            ).foregroundColor(.secondary)
+        ) {
+            Toggle("启用安全遮罩（启动/前台需解锁）", isOn: $securityOverlayEnabled)
+        }
+    }
+
+    @ViewBuilder
+    private func appAppearanceView() -> some View {
+        Section(header: Text("外观")) {
+            Picker(
+                "应用外观",
+                selection: Binding(
+                    get: { appAppearance.option },
+                    set: { appAppearance.setOption($0) }
+                )
+            ) {
+                ForEach(AppAppearanceOption.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
         }
     }
 

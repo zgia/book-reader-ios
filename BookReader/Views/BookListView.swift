@@ -23,50 +23,20 @@ struct BookListView: View {
             } else {
                 NavigationStack {
                     List(books) { bookRow in
-                        if let startChapter = startingChapter(for: bookRow) {
-                            NavigationLink(value: startChapter) {
-                                VStack(alignment: .leading) {
-                                    Text(bookRow.book.title).font(.headline)
-                                    let authorText = makeAuthorText(
-                                        bookRow: bookRow
-                                    )
-                                    if !authorText.isEmpty {
-                                        Text(authorText)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-
-                                    // 书籍额外信息：最新章节、总字数、完本状态
-                                    HStack(spacing: 8) {
-                                        let chapterText = makeChapterText(
-                                            bookRow: bookRow
-                                        )
-                                        if !chapterText.isEmpty {
-                                            Text(chapterText)
-                                        }
-                                    }
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                        NavigationLink {
+                            if let startChapter = startingChapter(for: bookRow)
+                            {
+                                ReaderView(chapter: startChapter)
+                            } else {
+                                VStack(spacing: 12) {
+                                    Text("无可阅读章节")
+                                        .font(.headline)
+                                        .foregroundColor(.secondary)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding()
                             }
-                            .swipeActions(
-                                edge: .trailing,
-                                allowsFullSwipe: false
-                            ) {
-                                Button(role: .destructive) {
-                                    deletingBook = bookRow
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Image(systemName: "trash")
-                                }
-                                Button("重命名") {
-                                    renamingBook = bookRow
-                                    newTitleText = bookRow.book.title
-                                }
-                                .tint(.blue)
-                            }
-                        } else {
-                            // 若没有可用章节，禁用跳转但仍显示条目
+                        } label: {
                             VStack(alignment: .leading) {
                                 Text(bookRow.book.title).font(.headline)
                                 let authorText = makeAuthorText(
@@ -77,26 +47,35 @@ struct BookListView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
-                                Text("无可阅读章节").font(.caption).foregroundColor(
-                                    .secondary
-                                )
-                            }
-                            .swipeActions(
-                                edge: .trailing,
-                                allowsFullSwipe: false
-                            ) {
-                                Button(role: .destructive) {
-                                    deletingBook = bookRow
-                                    showDeleteConfirm = true
-                                } label: {
-                                    Image(systemName: "trash")
+
+                                // 书籍额外信息：最新章节、总字数、完本状态
+                                HStack(spacing: 8) {
+                                    let chapterText = makeChapterText(
+                                        bookRow: bookRow
+                                    )
+                                    if !chapterText.isEmpty {
+                                        Text(chapterText)
+                                    }
                                 }
-                                Button("重命名") {
-                                    renamingBook = bookRow
-                                    newTitleText = bookRow.book.title
-                                }
-                                .tint(.blue)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                             }
+                        }
+                        .swipeActions(
+                            edge: .trailing,
+                            allowsFullSwipe: false
+                        ) {
+                            Button(role: .destructive) {
+                                deletingBook = bookRow
+                                showDeleteConfirm = true
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            Button("重命名") {
+                                renamingBook = bookRow
+                                newTitleText = bookRow.book.title
+                            }
+                            .tint(.blue)
                         }
                     }
                     .animation(.default, value: books)
@@ -117,7 +96,7 @@ struct BookListView: View {
                             }
                         }
                     }
-                    .onAppear { 
+                    .onAppear {
                         loadBooks(search: searchText)
                         // 监听取消模态视图的通知
                         NotificationCenter.default.addObserver(
@@ -133,9 +112,7 @@ struct BookListView: View {
                         // 移除通知监听器
                         NotificationCenter.default.removeObserver(self)
                     }
-                    .navigationDestination(for: Chapter.self) { ch in
-                        ReaderView(chapter: ch)
-                    }
+                    // 基于目的地闭包的导航，已不再使用基于值的目的地
                     .overlay {
                         if let renaming = renamingBook {
                             TextFieldDialog(

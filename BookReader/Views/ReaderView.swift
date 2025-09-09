@@ -77,6 +77,16 @@ struct ReaderView: View {
             }
             .navigationTitle(currentChapter.title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(currentChapter.title)
+                        .font(.headline)
+                        .foregroundColor(reading.textColor)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .tint(reading.textColor)
             .background(reading.backgroundColor)
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
             .overlay(alignment: .top) {
