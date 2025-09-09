@@ -16,10 +16,22 @@ struct BookListView: View {
     var body: some View {
         Group {
             if db.dbQueue == nil {
-                // 数据库不存在时的提示
-                Text("请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite")
-                    .padding()
-                    .multilineTextAlignment(.center)
+                VStack(spacing: 12) {
+                    if let err = db.initError, !err.isEmpty {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 36))
+                            .foregroundColor(.orange)
+                        Text(err)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        ProgressView()
+                        Text("正在初始化数据库…")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding()
             } else {
                 NavigationStack {
                     List(books) { bookRow in

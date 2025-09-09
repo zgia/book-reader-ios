@@ -20,7 +20,7 @@ final class TxtBookImporter {
     }
 
     func importTxt(at fileURL: URL) throws {
-        try dbManager.ensureDatabaseReadyForImport()
+        try dbManager.ensureDatabaseReady()
 
         let text: String = try Self.readWholeText(fileURL: fileURL)
 

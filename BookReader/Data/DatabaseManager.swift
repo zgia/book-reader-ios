@@ -4,41 +4,28 @@ import GRDB
 final class DatabaseManager: ObservableObject {
     static let shared = DatabaseManager()
     @Published var dbQueue: DatabaseQueue!
-    @Published var needsDatabaseImport: Bool = false
     @Published var isCompacting: Bool = false
+    @Published var initError: String? = nil
 
     init() {
         setupDatabase()
     }
 
     private func setupDatabase() {
-        let fm = FileManager.default
-        let documents = fm.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!
-        let dbURL = documents.appendingPathComponent("novel.sqlite")
-
-        // 如果数据库文件不存在，提示用户导入
-        guard fm.fileExists(atPath: dbURL.path) else {
-            self.needsDatabaseImport = true
-            return
-        }
-
         do {
-            var config = Configuration()
-            config.prepareDatabase { db in
-                try db.execute(sql: "PRAGMA journal_mode=WAL;")
-                try db.execute(sql: "PRAGMA synchronous=NORMAL;")
-                // 开启增量自动回收，配合 incremental_vacuum 使用
-                try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
-            }
-            dbQueue = try DatabaseQueue(path: dbURL.path, configuration: config)
+            try ensureDatabaseReady()
+            DispatchQueue.main.async { [weak self] in self?.initError = nil }
         } catch {
-            fatalError("打开数据库失败: \(error)")
+            // 初始化失败，记录错误并由 UI 提示用户手动放置数据库
+            DispatchQueue.main.async { [weak self] in
+                self?.initError =
+                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite"
+            }
         }
     }
 
     // MARK: - Import helpers
-    func ensureDatabaseReadyForImport() throws {
+    func ensureDatabaseReady() throws {
         // 若 dbQueue 未初始化（例如首次运行且用户未导入），则尝试在文档目录创建空库并初始化连接
         if dbQueue == nil {
             let fm = FileManager.default
@@ -168,10 +155,6 @@ final class DatabaseManager: ObservableObject {
                     """
             )
         }
-        // 数据库已就绪，不再提示缺少导入
-        DispatchQueue.main.async { [weak self] in
-            self?.needsDatabaseImport = false
-        }
     }
 
     func nextId(_ table: String, in db: Database) throws -> Int {
@@ -274,58 +257,6 @@ final class DatabaseManager: ObservableObject {
             sql: "UPDATE chapter SET wordcount = ? WHERE id = ?",
             arguments: [text.count, chapterId]
         )
-    }
-
-    // MARK: 已被 setupDatabase 替代
-    private func fromBundle() {
-        let fm = FileManager.default
-
-        // 沙盒存放数据库
-        let appSupport = try! fm.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        let dbFolder = appSupport.appendingPathComponent(
-            "db",
-            isDirectory: true
-        )
-        try? fm.createDirectory(at: dbFolder, withIntermediateDirectories: true)
-        let dstURL = dbFolder.appendingPathComponent("novel.sqlite")
-
-        if !fm.fileExists(atPath: dstURL.path) {
-            // 从 Package 资源复制数据库
-            guard
-                let srcURL = Bundle.main.url(
-                    forResource: "novel",
-                    withExtension: "sqlite"
-                )
-            else {
-                fatalError("novel.sqlite 未加入 Package 资源或命名不一致")
-            }
-            do {
-                try fm.copyItem(at: srcURL, to: dstURL)
-            } catch {
-                fatalError("复制数据库失败: \(error)")
-            }
-        }
-
-        do {
-            var config = Configuration()
-            config.prepareDatabase { db in
-                try db.execute(sql: "PRAGMA journal_mode=WAL;")
-                try db.execute(sql: "PRAGMA synchronous=NORMAL;")
-                try db.execute(sql: "PRAGMA auto_vacuum=INCREMENTAL;")
-            }
-            dbQueue = try DatabaseQueue(
-                path: dstURL.path,
-                configuration: config
-            )
-        } catch {
-            fatalError("打开数据库失败: \(error)")
-        }
-
     }
 
     // MARK: - 维护：压缩与回收空间

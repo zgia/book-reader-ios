@@ -36,15 +36,13 @@ struct NovelReaderApp: App {
                         .environmentObject(appAppearance)
                         .alert(
                             isPresented: Binding(
-                                get: { db.needsDatabaseImport },
+                                get: { db.initError != nil },
                                 set: { _ in }
                             )
                         ) {
                             Alert(
-                                title: Text("缺少数据库"),
-                                message: Text(
-                                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite"
-                                ),
+                                title: Text("初始化数据库失败"),
+                                message: Text(db.initError ?? ""),
                                 dismissButton: .default(Text("我知道了"))
                             )
                         }
