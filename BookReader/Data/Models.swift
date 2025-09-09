@@ -62,3 +62,23 @@ struct BookRow: Identifiable, Equatable {
     let categoryTitle: String
     let lastProgress: ReadingProgress?  // 可为空
 }
+
+// 收藏模型
+struct Favorite: Codable, FetchableRecord, PersistableRecord, Identifiable,
+    Equatable
+{
+    var id: Int
+    var bookid: Int
+    var chapterid: Int
+    var pageindex: Int?
+    var percent: Double?
+    var excerpt: String?
+    var createdat: Int
+}
+
+// 收藏行（带章节标题）
+struct FavoriteRow: Identifiable, Equatable {
+    var id: Int { favorite.id }
+    let favorite: Favorite
+    let chapterTitle: String
+}

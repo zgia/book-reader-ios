@@ -141,6 +141,32 @@ final class DatabaseManager: ObservableObject {
                         );
                     """
             )
+            // 收藏表：记录书籍、章节、定位与摘录
+            try db.execute(
+                sql: """
+                        CREATE TABLE IF NOT EXISTS favorite (
+                            id        BIGINT,
+                            bookid    BIGINT NOT NULL,
+                            chapterid BIGINT NOT NULL,
+                            pageindex BIGINT,
+                            percent   REAL,
+                            excerpt   TEXT,
+                            createdat BIGINT
+                        );
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE INDEX IF NOT EXISTS idx_favorite_bookid_createdat
+                        ON favorite(bookid, createdat);
+                    """
+            )
+            try db.execute(
+                sql: """
+                        CREATE INDEX IF NOT EXISTS idx_favorite_chapterid
+                        ON favorite(chapterid);
+                    """
+            )
         }
         // 数据库已就绪，不再提示缺少导入
         DispatchQueue.main.async { [weak self] in

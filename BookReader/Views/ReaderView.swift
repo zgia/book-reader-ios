@@ -59,6 +59,13 @@ struct ReaderView: View {
     // 触达书籍更新时间节流
     @State private var lastBookUpdatedAtTouchUnixTime: Int = 0
 
+    // 收藏
+    @State private var showFavorites: Bool = false
+    @State private var favorites: [FavoriteRow] = []
+    @State private var showAddFavoriteDialog: Bool = false
+    @State private var draftExcerpt: String = ""
+    @State private var draftFavoritePageIndex: Int? = nil
+
     // 边界提示（第一章/最后一章）
     @State private var showEdgeAlert: Bool = false
     @State private var edgeAlertMessage: String = ""
@@ -80,6 +87,28 @@ struct ReaderView: View {
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
             .overlay(alignment: .top) {
                 topControlsView(title: currentBook?.title ?? "")
+            }
+            .overlay {
+                if showAddFavoriteDialog {
+                    TextFieldDialog(
+                        title: "添加到收藏",
+                        placeholder: "为本次收藏写点备注（可选）",
+                        text: $draftExcerpt,
+                        onCancel: {
+                            showAddFavoriteDialog = false
+                        },
+                        onSave: {
+                            let pageIdx =
+                                draftFavoritePageIndex
+                                ?? currentVisiblePageIndex
+                            addFavorite(
+                                excerpt: draftExcerpt,
+                                pageIndex: pageIdx
+                            )
+                            showAddFavoriteDialog = false
+                        }
+                    )
+                }
             }
             .animation(.easeInOut(duration: 0.2), value: showControls)
             .sheet(isPresented: $showCatalog) {
@@ -109,6 +138,49 @@ struct ReaderView: View {
                     bgColor: $bgColor,
                     textColor: $textColor
                 )
+            }
+            .sheet(isPresented: $showFavorites) {
+                NavigationView {
+                    List {
+                        ForEach(favorites) { row in
+                            Button {
+                                jump(to: row.favorite)
+                                showFavorites = false
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(row.chapterTitle)
+                                        .font(.headline)
+                                    if let ex = row.favorite.excerpt,
+                                        !ex.isEmpty
+                                    {
+                                        Text(ex)
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(2)
+                                    }
+                                    if let idx = row.favorite.pageindex {
+                                        Text("第 \(idx + 1) 页")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .swipeActions(
+                                edge: .trailing,
+                                allowsFullSwipe: true
+                            ) {
+                                Button(role: .destructive) {
+                                    deleteFavorite(id: row.favorite.id)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("收藏夹")
+                    .onAppear { loadFavorites() }
+                }
             }
             .alert(isPresented: $showEdgeAlert) {
                 Alert(
@@ -317,6 +389,12 @@ struct ReaderView: View {
                     showCatalog = true
                 } label: {
                     Image(systemName: "list.bullet")
+                        .foregroundColor(textColor)
+                }
+                Button {
+                    showFavorites = true
+                } label: {
+                    Image(systemName: "bookmark")
                         .foregroundColor(textColor)
                 }
                 Button {
@@ -802,6 +880,14 @@ struct ReaderView: View {
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .contextMenu {
+                    Button {
+                        prepareAddFavorite(from: pageIndex)
+                    } label: {
+                        Label("添加到收藏", systemImage: "bookmark")
+                    }
+                }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -930,6 +1016,79 @@ struct ReaderView: View {
     private func dlog(_ message: String) {
         if UserDefaults.standard.bool(forKey: "ReaderDebugLoggingEnabled") {
             print(message)
+        }
+    }
+
+    // MARK: - 收藏相关
+    private func loadFavorites() {
+        favorites = DatabaseManager.shared.fetchFavorites(
+            bookId: currentChapter.bookid
+        )
+    }
+
+    private func prepareAddFavorite(from pageIndex: Int) {
+        draftFavoritePageIndex = pageIndex
+        let raw = pages[pageIndex]
+        let condensed = raw.replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(
+                of: "\\s+",
+                with: " ",
+                options: .regularExpression
+            )
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let maxLen = 120
+        let preview =
+            condensed.count > maxLen
+            ? String(condensed.prefix(maxLen)) : condensed
+        draftExcerpt = preview
+        showAddFavoriteDialog = true
+    }
+
+    private func addFavorite(excerpt: String, pageIndex: Int) {
+        let percent =
+            pages.count > 1
+            ? Double(pageIndex) / Double(pages.count - 1)
+            : 0
+        _ = DatabaseManager.shared.insertFavorite(
+            bookId: currentChapter.bookid,
+            chapterId: currentChapter.id,
+            pageIndex: pageIndex,
+            percent: percent,
+            excerpt: excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        loadFavorites()
+    }
+
+    private func deleteFavorite(id: Int) {
+        DatabaseManager.shared.deleteFavorite(id: id)
+        loadFavorites()
+    }
+
+    private func jump(to fav: Favorite) {
+        // 记录恢复意图
+        pendingRestorePageIndex = fav.pageindex
+        pendingRestorePercent = fav.percent
+
+        if fav.chapterid == currentChapter.id {
+            // 当前章，直接触发分页恢复逻辑
+            if let idx = fav.pageindex, !pages.isEmpty {
+                DispatchQueue.main.async {
+                    withAnimation {
+                        // 使用 ScrollViewReader 的 anchor id 恢复
+                        // 设置 pending 索引，交由 onChange/pages 执行；此处直接赋值也可
+                        pendingRestorePageIndex = idx
+                    }
+                }
+            }
+            return
+        }
+
+        // 目标章，切换并加载后由 onChange 恢复
+        if let target = fetchChapter(by: fav.chapterid) {
+            currentChapter = target
+            loadContent(for: target)
+            updateAdjacentRefs()
+            prefetchAroundCurrent()
         }
     }
 

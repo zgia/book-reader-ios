@@ -174,4 +174,101 @@ extension DatabaseManager {
             // 静默失败即可
         }
     }
+
+    // 收藏行记录（用于联表查询章节标题）
+    struct FavoriteRowRecord: Decodable, FetchableRecord {
+        let id: Int
+        let bookid: Int
+        let chapterid: Int
+        let pageindex: Int?
+        let percent: Double?
+        let excerpt: String?
+        let createdat: Int
+        let chapterTitle: String?
+    }
+
+    // 查询：某本书的收藏列表（按创建时间倒序）
+    func fetchFavorites(bookId: Int) -> [FavoriteRow] {
+        let records: [FavoriteRowRecord] =
+            (try? dbQueue.read { db in
+                try FavoriteRowRecord.fetchAll(
+                    db,
+                    sql: """
+                            SELECT f.id, f.bookid, f.chapterid, f.pageindex, f.percent, f.excerpt, f.createdat,
+                                   c.title AS chapterTitle
+                            FROM favorite f
+                            LEFT JOIN chapter c ON c.id = f.chapterid
+                            WHERE f.bookid = ?
+                            ORDER BY f.createdat DESC, f.id DESC
+                        """,
+                    arguments: [bookId]
+                )
+            }) ?? []
+
+        return records.map { r in
+            let fav = Favorite(
+                id: r.id,
+                bookid: r.bookid,
+                chapterid: r.chapterid,
+                pageindex: r.pageindex,
+                percent: r.percent,
+                excerpt: r.excerpt,
+                createdat: r.createdat
+            )
+            return FavoriteRow(
+                favorite: fav,
+                chapterTitle: r.chapterTitle ?? ""
+            )
+        }
+    }
+
+    // 新增：添加收藏，返回收藏 id
+    @discardableResult
+    func insertFavorite(
+        bookId: Int,
+        chapterId: Int,
+        pageIndex: Int?,
+        percent: Double?,
+        excerpt: String?
+    ) -> Int? {
+        guard let dbQueue = dbQueue else { return nil }
+        do {
+            var newId: Int = 0
+            try dbQueue.write { db in
+                newId = try nextId("favorite", in: db)
+                let ts = Int(Date().timeIntervalSince1970)
+                try db.execute(
+                    sql:
+                        "INSERT INTO favorite(id, bookid, chapterid, pageindex, percent, excerpt, createdat) VALUES(:id, :bookid, :chapterid, :pageindex, :percent, :excerpt, :createdat)",
+                    arguments: StatementArguments([
+                        "id": newId,
+                        "bookid": bookId,
+                        "chapterid": chapterId,
+                        "pageindex": pageIndex,
+                        "percent": percent,
+                        "excerpt": excerpt,
+                        "createdat": ts,
+                    ])
+                )
+            }
+            return newId
+        } catch {
+            return nil
+        }
+    }
+
+    // 删除：根据 id 删除收藏
+    func deleteFavorite(id: Int) {
+        guard let dbQueue = dbQueue else { return }
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql: "DELETE FROM favorite WHERE id = ?",
+                    arguments: [id]
+                )
+            }
+        } catch {
+            // 静默失败
+        }
+    }
 }

@@ -74,13 +74,12 @@ DROP TABLE IF EXISTS favorite;
 
 CREATE TABLE IF NOT EXISTS favorite (
     id        BIGINT,
-    bookid    BIGINT,
-    chapterid BIGINT,
-    postion   BIGINT,
-    content   TEXT,
-    createdat BIGINT,
-    updatedat BIGINT,
-    deletedat BIGINT
+    bookid    BIGINT NOT NULL,
+    chapterid BIGINT NOT NULL,
+    pageindex BIGINT,
+    percent   REAL,
+    excerpt   TEXT,
+    createdat BIGINT
 );
 
 
