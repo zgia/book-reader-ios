@@ -10,10 +10,10 @@ extension Notification.Name {
 struct NovelReaderApp: App {
     @StateObject private var db = DatabaseManager.shared
     @StateObject private var progressStore = ProgressStore()
-    @StateObject private var settings = ThemeSettings()
     @StateObject private var appAppearance = AppAppearanceSettings()
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("SecurityOverlayEnabled") private var securityOverlayEnabled: Bool = true
+    @AppStorage("SecurityOverlayEnabled") private var securityOverlayEnabled:
+        Bool = true
 
     @State private var isUnlocked: Bool = false
     @State private var authErrorMessage: String? = nil
@@ -32,7 +32,6 @@ struct NovelReaderApp: App {
                 BookListView()
                     .environmentObject(db)
                     .environmentObject(progressStore)
-                    .environmentObject(settings)
                     .environmentObject(appAppearance)
                     .alert(
                         isPresented: Binding(
@@ -49,7 +48,9 @@ struct NovelReaderApp: App {
                         )
                     }
 
-                if securityOverlayEnabled && (scenePhase != .active || !isUnlocked) {
+                if securityOverlayEnabled
+                    && (scenePhase != .active || !isUnlocked)
+                {
                     SecurityOverlayView(
                         showBlur: true,
                         isUnlocked: isUnlocked,
@@ -77,10 +78,14 @@ struct NovelReaderApp: App {
                 switch newPhase {
                 case .active:
                     // 回到前台时如果未解锁则再次验证（防抖）
-                    if securityOverlayEnabled && !isUnlocked && !isAuthenticating {
+                    if securityOverlayEnabled && !isUnlocked
+                        && !isAuthenticating
+                    {
                         // 延迟一点验证，确保模态视图已经完全消失
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            if securityOverlayEnabled && !self.isUnlocked && !self.isAuthenticating {
+                            if securityOverlayEnabled && !self.isUnlocked
+                                && !self.isAuthenticating
+                            {
                                 self.authenticate()
                             }
                         }

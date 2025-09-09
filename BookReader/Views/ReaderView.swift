@@ -6,34 +6,27 @@ struct ReaderView: View {
     @State private var currentChapter: Chapter
     @State private var content: Content?
     @EnvironmentObject var progressStore: ProgressStore
+    // 使用 @AppStorage 作为持久化源
+    @AppStorage("ReaderFontSize") private var storedFontSize: Double = 16
+    @AppStorage("ReaderLineSpacing") private var storedLineSpacing: Double = 8
+    @AppStorage("ReaderParagraphSpacing") private var storedParagraphSpacing:
+        Double = 16
+    @AppStorage("ReaderBackgroundColor") private var storedBgHex: String =
+        "#FFFFFF"
+    @AppStorage("ReaderTextColor") private var storedTextHex: String = "#000000"
+    @AppStorage("ReaderDebugLoggingEnabled") private var debugEnabled: Bool =
+        false
+
     // 目录
     @State private var showCatalog: Bool = false
     // 阅读设置
     @State private var showSettings: Bool = false
-    // 字体大小
-    @State private var fontSize: CGFloat =
-        UserDefaults.standard.double(forKey: "ReaderFontSize") != 0
-        ? UserDefaults.standard.double(forKey: "ReaderFontSize") : 16
-    // 行间距
-    @State private var lineSpacing: CGFloat =
-        UserDefaults.standard.double(forKey: "ReaderLineSpacing") != 0
-        ? UserDefaults.standard.double(forKey: "ReaderLineSpacing") : 8
-    // 段间距
-    @State private var paragraphSpacing: CGFloat =
-        UserDefaults.standard.double(forKey: "ReaderParagraphSpacing") != 0
-        ? UserDefaults.standard.double(forKey: "ReaderParagraphSpacing") : 16
-    // 背景色
-    @State private var bgColor: Color =
-        Color(
-            hex: UserDefaults.standard.string(forKey: "ReaderBackgroundColor")
-                ?? "#FFFFFF"
-        ) ?? .white
-    // 文字颜色
-    @State private var textColor: Color =
-        Color(
-            hex: UserDefaults.standard.string(forKey: "ReaderTextColor")
-                ?? "#000000"
-        ) ?? .black
+    // 渲染状态（从 @AppStorage 派生）
+    @State private var fontSize: CGFloat = 16
+    @State private var lineSpacing: CGFloat = 8
+    @State private var paragraphSpacing: CGFloat = 16
+    @State private var bgColor: Color = .white
+    @State private var textColor: Color = .black
 
     // 拖拽偏移（用于左右滑动动画）
     @State private var dragOffset: CGFloat = 0
@@ -206,7 +199,7 @@ struct ReaderView: View {
                 }
                 // 进入阅读页即触达一次（节流保护）
                 touchCurrentBookUpdatedAt(throttleSeconds: 30)
-                
+
                 // 监听取消模态视图的通知
                 NotificationCenter.default.addObserver(
                     forName: .dismissAllModals,
@@ -219,6 +212,21 @@ struct ReaderView: View {
                     showAddFavoriteDialog = false
                     showControls = false
                 }
+            }
+            .onChange(of: storedFontSize) { _, _ in
+                fontSize = CGFloat(storedFontSize)
+            }
+            .onChange(of: storedLineSpacing) { _, _ in
+                lineSpacing = CGFloat(storedLineSpacing)
+            }
+            .onChange(of: storedParagraphSpacing) { _, _ in
+                paragraphSpacing = CGFloat(storedParagraphSpacing)
+            }
+            .onChange(of: storedBgHex) { _, _ in
+                bgColor = Color(hex: storedBgHex) ?? .white
+            }
+            .onChange(of: storedTextHex) { _, _ in
+                textColor = Color(hex: storedTextHex) ?? .black
             }
             .onDisappear {
                 // 移除通知监听器
@@ -532,43 +540,12 @@ struct ReaderView: View {
     }
 
     private func loadSettings() {
-        // 重新加载所有设置
-        let savedFontSize = UserDefaults.standard.double(
-            forKey: "ReaderFontSize"
-        )
-        if savedFontSize != 0 {
-            fontSize = savedFontSize
-        }
-
-        let savedLineSpacing = UserDefaults.standard.double(
-            forKey: "ReaderLineSpacing"
-        )
-        if savedLineSpacing != 0 {
-            lineSpacing = savedLineSpacing
-        }
-
-        let savedParagraphSpacing = UserDefaults.standard.double(
-            forKey: "ReaderParagraphSpacing"
-        )
-        if savedParagraphSpacing != 0 {
-            paragraphSpacing = savedParagraphSpacing
-        }
-
-        if let savedBgColor = UserDefaults.standard.string(
-            forKey: "ReaderBackgroundColor"
-        ),
-            let color = Color(hex: savedBgColor)
-        {
-            bgColor = color
-        }
-
-        if let savedTextColor = UserDefaults.standard.string(
-            forKey: "ReaderTextColor"
-        ),
-            let color = Color(hex: savedTextColor)
-        {
-            textColor = color
-        }
+        // 从 @AppStorage 同步到渲染状态
+        fontSize = CGFloat(storedFontSize)
+        lineSpacing = CGFloat(storedLineSpacing)
+        paragraphSpacing = CGFloat(storedParagraphSpacing)
+        bgColor = Color(hex: storedBgHex) ?? .white
+        textColor = Color(hex: storedTextHex) ?? .black
     }
 
     private func processParagraphs(_ text: String) -> [String] {
@@ -1031,7 +1008,7 @@ struct ReaderView: View {
     }
 
     private func dlog(_ message: String) {
-        if UserDefaults.standard.bool(forKey: "ReaderDebugLoggingEnabled") {
+        if debugEnabled {
             print(message)
         }
     }

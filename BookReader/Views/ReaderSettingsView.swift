@@ -9,6 +9,17 @@ struct ReaderSettingsView: View {
     @Binding var bgColor: Color
     @Binding var textColor: Color
 
+    // 使用 @AppStorage 持久化阅读设置
+    @AppStorage("ReaderFontSize") private var storedFontSize: Double = 16
+    @AppStorage("ReaderLineSpacing") private var storedLineSpacing: Double = 8
+    @AppStorage("ReaderParagraphSpacing") private var storedParagraphSpacing:
+        Double = 16
+    @AppStorage("ReaderBackgroundColor") private var storedBgHex: String =
+        "#FFFFFF"
+    @AppStorage("ReaderTextColor") private var storedTextHex: String = "#000000"
+    @AppStorage("ReaderDebugLoggingEnabled") private var debugEnabled: Bool =
+        false
+
     private enum ThemeOption: String, CaseIterable, Identifiable {
         case light = "浅色"
         case dark = "深色"
@@ -86,23 +97,7 @@ struct ReaderSettingsView: View {
 
                 // 调试
                 Section(header: Text("调试")) {
-                    Toggle(
-                        isOn: Binding(
-                            get: {
-                                UserDefaults.standard.bool(
-                                    forKey: "ReaderDebugLoggingEnabled"
-                                )
-                            },
-                            set: {
-                                UserDefaults.standard.set(
-                                    $0,
-                                    forKey: "ReaderDebugLoggingEnabled"
-                                )
-                            }
-                        )
-                    ) {
-                        Text("启用阅读调试日志")
-                    }
+                    Toggle("启用阅读调试日志", isOn: $debugEnabled)
                 }
             }
             .navigationTitle("阅读设置")
@@ -124,23 +119,17 @@ struct ReaderSettingsView: View {
     // MARK: - Settings Update Methods
     private func updateFontSize(increment: CGFloat) {
         fontSize += increment
-        UserDefaults.standard.set(fontSize, forKey: "ReaderFontSize")
-        UserDefaults.standard.synchronize()
+        storedFontSize = Double(fontSize)
     }
 
     private func updateLineSpacing(increment: CGFloat) {
         lineSpacing += increment
-        UserDefaults.standard.set(lineSpacing, forKey: "ReaderLineSpacing")
-        UserDefaults.standard.synchronize()
+        storedLineSpacing = Double(lineSpacing)
     }
 
     private func updateParagraphSpacing(increment: CGFloat) {
         paragraphSpacing += increment
-        UserDefaults.standard.set(
-            paragraphSpacing,
-            forKey: "ReaderParagraphSpacing"
-        )
-        UserDefaults.standard.synchronize()
+        storedParagraphSpacing = Double(paragraphSpacing)
     }
 
     private func updateTheme(background: String, text: String) {
@@ -148,21 +137,15 @@ struct ReaderSettingsView: View {
             Color(hex: background)
             ?? (background == "#FFFFFF" ? .white : .black)
         textColor = Color(hex: text) ?? (text == "#000000" ? .black : .white)
-
-        UserDefaults.standard.set(background, forKey: "ReaderBackgroundColor")
-        UserDefaults.standard.set(text, forKey: "ReaderTextColor")
-        UserDefaults.standard.synchronize()
+        storedBgHex = background
+        storedTextHex = text
     }
 
     private func inferTheme() -> ThemeOption {
-        if let bg = UserDefaults.standard.string(
-            forKey: "ReaderBackgroundColor"
-        ),
-            let fg = UserDefaults.standard.string(forKey: "ReaderTextColor")
-        {
-            if bg.uppercased() == "#000000" && fg.uppercased() == "#FFFFFF" {
-                return .dark
-            }
+        let bg = storedBgHex
+        let fg = storedTextHex
+        if bg.uppercased() == "#000000" && fg.uppercased() == "#FFFFFF" {
+            return .dark
         }
         return .light
     }
