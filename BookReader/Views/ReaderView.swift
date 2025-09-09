@@ -206,6 +206,23 @@ struct ReaderView: View {
                 }
                 // 进入阅读页即触达一次（节流保护）
                 touchCurrentBookUpdatedAt(throttleSeconds: 30)
+                
+                // 监听取消模态视图的通知
+                NotificationCenter.default.addObserver(
+                    forName: .dismissAllModals,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    showCatalog = false
+                    showSettings = false
+                    showFavorites = false
+                    showAddFavoriteDialog = false
+                    showControls = false
+                }
+            }
+            .onDisappear {
+                // 移除通知监听器
+                NotificationCenter.default.removeObserver(self)
             }
         }
     }

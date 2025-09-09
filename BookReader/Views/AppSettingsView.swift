@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct AppSettingsView: View {
     @EnvironmentObject private var appAppearance: AppAppearanceSettings
     @EnvironmentObject private var dbManager: DatabaseManager
+    @AppStorage("SecurityOverlayEnabled") private var securityOverlayEnabled: Bool = true
 
     @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
@@ -31,6 +32,14 @@ struct AppSettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                }
+
+                // 隐私与安全
+                Section(
+                    header: Text("隐私与安全"),
+                    footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(.footnote).foregroundColor(.secondary)
+                ) {
+                    Toggle("启用安全遮罩（启动/前台需解锁）", isOn: $securityOverlayEnabled)
                 }
 
                 Section(

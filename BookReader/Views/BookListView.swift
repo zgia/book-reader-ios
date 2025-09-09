@@ -117,7 +117,22 @@ struct BookListView: View {
                             }
                         }
                     }
-                    .onAppear { loadBooks(search: searchText) }
+                    .onAppear { 
+                        loadBooks(search: searchText)
+                        // 监听取消模态视图的通知
+                        NotificationCenter.default.addObserver(
+                            forName: .dismissAllModals,
+                            object: nil,
+                            queue: .main
+                        ) { _ in
+                            showDeleteConfirm = false
+                            renamingBook = nil
+                        }
+                    }
+                    .onDisappear {
+                        // 移除通知监听器
+                        NotificationCenter.default.removeObserver(self)
+                    }
                     .navigationDestination(for: Chapter.self) { ch in
                         ReaderView(chapter: ch)
                     }
