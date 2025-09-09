@@ -6,27 +6,28 @@ struct ReaderView: View {
     @State private var currentChapter: Chapter
     @State private var content: Content?
     @EnvironmentObject var progressStore: ProgressStore
+    @EnvironmentObject private var reading: ReadingSettings
     // 使用 @AppStorage 作为持久化源
-    @AppStorage("ReaderFontSize") private var storedFontSize: Double = 16
-    @AppStorage("ReaderLineSpacing") private var storedLineSpacing: Double = 8
-    @AppStorage("ReaderParagraphSpacing") private var storedParagraphSpacing:
+    @AppStorage(DefaultsKeys.readerFontSize) private var storedFontSize:
         Double = 16
-    @AppStorage("ReaderBackgroundColor") private var storedBgHex: String =
-        "#FFFFFF"
-    @AppStorage("ReaderTextColor") private var storedTextHex: String = "#000000"
-    @AppStorage("ReaderDebugLoggingEnabled") private var debugEnabled: Bool =
-        false
+    @AppStorage(DefaultsKeys.readerLineSpacing) private var storedLineSpacing:
+        Double = 8
+    @AppStorage(DefaultsKeys.readerParagraphSpacing) private
+        var storedParagraphSpacing: Double = 16
+    @AppStorage(DefaultsKeys.readerBackgroundColor) private var storedBgHex:
+        String =
+            "#FFFFFF"
+    @AppStorage(DefaultsKeys.readerTextColor) private var storedTextHex:
+        String = "#000000"
+    @AppStorage(DefaultsKeys.readerDebugLoggingEnabled) private
+        var debugEnabled: Bool =
+            false
 
     // 目录
     @State private var showCatalog: Bool = false
     // 阅读设置
     @State private var showSettings: Bool = false
-    // 渲染状态（从 @AppStorage 派生）
-    @State private var fontSize: CGFloat = 16
-    @State private var lineSpacing: CGFloat = 8
-    @State private var paragraphSpacing: CGFloat = 16
-    @State private var bgColor: Color = .white
-    @State private var textColor: Color = .black
+    // 直接使用 ReadingSettings 提供的值，无需派生状态
 
     // 拖拽偏移（用于左右滑动动画）
     @State private var dragOffset: CGFloat = 0
@@ -76,7 +77,7 @@ struct ReaderView: View {
             }
             .navigationTitle(currentChapter.title)
             .navigationBarTitleDisplayMode(.inline)
-            .background(bgColor)
+            .background(reading.backgroundColor)
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
             .overlay(alignment: .top) {
                 topControlsView(title: currentBook?.title ?? "")
@@ -105,7 +106,7 @@ struct ReaderView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: showControls)
             .sheet(isPresented: $showCatalog) {
-                NavigationView {
+                NavigationStack {
                     if let book = currentBook {
                         ChapterListView(
                             book: book,
@@ -124,16 +125,10 @@ struct ReaderView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                ReaderSettingsView(
-                    fontSize: $fontSize,
-                    lineSpacing: $lineSpacing,
-                    paragraphSpacing: $paragraphSpacing,
-                    bgColor: $bgColor,
-                    textColor: $textColor
-                )
+                ReaderSettingsView()
             }
             .sheet(isPresented: $showFavorites) {
-                NavigationView {
+                NavigationStack {
                     List {
                         ForEach(favorites) { row in
                             Button {
@@ -213,21 +208,7 @@ struct ReaderView: View {
                     showControls = false
                 }
             }
-            .onChange(of: storedFontSize) { _, _ in
-                fontSize = CGFloat(storedFontSize)
-            }
-            .onChange(of: storedLineSpacing) { _, _ in
-                lineSpacing = CGFloat(storedLineSpacing)
-            }
-            .onChange(of: storedParagraphSpacing) { _, _ in
-                paragraphSpacing = CGFloat(storedParagraphSpacing)
-            }
-            .onChange(of: storedBgHex) { _, _ in
-                bgColor = Color(hex: storedBgHex) ?? .white
-            }
-            .onChange(of: storedTextHex) { _, _ in
-                textColor = Color(hex: storedTextHex) ?? .black
-            }
+            // 设置由 ReadingSettings 驱动，无需本地同步
             .onDisappear {
                 // 移除通知监听器
                 NotificationCenter.default.removeObserver(self)
@@ -407,26 +388,26 @@ struct ReaderView: View {
                 } label: {
                     Label("上一章", systemImage: "chevron.left")
                         .labelStyle(.titleAndIcon)
-                        .foregroundColor(textColor)
+                        .foregroundColor(reading.textColor)
                 }
                 Spacer(minLength: 24)
                 Button {
                     showCatalog = true
                 } label: {
                     Image(systemName: "list.bullet")
-                        .foregroundColor(textColor)
+                        .foregroundColor(reading.textColor)
                 }
                 Button {
                     showFavorites = true
                 } label: {
                     Image(systemName: "bookmark")
-                        .foregroundColor(textColor)
+                        .foregroundColor(reading.textColor)
                 }
                 Button {
                     showSettings = true
                 } label: {
                     Image(systemName: "gearshape")
-                        .foregroundColor(textColor)
+                        .foregroundColor(reading.textColor)
                 }
                 Spacer(minLength: 24)
                 Button {
@@ -439,7 +420,7 @@ struct ReaderView: View {
                         Text("下一章")
                         Image(systemName: "chevron.right")
                     }
-                    .foregroundColor(textColor)
+                    .foregroundColor(reading.textColor)
                 }
             }
             .padding(.horizontal)
@@ -460,7 +441,7 @@ struct ReaderView: View {
                 Spacer(minLength: 0)
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(textColor)
+                    .foregroundColor(reading.textColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity)
@@ -494,8 +475,8 @@ struct ReaderView: View {
                 pages = paginate(
                     text: txt,
                     screen: geoSize(),
-                    fontSize: fontSize,
-                    lineSpacing: lineSpacing
+                    fontSize: CGFloat(reading.fontSize),
+                    lineSpacing: CGFloat(reading.lineSpacing)
                 )
                 pagesCache[chapter.id] = pages
             }
@@ -519,8 +500,8 @@ struct ReaderView: View {
             let computedPages = paginate(
                 text: txt,
                 screen: geoSize(),
-                fontSize: fontSize,
-                lineSpacing: lineSpacing
+                fontSize: CGFloat(reading.fontSize),
+                lineSpacing: CGFloat(reading.lineSpacing)
             )
 
             DispatchQueue.main.async {
@@ -539,14 +520,7 @@ struct ReaderView: View {
         }
     }
 
-    private func loadSettings() {
-        // 从 @AppStorage 同步到渲染状态
-        fontSize = CGFloat(storedFontSize)
-        lineSpacing = CGFloat(storedLineSpacing)
-        paragraphSpacing = CGFloat(storedParagraphSpacing)
-        bgColor = Color(hex: storedBgHex) ?? .white
-        textColor = Color(hex: storedTextHex) ?? .black
-    }
+    private func loadSettings() {}
 
     private func processParagraphs(_ text: String) -> [String] {
         // 先尝试按双换行符分割，如果没有则按单换行符分割
@@ -667,8 +641,8 @@ struct ReaderView: View {
             let computedPages = paginate(
                 text: txt,
                 screen: geoSize(),
-                fontSize: fontSize,
-                lineSpacing: lineSpacing
+                fontSize: CGFloat(reading.fontSize),
+                lineSpacing: CGFloat(reading.lineSpacing)
             )
             DispatchQueue.main.async {
                 contentCache[cid] = fetched
@@ -858,8 +832,8 @@ struct ReaderView: View {
     // MARK: - View helpers
     private var loadingView: some View {
         Text("加载中...")
-            .font(.system(size: fontSize))
-            .foregroundColor(textColor)
+            .font(.system(size: reading.fontSize))
+            .foregroundColor(reading.textColor)
             .padding()
     }
 
@@ -867,9 +841,9 @@ struct ReaderView: View {
     private func pageView(pageIndex: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(pages[pageIndex])
-                .font(.system(size: fontSize))
-                .foregroundColor(textColor)
-                .lineSpacing(lineSpacing)
+                .font(.system(size: reading.fontSize))
+                .foregroundColor(reading.textColor)
+                .lineSpacing(reading.lineSpacing)
                 .multilineTextAlignment(.leading)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1094,9 +1068,9 @@ struct ReaderView: View {
                 ForEach(pagesArray.indices, id: \.self) { idx in
                     VStack(alignment: .leading, spacing: 0) {
                         Text(pagesArray[idx])
-                            .font(.system(size: fontSize))
-                            .foregroundColor(textColor)
-                            .lineSpacing(lineSpacing)
+                            .font(.system(size: reading.fontSize))
+                            .foregroundColor(reading.textColor)
+                            .lineSpacing(reading.lineSpacing)
                             .multilineTextAlignment(.leading)
                             .lineLimit(nil)
                             .fixedSize(horizontal: false, vertical: true)
@@ -1111,39 +1085,4 @@ struct ReaderView: View {
     }
 }
 
-// MARK: - Color Extension
-extension Color {
-    init?(hex: String) {
-        let hex = hex.trimmingCharacters(
-            in: CharacterSet.alphanumerics.inverted
-        )
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a: UInt64
-        let r: UInt64
-        let g: UInt64
-        let b: UInt64
-        switch hex.count {
-        case 3:  // RGB (12-bit)
-            (a, r, g, b) = (
-                255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17
-            )
-        case 6:  // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8:  // ARGB (32-bit)
-            (a, r, g, b) = (
-                int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF
-            )
-        default:
-            return nil
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-}
+// 颜色 hex 扩展已提取到 Utils/Color+Hex.swift

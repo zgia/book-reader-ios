@@ -4,7 +4,8 @@ import UniformTypeIdentifiers
 struct AppSettingsView: View {
     @EnvironmentObject private var appAppearance: AppAppearanceSettings
     @EnvironmentObject private var dbManager: DatabaseManager
-    @AppStorage("SecurityOverlayEnabled") private var securityOverlayEnabled: Bool = true
+    @AppStorage(DefaultsKeys.securityOverlayEnabled) private
+        var securityOverlayEnabled: Bool = true
 
     @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
@@ -17,7 +18,7 @@ struct AppSettingsView: View {
     @State private var showingFormatHelp: Bool = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("外观")) {
                     Picker(
@@ -37,7 +38,9 @@ struct AppSettingsView: View {
                 // 隐私与安全
                 Section(
                     header: Text("隐私与安全"),
-                    footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(.footnote).foregroundColor(.secondary)
+                    footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(
+                        .footnote
+                    ).foregroundColor(.secondary)
                 ) {
                     Toggle("启用安全遮罩（启动/前台需解锁）", isOn: $securityOverlayEnabled)
                 }
@@ -133,7 +136,7 @@ struct AppSettingsView: View {
             .navigationTitle("设置")
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
-                NavigationView {
+                NavigationStack {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("· 仅支持文本格式：*.txt。")

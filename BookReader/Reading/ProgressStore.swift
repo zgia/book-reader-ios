@@ -8,7 +8,7 @@ struct ReadingProgress: Codable, Equatable {
 }
 
 final class ProgressStore: ObservableObject {
-    private let key = "reading_progress_v1"
+    private let key = DefaultsKeys.readingProgress
     @Published private(set) var map: [Int: ReadingProgress] = [:]  // bookId -> progress
 
     init() {

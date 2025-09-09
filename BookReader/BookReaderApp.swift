@@ -12,8 +12,8 @@ struct NovelReaderApp: App {
     @StateObject private var progressStore = ProgressStore()
     @StateObject private var appAppearance = AppAppearanceSettings()
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("SecurityOverlayEnabled") private var securityOverlayEnabled:
-        Bool = true
+    @AppStorage(DefaultsKeys.securityOverlayEnabled) private
+        var securityOverlayEnabled: Bool = true
 
     @State private var isUnlocked: Bool = false
     @State private var authErrorMessage: String? = nil
@@ -28,38 +28,40 @@ struct NovelReaderApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                BookListView()
-                    .environmentObject(db)
-                    .environmentObject(progressStore)
-                    .environmentObject(appAppearance)
-                    .alert(
-                        isPresented: Binding(
-                            get: { db.needsDatabaseImport },
-                            set: { _ in }
-                        )
-                    ) {
-                        Alert(
-                            title: Text("缺少数据库"),
-                            message: Text(
-                                "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite"
-                            ),
-                            dismissButton: .default(Text("我知道了"))
-                        )
-                    }
+            ReadingSettingsProvider {
+                ZStack {
+                    BookListView()
+                        .environmentObject(db)
+                        .environmentObject(progressStore)
+                        .environmentObject(appAppearance)
+                        .alert(
+                            isPresented: Binding(
+                                get: { db.needsDatabaseImport },
+                                set: { _ in }
+                            )
+                        ) {
+                            Alert(
+                                title: Text("缺少数据库"),
+                                message: Text(
+                                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite"
+                                ),
+                                dismissButton: .default(Text("我知道了"))
+                            )
+                        }
 
-                if securityOverlayEnabled
-                    && (scenePhase != .active || !isUnlocked)
-                {
-                    SecurityOverlayView(
-                        showBlur: true,
-                        isUnlocked: isUnlocked,
-                        message: authErrorMessage,
-                        onRetry: { authenticate() }
-                    )
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .zIndex(999)
+                    if securityOverlayEnabled
+                        && (scenePhase != .active || !isUnlocked)
+                    {
+                        SecurityOverlayView(
+                            showBlur: true,
+                            isUnlocked: isUnlocked,
+                            message: authErrorMessage,
+                            onRetry: { authenticate() }
+                        )
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .zIndex(999)
+                    }
                 }
             }
             .preferredColorScheme(appAppearance.preferredColorScheme)

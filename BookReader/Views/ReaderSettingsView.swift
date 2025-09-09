@@ -1,24 +1,7 @@
-import Combine
-// 在现有设置视图中增加一个“调试日志”开关（使用 AppStorage 持久化）
 import SwiftUI
 
 struct ReaderSettingsView: View {
-    @Binding var fontSize: CGFloat
-    @Binding var lineSpacing: CGFloat
-    @Binding var paragraphSpacing: CGFloat
-    @Binding var bgColor: Color
-    @Binding var textColor: Color
-
-    // 使用 @AppStorage 持久化阅读设置
-    @AppStorage("ReaderFontSize") private var storedFontSize: Double = 16
-    @AppStorage("ReaderLineSpacing") private var storedLineSpacing: Double = 8
-    @AppStorage("ReaderParagraphSpacing") private var storedParagraphSpacing:
-        Double = 16
-    @AppStorage("ReaderBackgroundColor") private var storedBgHex: String =
-        "#FFFFFF"
-    @AppStorage("ReaderTextColor") private var storedTextHex: String = "#000000"
-    @AppStorage("ReaderDebugLoggingEnabled") private var debugEnabled: Bool =
-        false
+    @EnvironmentObject private var reading: ReadingSettings
 
     private enum ThemeOption: String, CaseIterable, Identifiable {
         case light = "浅色"
@@ -29,41 +12,65 @@ struct ReaderSettingsView: View {
     @State private var selectedTheme: ThemeOption = .light
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 // 字体大小设置
                 Section(header: Text("字体大小")) {
                     HStack {
-                        Text("当前大小: \(Int(fontSize))")
+                        Text("当前大小: \(Int(reading.fontSize))")
                         Spacer()
-                        Button("-") { updateFontSize(increment: -2) }
-                            .buttonStyle(.bordered)
-                        Button("+") { updateFontSize(increment: 2) }
-                            .buttonStyle(.bordered)
+                        Button("-") {
+                            reading.fontSize = max(8, reading.fontSize - 2)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("+") {
+                            reading.fontSize = min(72, reading.fontSize + 2)
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
 
                 // 行间距设置
                 Section(header: Text("行间距")) {
                     HStack {
-                        Text("当前间距: \(Int(lineSpacing))")
+                        Text("当前间距: \(Int(reading.lineSpacing))")
                         Spacer()
-                        Button("-") { updateLineSpacing(increment: -2) }
-                            .buttonStyle(.bordered)
-                        Button("+") { updateLineSpacing(increment: 2) }
-                            .buttonStyle(.bordered)
+                        Button("-") {
+                            reading.lineSpacing = max(
+                                0,
+                                reading.lineSpacing - 2
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        Button("+") {
+                            reading.lineSpacing = min(
+                                48,
+                                reading.lineSpacing + 2
+                            )
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
 
                 // 段间距设置
                 Section(header: Text("段间距")) {
                     HStack {
-                        Text("当前间距: \(Int(paragraphSpacing))")
+                        Text("当前间距: \(Int(reading.paragraphSpacing))")
                         Spacer()
-                        Button("-") { updateParagraphSpacing(increment: -4) }
-                            .buttonStyle(.bordered)
-                        Button("+") { updateParagraphSpacing(increment: 4) }
-                            .buttonStyle(.bordered)
+                        Button("-") {
+                            reading.paragraphSpacing = max(
+                                0,
+                                reading.paragraphSpacing - 4
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        Button("+") {
+                            reading.paragraphSpacing = min(
+                                96,
+                                reading.paragraphSpacing + 4
+                            )
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
 
@@ -79,33 +86,34 @@ struct ReaderSettingsView: View {
 
                 // 预览区域
                 Section(header: Text("预览")) {
-                    VStack(alignment: .leading, spacing: paragraphSpacing) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: reading.paragraphSpacing
+                    ) {
                         Text("这是预览文本")
-                            .font(.system(size: fontSize))
-                            .foregroundColor(textColor)
-                            .lineSpacing(lineSpacing)
+                            .font(.system(size: reading.fontSize))
+                            .foregroundColor(reading.textColor)
+                            .lineSpacing(reading.lineSpacing)
 
                         Text("您可以在这里看到字体大小、行间距和段间距的效果。")
-                            .font(.system(size: fontSize))
-                            .foregroundColor(textColor)
-                            .lineSpacing(lineSpacing)
+                            .font(.system(size: reading.fontSize))
+                            .foregroundColor(reading.textColor)
+                            .lineSpacing(reading.lineSpacing)
                     }
                     .padding()
-                    .background(bgColor)
+                    .background(reading.backgroundColor)
                     .cornerRadius(8)
                 }
 
                 // 调试
                 Section(header: Text("调试")) {
-                    Toggle("启用阅读调试日志", isOn: $debugEnabled)
+                    Toggle("启用阅读调试日志", isOn: $reading.debugEnabled)
                 }
             }
             .navigationTitle("阅读设置")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .onAppear {
-            selectedTheme = inferTheme()
-        }
+        .onAppear { selectedTheme = inferTheme() }
         .onChange(of: selectedTheme) { _, newValue in
             switch newValue {
             case .light:
@@ -116,34 +124,14 @@ struct ReaderSettingsView: View {
         }
     }
 
-    // MARK: - Settings Update Methods
-    private func updateFontSize(increment: CGFloat) {
-        fontSize += increment
-        storedFontSize = Double(fontSize)
-    }
-
-    private func updateLineSpacing(increment: CGFloat) {
-        lineSpacing += increment
-        storedLineSpacing = Double(lineSpacing)
-    }
-
-    private func updateParagraphSpacing(increment: CGFloat) {
-        paragraphSpacing += increment
-        storedParagraphSpacing = Double(paragraphSpacing)
-    }
-
     private func updateTheme(background: String, text: String) {
-        bgColor =
-            Color(hex: background)
-            ?? (background == "#FFFFFF" ? .white : .black)
-        textColor = Color(hex: text) ?? (text == "#000000" ? .black : .white)
-        storedBgHex = background
-        storedTextHex = text
+        reading.backgroundHex = background
+        reading.textHex = text
     }
 
     private func inferTheme() -> ThemeOption {
-        let bg = storedBgHex
-        let fg = storedTextHex
+        let bg = reading.backgroundHex
+        let fg = reading.textHex
         if bg.uppercased() == "#000000" && fg.uppercased() == "#FFFFFF" {
             return .dark
         }
@@ -152,11 +140,6 @@ struct ReaderSettingsView: View {
 }
 
 #Preview {
-    ReaderSettingsView(
-        fontSize: .constant(16),
-        lineSpacing: .constant(8),
-        paragraphSpacing: .constant(16),
-        bgColor: .constant(.white),
-        textColor: .constant(.black)
-    )
+    ReaderSettingsView()
+        .environmentObject(ReadingSettings())
 }
