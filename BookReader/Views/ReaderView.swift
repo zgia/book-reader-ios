@@ -15,13 +15,11 @@ struct ReaderView: View {
     @AppStorage(DefaultsKeys.readerParagraphSpacing) private
         var storedParagraphSpacing: Double = 16
     @AppStorage(DefaultsKeys.readerBackgroundColor) private var storedBgHex:
-        String =
-            "#FFFFFF"
+        String = "#FFFFFF"
     @AppStorage(DefaultsKeys.readerTextColor) private var storedTextHex:
         String = "#000000"
     @AppStorage(DefaultsKeys.readerDebugLoggingEnabled) private
-        var debugEnabled: Bool =
-            false
+        var debugEnabled: Bool = false
 
     // 目录
     @State private var showCatalog: Bool = false
@@ -60,6 +58,7 @@ struct ReaderView: View {
     @State private var showAddFavoriteDialog: Bool = false
     @State private var draftExcerpt: String = ""
     @State private var draftFavoritePageIndex: Int? = nil
+    @State private var showBookInfo: Bool = false
 
     // 边界提示（第一章/最后一章）
     @State private var showEdgeAlert: Bool = false
@@ -86,13 +85,18 @@ struct ReaderView: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showBookInfo = true
+                    } label: {
+                        Image(systemName: "book")
+                    }
+                    .accessibilityLabel("图书信息")
+                }
             }
             .tint(reading.textColor)
             .background(reading.backgroundColor)
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
-            .overlay(alignment: .top) {
-                topControlsView(title: currentBook?.title ?? "")
-            }
             .overlay {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
@@ -181,6 +185,9 @@ struct ReaderView: View {
                     .onAppear { loadFavorites() }
                 }
             }
+            .sheet(isPresented: $showBookInfo) {
+                bookInfo()
+            }
             .alert(isPresented: $showEdgeAlert) {
                 Alert(
                     title: Text(edgeAlertMessage),
@@ -196,7 +203,6 @@ struct ReaderView: View {
                     "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))"
                 )
                 loadContent(for: currentChapter)
-                loadSettings()
                 loadCurrentBook()
                 updateAdjacentRefs()
                 prefetchAroundCurrent()
@@ -216,6 +222,7 @@ struct ReaderView: View {
                     showSettings = false
                     showFavorites = false
                     showAddFavoriteDialog = false
+                    showBookInfo = false
                     showControls = false
                 }
             }
@@ -228,6 +235,44 @@ struct ReaderView: View {
     }
 
     // MARK: - Extracted Views
+    @ViewBuilder
+    private func bookInfo() -> some View {
+        NavigationStack {
+            if let book = currentBook {
+                List {
+                    Section("图书信息") {
+                        Text("书名：\(book.title)")
+                        Text("作者：\(book.author)")
+                        if !book.category.isEmpty {
+                            Text("分类：\(book.category)")
+                        }
+                        Text("字数：\(formatWordCount(book.wordcount))字")
+                        if !book.latest.isEmpty {
+                            Text("最新章节：\(book.latest)")
+                        }
+                        let updatedDate = Date(
+                            timeIntervalSince1970: TimeInterval(book.updatedat)
+                        )
+                        HStack(spacing: 4) {
+                            Text("更新时间：")
+                            Text(updatedDate, style: .date)
+                            Text(updatedDate, style: .time)
+                        }
+                        Text("完结：\(book.isfinished == 1 ? "是" : "否")")
+                    }
+                }
+                .navigationTitle("图书信息")
+            } else {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("正在加载...")
+                }
+                .padding()
+                .navigationTitle("图书信息")
+            }
+        }
+    }
+
     @ViewBuilder
     private func leftPreviewView(geo: GeometryProxy) -> some View {
         if abs(dragOffset) > 0.1,
@@ -481,50 +526,69 @@ struct ReaderView: View {
     @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
         if showControls {
-            HStack {
+            HStack(spacing: 0) {
                 Button {
                     navigateToAdjacentChapter(
                         isNext: false,
                         containerWidth: geo.size.width
                     )
                 } label: {
-                    Label("上一章", systemImage: "chevron.left")
-                        .labelStyle(.titleAndIcon)
-                        .foregroundColor(reading.textColor)
+                    VStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("上一章").font(.caption)
+                    }
                 }
-                Spacer(minLength: 24)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
+
                 Button {
                     showCatalog = true
                 } label: {
-                    Image(systemName: "list.bullet")
-                        .foregroundColor(reading.textColor)
+                    VStack(spacing: 4) {
+                        Image(systemName: "list.bullet")
+                        Text("目录").font(.caption)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
+
                 Button {
                     showFavorites = true
                 } label: {
-                    Image(systemName: "bookmark")
-                        .foregroundColor(reading.textColor)
+                    VStack(spacing: 4) {
+                        Image(systemName: "bookmark")
+                        Text("收藏").font(.caption)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
+
                 Button {
                     showSettings = true
                 } label: {
-                    Image(systemName: "gearshape")
-                        .foregroundColor(reading.textColor)
+                    VStack(spacing: 4) {
+                        Image(systemName: "gearshape")
+                        Text("设置").font(.caption)
+                    }
                 }
-                Spacer(minLength: 24)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
+
                 Button {
                     navigateToAdjacentChapter(
                         isNext: true,
                         containerWidth: geo.size.width
                     )
                 } label: {
-                    HStack {
-                        Text("下一章")
+                    VStack(spacing: 4) {
                         Image(systemName: "chevron.right")
+                        Text("下一章").font(.caption)
                     }
-                    .foregroundColor(reading.textColor)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .contentShape(Rectangle())
             }
+            .foregroundColor(reading.textColor)
             .padding(.horizontal)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
@@ -533,30 +597,6 @@ struct ReaderView: View {
             .padding(.horizontal)
             .padding(.bottom, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
-    @ViewBuilder
-    private func topControlsView(title: String) -> some View {
-        if showControls && !title.isEmpty {
-            HStack {
-                Spacer(minLength: 0)
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(reading.textColor)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 
@@ -621,8 +661,6 @@ struct ReaderView: View {
             }
         }
     }
-
-    private func loadSettings() {}
 
     private func processParagraphs(_ text: String) -> [String] {
         // 先尝试按双换行符分割，如果没有则按单换行符分割
@@ -1212,5 +1250,14 @@ struct ReaderView: View {
             }
         }
         .scrollIndicators(.hidden)
+    }
+
+    private func formatWordCount(_ wordCount: Int) -> String {
+        if wordCount < 10000 {
+            return "\(wordCount)"
+        } else {
+            let tenThousands = wordCount / 10000
+            return "\(tenThousands)万"
+        }
     }
 }

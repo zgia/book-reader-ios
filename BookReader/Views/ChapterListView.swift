@@ -164,12 +164,30 @@ struct ChapterListView: View {
     }
 
     private func attemptAutoScroll(_ proxy: ScrollViewProxy) {
+        // 仅在非搜索模式下自动滚动，避免影响搜索结果列表
+        guard searchText.isEmpty else { return }
         guard !didAutoScroll, let targetId = initialChapterId else { return }
-        let exists = chapters.contains(where: { $0.id == targetId })
-        guard exists else { return }
+        guard let idx = chapters.firstIndex(where: { $0.id == targetId }) else {
+            return
+        }
+
+        // 计算合适的定位：当前章的前 5 章置顶；如果不足 5 章，则置顶第 1 章
+        // 如果是最后一章，则将其显示在底部
+        let isLastChapter = (idx == chapters.count - 1)
+        let scrollTargetId: Int
+        let anchor: UnitPoint
+        if isLastChapter {
+            scrollTargetId = targetId
+            anchor = .bottom
+        } else {
+            let adjustedIndex = max(idx - 5, 0)
+            scrollTargetId = chapters[adjustedIndex].id
+            anchor = .top
+        }
+
         DispatchQueue.main.async {
             withAnimation(.easeInOut(duration: 0.2)) {
-                proxy.scrollTo(targetId, anchor: .top)
+                proxy.scrollTo(scrollTargetId, anchor: anchor)
             }
             didAutoScroll = true
         }
