@@ -50,6 +50,7 @@ struct ReaderView: View {
     @State private var needsInitialRestore: Bool = true
     @State private var pendingRestorePercent: Double? = nil
     @State private var pendingRestorePageIndex: Int? = nil
+    @State private var pendingRestoreChapterId: Int? = nil
     // 触达书籍更新时间节流
     @State private var lastBookUpdatedAtTouchUnixTime: Int = 0
 
@@ -278,16 +279,25 @@ struct ReaderView: View {
                     dlog("📖 onChange pages: pages empty, skip")
                     return
                 }
+                // 仅当目标章节就是当前章节时才应用恢复
+                let shouldApplyRestore =
+                    (pendingRestoreChapterId == nil)
+                    || (pendingRestoreChapterId == currentChapter.id)
+                guard shouldApplyRestore else {
+                    dlog(
+                        "📖 onChange pages: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
+                    )
+                    return
+                }
                 if let idx0 = pendingRestorePageIndex {
                     let idx = max(0, min(newPages.count - 1, idx0))
                     dlog(
                         "📖 restore via onChange (pageIndex) → scrollTo pageIndex=\(idx)"
                     )
-                    DispatchQueue.main.async {
-                        proxy.scrollTo(pageAnchorId(idx), anchor: .top)
-                    }
+                    scrollToPage(idx, using: proxy, animated: true)
                     pendingRestorePageIndex = nil
                     pendingRestorePercent = nil
+                    pendingRestoreChapterId = nil
                     currentVisiblePageIndex = idx
                     let computedPercent =
                         newPages.count > 1
@@ -304,10 +314,9 @@ struct ReaderView: View {
                     dlog(
                         "📖 restore via onChange (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
                     )
-                    DispatchQueue.main.async {
-                        proxy.scrollTo(pageAnchorId(idx), anchor: .top)
-                    }
+                    scrollToPage(idx, using: proxy, animated: true)
                     pendingRestorePercent = nil
+                    pendingRestoreChapterId = nil
                     currentVisiblePageIndex = idx
                     let computedPercent =
                         newPages.count > 1
@@ -318,6 +327,99 @@ struct ReaderView: View {
                     )
                 } else {
                     dlog("📖 onChange pages: no pending restore, skip")
+                }
+            }
+            // 收藏跳转：同章节情况下也能立即滚动
+            .onChange(of: pendingRestorePageIndex) { oldValue, newValue in
+                guard let idx0 = newValue, !pages.isEmpty else { return }
+                let shouldApplyRestore =
+                    (pendingRestoreChapterId == nil)
+                    || (pendingRestoreChapterId == currentChapter.id)
+                guard shouldApplyRestore else {
+                    dlog(
+                        "📖 onChange pendingRestorePageIndex: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
+                    )
+                    return
+                }
+                let idx = max(0, min(pages.count - 1, idx0))
+                dlog(
+                    "📖 onChange pendingRestorePageIndex → scrollTo pageIndex=\(idx)"
+                )
+                scrollToPage(idx, using: proxy, animated: true)
+                pendingRestorePageIndex = nil
+                pendingRestorePercent = nil
+                pendingRestoreChapterId = nil
+                currentVisiblePageIndex = idx
+                let computedPercent =
+                    pages.count > 1 ? Double(idx) / Double(pages.count - 1) : 0
+                saveProgress(percent: computedPercent, pageIndex: idx)
+            }
+            .onChange(of: pendingRestorePercent) { oldValue, newValue in
+                guard let percent = newValue, !pages.isEmpty else { return }
+                let shouldApplyRestore =
+                    (pendingRestoreChapterId == nil)
+                    || (pendingRestoreChapterId == currentChapter.id)
+                guard shouldApplyRestore else {
+                    dlog(
+                        "📖 onChange pendingRestorePercent: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
+                    )
+                    return
+                }
+                let idx = restorePageIndex(
+                    for: percent,
+                    pagesCount: pages.count
+                )
+                dlog(
+                    "📖 onChange pendingRestorePercent → scrollTo pageIndex=\(idx) percent=\(percent)"
+                )
+                scrollToPage(idx, using: proxy, animated: true)
+                pendingRestorePercent = nil
+                pendingRestoreChapterId = nil
+                currentVisiblePageIndex = idx
+                let computedPercent =
+                    pages.count > 1 ? Double(idx) / Double(pages.count - 1) : 0
+                saveProgress(percent: computedPercent, pageIndex: idx)
+            }
+            // 章节切换完成的兜底：若目标章与当前章一致且 pages 已就绪，则立即恢复
+            .onChange(of: currentChapter.id) { oldId, newId in
+                dlog(
+                    "📖 onChange currentChapterId old=\(oldId) new=\(newId) pendingChapter=\(String(describing: pendingRestoreChapterId)) pendingPageIndex=\(String(describing: pendingRestorePageIndex)) pendingPercent=\(String(describing: pendingRestorePercent)) pages=\(pages.count)"
+                )
+                guard let targetChapterId = pendingRestoreChapterId,
+                    targetChapterId == newId
+                else { return }
+                if let idx0 = pendingRestorePageIndex, !pages.isEmpty {
+                    let idx = max(0, min(pages.count - 1, idx0))
+                    dlog(
+                        "📖 restore via onChange(currentChapterId) (pageIndex) → scrollTo pageIndex=\(idx)"
+                    )
+                    scrollToPage(idx, using: proxy, animated: true)
+                    pendingRestorePageIndex = nil
+                    pendingRestorePercent = nil
+                    pendingRestoreChapterId = nil
+                    currentVisiblePageIndex = idx
+                    let computedPercent =
+                        pages.count > 1
+                        ? Double(idx) / Double(pages.count - 1) : 0
+                    saveProgress(percent: computedPercent, pageIndex: idx)
+                } else if let percent = pendingRestorePercent, !pages.isEmpty {
+                    let idx = restorePageIndex(
+                        for: percent,
+                        pagesCount: pages.count
+                    )
+                    dlog(
+                        "📖 restore via onChange(currentChapterId) (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
+                    )
+                    scrollToPage(idx, using: proxy, animated: true)
+                    pendingRestorePercent = nil
+                    pendingRestoreChapterId = nil
+                    currentVisiblePageIndex = idx
+                    let computedPercent =
+                        pages.count > 1
+                        ? Double(idx) / Double(pages.count - 1) : 0
+                    saveProgress(percent: computedPercent, pageIndex: idx)
+                } else {
+                    // pages 还未就绪，等待 onChange(pages) 处理
                 }
             }
             .onAppear {
@@ -333,12 +435,7 @@ struct ReaderView: View {
                         dlog(
                             "📖 immediate restore on appear (pageIndex) → scrollTo pageIndex=\(idx)"
                         )
-                        DispatchQueue.main.async {
-                            proxy.scrollTo(
-                                pageAnchorId(idx),
-                                anchor: .top
-                            )
-                        }
+                        scrollToPage(idx, using: proxy, animated: false)
                         pendingRestorePageIndex = nil
                         pendingRestorePercent = nil
                         currentVisiblePageIndex = idx
@@ -357,12 +454,7 @@ struct ReaderView: View {
                         dlog(
                             "📖 immediate restore on appear (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
                         )
-                        DispatchQueue.main.async {
-                            proxy.scrollTo(
-                                pageAnchorId(idx),
-                                anchor: .top
-                            )
-                        }
+                        scrollToPage(idx, using: proxy, animated: false)
                         pendingRestorePercent = nil
                         currentVisiblePageIndex = idx
                         let computedPercent =
@@ -835,7 +927,9 @@ struct ReaderView: View {
     private func fetchChapter(by id: Int) -> Chapter? {
         guard let dbQueue = DatabaseManager.shared.dbQueue else { return nil }
         return try? dbQueue.read { db in
-            try Chapter.fetchOne(db, key: id)
+            try Chapter
+                .filter(Column("id") == id)
+                .fetchOne(db)
         }
     }
 
@@ -894,6 +988,24 @@ struct ReaderView: View {
     }
 
     private func pageAnchorId(_ index: Int) -> String { "page-\(index)" }
+
+    // 统一滚动封装：主线程执行 + 极短延迟兜底，提升真机稳定性
+    private func scrollToPage(
+        _ index: Int,
+        using proxy: ScrollViewProxy,
+        animated: Bool
+    ) {
+        let anchorId = pageAnchorId(index)
+        let perform = {
+            if animated {
+                withAnimation { proxy.scrollTo(anchorId, anchor: .top) }
+            } else {
+                proxy.scrollTo(anchorId, anchor: .top)
+            }
+        }
+        DispatchQueue.main.async { perform() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { perform() }
+    }
 
     private func restorePageIndex(for percent: Double, pagesCount: Int) -> Int {
         let clamped = max(0, min(1, percent))
@@ -1027,6 +1139,9 @@ struct ReaderView: View {
             pages.count > 1
             ? Double(pageIndex) / Double(pages.count - 1)
             : 0
+        dlog(
+            "⭐️ addFavorite bookId=\(currentChapter.bookid) chapterId=\(currentChapter.id) pageIndex=\(pageIndex) percent=\(percent) pages=\(pages.count)"
+        )
         _ = DatabaseManager.shared.insertFavorite(
             bookId: currentChapter.bookid,
             chapterId: currentChapter.id,
@@ -1043,9 +1158,13 @@ struct ReaderView: View {
     }
 
     private func jump(to fav: Favorite) {
-        // 记录恢复意图
+        dlog(
+            "🎯 jump favorite id=\(fav.id) bookId=\(fav.bookid) chapterId=\(fav.chapterid) pageIndex=\(String(describing: fav.pageindex)) percent=\(String(describing: fav.percent)) currentChapterId=\(currentChapter.id) pages=\(pages.count)"
+        )
+        // 记录恢复意图：优先使用明确的页索引，其次才使用百分比，避免重复触发
         pendingRestorePageIndex = fav.pageindex
-        pendingRestorePercent = fav.percent
+        pendingRestorePercent = fav.pageindex == nil ? fav.percent : nil
+        pendingRestoreChapterId = fav.chapterid
 
         if fav.chapterid == currentChapter.id {
             // 当前章，直接触发分页恢复逻辑
@@ -1055,6 +1174,7 @@ struct ReaderView: View {
                         // 使用 ScrollViewReader 的 anchor id 恢复
                         // 设置 pending 索引，交由 onChange/pages 执行；此处直接赋值也可
                         pendingRestorePageIndex = idx
+                        pendingRestoreChapterId = currentChapter.id
                     }
                 }
             }
@@ -1094,5 +1214,3 @@ struct ReaderView: View {
         .scrollIndicators(.hidden)
     }
 }
-
-// 颜色 hex 扩展已提取到 Utils/Color+Hex.swift
