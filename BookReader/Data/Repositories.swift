@@ -14,6 +14,35 @@ extension DatabaseManager {
         let updatedat: Int?
     }
 
+    // 统一：阅读进度文案（可附带百分比）
+    func readingProgressText(
+        forBookId bookId: Int,
+        progressStore: ProgressStore,
+        includePercent: Bool = false
+    ) -> String {
+        guard let last = progressStore.lastProgress(forBook: bookId) else {
+            return includePercent ? "0%・未读" : "未读"
+        }
+
+        let unread = unreadChapterCount(
+            bookId: bookId,
+            afterChapterId: last.chapterId
+        )
+        let total = totalChapterCount(bookId: bookId)
+        var percentValue: Double = 0
+        if total > 0 {
+            // 已完成的整章数 = 总章数 -（最后进度章及其之后章节数）
+            let completedChapters = max(0, total - unread - 1)
+            percentValue =
+                (Double(completedChapters) + last.percent)
+                / Double(max(1, total))
+        }
+        let percentText = "\(Int(round(percentValue * 100)))%"
+
+        let base = unread == 0 ? "读完" : "\(unread)章未读"
+        return includePercent ? "\(percentText)・\(base)" : base
+    }
+
     // 书籍列表（带分类名 & 进度）
     func fetchBooks(search: String?, progressStore: ProgressStore) -> [BookRow]
     {

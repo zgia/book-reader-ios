@@ -2,6 +2,7 @@ import GRDB
 import SwiftUI
 
 struct ReaderView: View {
+    @EnvironmentObject private var db: DatabaseManager
     @State private var currentBook: Book?
     @State private var currentChapter: Chapter
     @State private var content: Content?
@@ -178,7 +179,19 @@ struct ReaderView: View {
                 }
             }
             .sheet(isPresented: $showBookInfo) {
-                bookInfo()
+                if let book = currentBook {
+                    BookInfoSheetView(
+                        book: book,
+                        progressText: progressText(for: book)
+                    )
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackgroundInteraction(.enabled)
+                    .interactiveDismissDisabled(false)
+                } else {
+                    ProgressView()
+                        .padding()
+                }
             }
             .alert(isPresented: $showEdgeAlert) {
                 Alert(
@@ -226,45 +239,16 @@ struct ReaderView: View {
         }
     }
 
-    // MARK: - Extracted Views
-    @ViewBuilder
-    private func bookInfo() -> some View {
-        NavigationStack {
-            if let book = currentBook {
-                List {
-                    Section("图书信息") {
-                        Text("书名：\(book.title)")
-                        Text("作者：\(book.author)")
-                        if !book.category.isEmpty {
-                            Text("分类：\(book.category)")
-                        }
-                        Text("字数：\(formatWordCount(book.wordcount))字")
-                        if !book.latest.isEmpty {
-                            Text("最新章节：\(book.latest)")
-                        }
-                        let updatedDate = Date(
-                            timeIntervalSince1970: TimeInterval(book.updatedat)
-                        )
-                        HStack(spacing: 4) {
-                            Text("更新时间：")
-                            Text(updatedDate, style: .date)
-                            Text(updatedDate, style: .time)
-                        }
-                        Text("完结：\(book.isfinished == 1 ? "是" : "否")")
-                    }
-                }
-                .navigationTitle("图书信息")
-            } else {
-                VStack(spacing: 12) {
-                    ProgressView()
-                    Text("正在加载...")
-                }
-                .padding()
-                .navigationTitle("图书信息")
-            }
-        }
+    // 列表展示的阅读进度文案（含百分比）
+    private func progressText(for book: Book) -> String {
+        db.readingProgressText(
+            forBookId: book.id,
+            progressStore: progressStore,
+            includePercent: true
+        )
     }
 
+    // MARK: - Extracted Views
     @ViewBuilder
     private func leftPreviewView(geo: GeometryProxy) -> some View {
         if abs(dragOffset) > 0.1,
@@ -1242,14 +1226,5 @@ struct ReaderView: View {
             }
         }
         .scrollIndicators(.hidden)
-    }
-
-    private func formatWordCount(_ wordCount: Int) -> String {
-        if wordCount < 10000 {
-            return "\(wordCount)"
-        } else {
-            let tenThousands = wordCount / 10000
-            return "\(tenThousands)万"
-        }
     }
 }

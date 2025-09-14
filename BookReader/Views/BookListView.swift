@@ -210,17 +210,13 @@ struct BookListView: View {
         }
     }
 
-    // 列表展示的阅读进度文案
+    // 列表展示的阅读进度文案（含百分比）
     private func progressText(for book: Book) -> String {
-        if let last = progressStore.lastProgress(forBook: book.id) {
-            let unread = db.unreadChapterCount(
-                bookId: book.id,
-                afterChapterId: last.chapterId
-            )
-            return unread == 0 ? "读完" : "\(unread)章未读"
-        } else {
-            return "未读"
-        }
+        db.readingProgressText(
+            forBookId: book.id,
+            progressStore: progressStore,
+            includePercent: true
+        )
     }
 
     // 组合分类与进度为单行文案
