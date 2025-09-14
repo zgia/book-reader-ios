@@ -8,16 +8,6 @@ struct ReaderView: View {
     @EnvironmentObject var progressStore: ProgressStore
     @EnvironmentObject private var reading: ReadingSettings
     // 使用 @AppStorage 作为持久化源
-    @AppStorage(DefaultsKeys.readerFontSize) private var storedFontSize:
-        Double = 16
-    @AppStorage(DefaultsKeys.readerLineSpacing) private var storedLineSpacing:
-        Double = 8
-    @AppStorage(DefaultsKeys.readerParagraphSpacing) private
-        var storedParagraphSpacing: Double = 16
-    @AppStorage(DefaultsKeys.readerBackgroundColor) private var storedBgHex:
-        String = "#FFFFFF"
-    @AppStorage(DefaultsKeys.readerTextColor) private var storedTextHex:
-        String = "#000000"
     @AppStorage(DefaultsKeys.readerDebugLoggingEnabled) private
         var debugEnabled: Bool = false
 
@@ -95,6 +85,8 @@ struct ReaderView: View {
                 }
             }
             .tint(reading.textColor)
+            .toolbarBackground(reading.backgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .background(reading.backgroundColor)
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
             .overlay {
