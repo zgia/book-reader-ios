@@ -113,6 +113,10 @@ struct BookInfoSheetView: View {
                     Button("完成") { dismiss() }
                 }
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(false)
         }
     }
 

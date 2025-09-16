@@ -43,24 +43,51 @@ struct AppSettingsView: View {
     @ViewBuilder
     private func textBookFormatHelpView() -> some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("· 仅支持文本格式：*.txt。")
-                    Text("· 书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
-                    Text("· 作者：建议以“作者：xxx”独立一行。")
-                    Text("· 卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
-                    Text("· 章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
-                    Text("· 章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
+            List {
+                Section {
+                    Label {
+                        Text("格式：仅支持文本格式：*.txt。")
+                    } icon: {
+                        Image(systemName: "text.page")
+                    }
+                    Label {
+                        Text("书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
+                    } icon: {
+                        Image(systemName: "character.book.closed")
+                    }
+                    Label {
+                        Text("作者：建议以“作者：xxx”独立一行。")
+                    } icon: {
+                        Image(systemName: "person")
+                    }
+                    Label {
+                        Text("卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                    } icon: {
+                        Image(systemName: "text.book.closed")
+                    }
+                    Label {
+                        Text("章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                    } icon: {
+                        Image(systemName: "book.pages")
+                    }
+                    Label {
+                        Text("默认：章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
+                    } icon: {
+                        Image(systemName: "book.and.wrench")
+                    }
+
                 }
-                .padding()
             }
             .navigationTitle("小说格式说明")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("完成") { showingFormatHelp = false }
                 }
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(false)
         }
     }
 

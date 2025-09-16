@@ -184,10 +184,6 @@ struct ReaderView: View {
                         book: book,
                         progressText: progressText(for: book)
                     )
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationBackgroundInteraction(.enabled)
-                    .interactiveDismissDisabled(false)
                 } else {
                     ProgressView()
                         .padding()
