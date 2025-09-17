@@ -4,8 +4,7 @@ import UniformTypeIdentifiers
 struct AppSettingsView: View {
     @EnvironmentObject private var appAppearance: AppAppearanceSettings
     @EnvironmentObject private var dbManager: DatabaseManager
-    @AppStorage(DefaultsKeys.securityOverlayEnabled) private
-        var securityOverlayEnabled: Bool = true
+    // 由是否设置密码决定是否启用安全遮罩
 
     @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
@@ -16,6 +15,14 @@ struct AppSettingsView: View {
     @State private var showingCompactConfirm: Bool = false
     @State private var statsText: String = ""
     @State private var showingFormatHelp: Bool = false
+    @State private var securityDialog: SecurityDialog?
+    @State private var securitySheet: SecuritySheet?
+    @State private var passcodeInput: String = ""
+    @State private var passcodeConfirmInput: String = ""
+    @State private var passcodeTip: String?
+    @FocusState private var setPasscodeFieldFocused: Bool
+    @FocusState private var confirmPasscodeFieldFocused: Bool
+    @FocusState private var removePasscodeFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -29,13 +36,21 @@ struct AppSettingsView: View {
                 // 导入小说
                 bookImporterView()
 
-                // 新的“数据库维护”分区
+                // 数据库维护
                 databaseMaintainerView()
             }
             .navigationTitle("设置")
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
                 textBookFormatHelpView()
+            }
+            .overlay(securityDialogOverlay())
+            .sheet(item: $securitySheet) { sheet in
+                if sheet == .setPasscode {
+                    setPasscodeSheetView()
+                } else {
+                    removePasscodeSheetView()
+                }
             }
         }
     }
@@ -56,7 +71,7 @@ struct AppSettingsView: View {
                         Image(systemName: "character.book.closed")
                     }
                     Label {
-                        Text("作者：建议以“作者：xxx”独立一行。")
+                        Text("作者：“作者：xxx”独立一行。")
                     } icon: {
                         Image(systemName: "person")
                     }
@@ -188,12 +203,186 @@ struct AppSettingsView: View {
     private func securityView() -> some View {
         Section(
             header: Text("隐私与安全"),
-            footer: Text("关闭后，应用启动或回到前台将不再要求解锁，也不会显示安全遮罩。").font(
+            footer: Text("已设置密码时，应用启动或回到前台将显示安全遮罩并需要输入密码解锁。移除密码则不再需要解锁。").font(
                 .footnote
             ).foregroundColor(.secondary)
         ) {
-            Toggle("启用安全遮罩（启动/前台需解锁）", isOn: $securityOverlayEnabled)
+            if PasscodeManager.shared.isPasscodeSet {
+                HStack {
+                    Image(systemName: "key.fill").foregroundColor(.green)
+                    Text("已设置6位数字密码")
+                    Spacer()
+                    Button("移除密码", role: .destructive) {
+                        passcodeInput = ""
+                        passcodeTip = nil
+                        securityDialog = .removePasscode
+                    }
+                    .font(.footnote)
+                }
+            } else {
+                HStack {
+                    Image(systemName: "key.slash.fill").foregroundColor(
+                        .secondary
+                    )
+                    Text("未设置密码")
+                    Spacer()
+                    Button("设置密码") {
+                        passcodeInput = ""
+                        passcodeConfirmInput = ""
+                        passcodeTip = nil
+                        securityDialog = .setPasscode
+                    }
+                    .font(.footnote)
+                }
+            }
         }
+
+    }
+
+    // MARK: - Sheets
+    private func setPasscodeSheetView() -> some View {
+        NavigationStack {
+            Form {
+                Section(
+                    footer: Text(passcodeTip ?? "密码需为6位数字").font(.footnote)
+                        .foregroundColor(.secondary)
+                ) {
+                    SecureField("输入新密码", text: $passcodeInput)
+                        .keyboardType(.numberPad)
+                        .onChange(of: passcodeInput) { newValue, _ in
+                            passcodeInput = String(
+                                newValue.filter { $0.isNumber }.prefix(6)
+                            )
+                        }
+                        .focused($setPasscodeFieldFocused)
+                    SecureField("再次输入", text: $passcodeConfirmInput)
+                        .keyboardType(.numberPad)
+                        .onChange(of: passcodeConfirmInput) { newValue, _ in
+                            passcodeConfirmInput = String(
+                                newValue.filter { $0.isNumber }.prefix(6)
+                            )
+                        }
+                        .focused($confirmPasscodeFieldFocused)
+                }
+            }
+            .navigationTitle("设置密码")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("取消") { securitySheet = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("保存") {
+                        guard passcodeInput.count == 6,
+                            passcodeInput == passcodeConfirmInput
+                        else {
+                            passcodeTip = "两次输入不一致或非6位"
+                            return
+                        }
+                        do {
+                            try PasscodeManager.shared.setPasscode(
+                                passcodeInput
+                            )
+                            passcodeTip = "已设置密码"
+                            securitySheet = nil
+                            NotificationCenter.default.post(
+                                name: .passcodeDidChange,
+                                object: nil
+                            )
+                        } catch {
+                            passcodeTip = "保存失败：\(error.localizedDescription)"
+                        }
+                    }
+                    .disabled(
+                        passcodeInput.count != 6
+                            || passcodeConfirmInput.count != 6
+                    )
+                }
+            }
+            .onAppear {
+                passcodeInput = ""
+                passcodeConfirmInput = ""
+                passcodeTip = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    setPasscodeFieldFocused = true
+                }
+            }
+            .onDisappear {
+                passcodeInput = ""
+                passcodeConfirmInput = ""
+                passcodeTip = nil
+                setPasscodeFieldFocused = false
+                confirmPasscodeFieldFocused = false
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func removePasscodeSheetView() -> some View {
+        NavigationStack {
+            Form {
+                Section(
+                    footer: Text(passcodeTip ?? "请输入当前6位密码以确认移除").font(
+                        .footnote
+                    ).foregroundColor(.secondary)
+                ) {
+                    SecureField("当前密码", text: $passcodeInput)
+                        .keyboardType(.numberPad)
+                        .onChange(of: passcodeInput) { newValue, _ in
+                            passcodeInput = String(
+                                newValue.filter { $0.isNumber }.prefix(6)
+                            )
+                        }
+                        .focused($removePasscodeFieldFocused)
+                }
+            }
+            .navigationTitle("移除密码")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("取消") { securitySheet = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("移除", role: .destructive) {
+                        if PasscodeManager.shared.verifyPasscode(passcodeInput)
+                        {
+                            do {
+                                try PasscodeManager.shared.removePasscode()
+                                passcodeTip = "已移除密码"
+                                securitySheet = nil
+                                NotificationCenter.default.post(
+                                    name: .passcodeDidChange,
+                                    object: nil
+                                )
+                            } catch {
+                                passcodeTip =
+                                    "移除失败：\(error.localizedDescription)"
+                            }
+                        } else {
+                            passcodeTip = "密码错误"
+                        }
+                    }
+                    .disabled(passcodeInput.count != 6)
+                }
+            }
+            .onAppear {
+                passcodeInput = ""
+                passcodeTip = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    removePasscodeFieldFocused = true
+                }
+            }
+            .onDisappear {
+                passcodeInput = ""
+                passcodeTip = nil
+                removePasscodeFieldFocused = false
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private enum SecuritySheet: Identifiable, Equatable {
+        case setPasscode
+        case removePasscode
+        var id: String { self == .setPasscode ? "set" : "remove" }
     }
 
     @ViewBuilder
@@ -311,6 +500,158 @@ struct AppSettingsView: View {
         case .failure(let error):
             importMessage = "选择文件失败：\(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Dialog Overlay
+    @ViewBuilder
+    private func securityDialogOverlay() -> some View {
+        if let dialog = securityDialog {
+            ZStack {
+                Color.black.opacity(0.35).ignoresSafeArea()
+                VStack(spacing: 16) {
+                    Text(dialog.title)
+                        .font(.headline)
+                    if dialog == .setPasscode {
+                        VStack(spacing: 10) {
+                            SecureField("输入新密码", text: $passcodeInput)
+                                .keyboardType(.numberPad)
+                                .focused($setPasscodeFieldFocused)
+                                .onChange(of: passcodeInput) { newValue, _ in
+                                    let filtered = String(
+                                        newValue.filter { $0.isNumber }.prefix(
+                                            6
+                                        )
+                                    )
+                                    if filtered != newValue {
+                                        passcodeInput = filtered
+                                    }
+                                }
+                                .textContentType(.oneTimeCode)
+                                .padding(10)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            SecureField("再次输入", text: $passcodeConfirmInput)
+                                .keyboardType(.numberPad)
+                                .focused($confirmPasscodeFieldFocused)
+                                .onChange(of: passcodeConfirmInput) {
+                                    newValue,
+                                    _ in
+                                    let filtered = String(
+                                        newValue.filter { $0.isNumber }.prefix(
+                                            6
+                                        )
+                                    )
+                                    if filtered != newValue {
+                                        passcodeConfirmInput = filtered
+                                    }
+                                }
+                                .textContentType(.oneTimeCode)
+                                .padding(10)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    } else {
+                        SecureField("当前密码", text: $passcodeInput)
+                            .keyboardType(.numberPad)
+                            .focused($removePasscodeFieldFocused)
+                            .onChange(of: passcodeInput) { newValue, _ in
+                                let filtered = String(
+                                    newValue.filter { $0.isNumber }.prefix(6)
+                                )
+                                if filtered != newValue {
+                                    passcodeInput = filtered
+                                }
+                            }
+                            .textContentType(.oneTimeCode)
+                            .padding(10)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    if let tip = passcodeTip, !tip.isEmpty {
+                        Text(tip)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    HStack {
+                        Button("取消") { securityDialog = nil }
+                            .frame(maxWidth: .infinity)
+                        Button(dialog.primaryActionTitle) {
+                            handleSecurityDialogPrimaryAction(dialog)
+                        }
+                        .disabled(
+                            dialog == .setPasscode
+                                ? !(passcodeInput.count == 6
+                                    && passcodeConfirmInput.count == 6)
+                                : passcodeInput.count != 6
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(20)
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .padding(.horizontal, 40)
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        switch dialog {
+                        case .setPasscode: setPasscodeFieldFocused = true
+                        case .removePasscode: removePasscodeFieldFocused = true
+                        }
+                    }
+                }
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    private func handleSecurityDialogPrimaryAction(_ dialog: SecurityDialog) {
+        switch dialog {
+        case .setPasscode:
+            guard passcodeInput.count == 6,
+                passcodeInput == passcodeConfirmInput
+            else {
+                passcodeTip = "两次输入不一致或非6位"
+                return
+            }
+            do {
+                try PasscodeManager.shared.setPasscode(passcodeInput)
+                passcodeTip = "已设置密码"
+                securityDialog = nil
+                NotificationCenter.default.post(
+                    name: .passcodeDidChange,
+                    object: nil
+                )
+            } catch {
+                passcodeTip = "保存失败：\(error.localizedDescription)"
+            }
+        case .removePasscode:
+            if PasscodeManager.shared.verifyPasscode(passcodeInput) {
+                do {
+                    try PasscodeManager.shared.removePasscode()
+                    passcodeTip = "已移除密码"
+                    securityDialog = nil
+                    NotificationCenter.default.post(
+                        name: .passcodeDidChange,
+                        object: nil
+                    )
+                } catch {
+                    passcodeTip = "移除失败：\(error.localizedDescription)"
+                }
+            } else {
+                passcodeTip = "密码错误"
+            }
+        }
+        passcodeInput = ""
+        passcodeConfirmInput = ""
+    }
+
+    private enum SecurityDialog: Equatable {
+        case setPasscode
+        case removePasscode
+        var title: String { self == .setPasscode ? "设置密码" : "移除密码" }
+        var primaryActionTitle: String { self == .setPasscode ? "保存" : "移除" }
     }
 }
 

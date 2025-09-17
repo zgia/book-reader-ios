@@ -1,9 +1,9 @@
-import LocalAuthentication
 import SwiftUI
 
 // 通知名称扩展
 extension Notification.Name {
     static let dismissAllModals = Notification.Name("dismissAllModals")
+    static let passcodeDidChange = Notification.Name("passcodeDidChange")
 }
 
 @main
@@ -12,8 +12,6 @@ struct NovelReaderApp: App {
     @StateObject private var progressStore = ProgressStore()
     @StateObject private var appAppearance = AppAppearanceSettings()
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage(DefaultsKeys.securityOverlayEnabled) private
-        var securityOverlayEnabled: Bool = true
 
     @State private var isUnlocked: Bool = false
     @State private var authErrorMessage: String? = nil
@@ -47,14 +45,14 @@ struct NovelReaderApp: App {
                             )
                         }
 
-                    if securityOverlayEnabled
+                    if PasscodeManager.shared.isPasscodeSet
                         && (scenePhase != .active || !isUnlocked)
                     {
                         SecurityOverlayView(
                             showBlur: true,
                             isUnlocked: isUnlocked,
                             message: authErrorMessage,
-                            onRetry: { authenticate() }
+                            onVerify: { code in onVerifyPasscode(code) }
                         )
                         .ignoresSafeArea()
                         .transition(.opacity)
@@ -67,7 +65,7 @@ struct NovelReaderApp: App {
                 // 仅首次进入时触发一次验证，避免视图重建导致反复调用
                 if !hasRequestedInitialAuth {
                     hasRequestedInitialAuth = true
-                    if securityOverlayEnabled {
+                    if PasscodeManager.shared.isPasscodeSet {
                         authenticate()
                     } else {
                         isUnlocked = true
@@ -78,12 +76,13 @@ struct NovelReaderApp: App {
                 switch newPhase {
                 case .active:
                     // 回到前台时如果未解锁则再次验证（防抖）
-                    if securityOverlayEnabled && !isUnlocked
+                    if PasscodeManager.shared.isPasscodeSet && !isUnlocked
                         && !isAuthenticating
                     {
                         // 延迟一点验证，确保模态视图已经完全消失
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            if securityOverlayEnabled && !self.isUnlocked
+                            if PasscodeManager.shared.isPasscodeSet
+                                && !self.isUnlocked
                                 && !self.isAuthenticating
                             {
                                 self.authenticate()
@@ -92,7 +91,7 @@ struct NovelReaderApp: App {
                     }
                 case .background:
                     // 进入后台时立即上锁
-                    if securityOverlayEnabled {
+                    if PasscodeManager.shared.isPasscodeSet {
                         isUnlocked = false
                     }
                     // 取消所有活动的模态视图
@@ -101,15 +100,15 @@ struct NovelReaderApp: App {
                     break
                 }
             }
-            .onChange(of: securityOverlayEnabled) { newValue, oldValue in
-                if newValue {
-                    // 开启安全遮罩后强制上锁并触发验证
-                    isUnlocked = false
-                    if !isAuthenticating {
-                        authenticate()
-                    }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .passcodeDidChange)
+            ) { _ in
+                // 密码变更后立即刷新状态：
+                // 若设置了密码，不立刻上锁；若移除了密码，直接解锁
+                if PasscodeManager.shared.isPasscodeSet {
+                    isUnlocked = true
+                    authErrorMessage = nil
                 } else {
-                    // 关闭安全遮罩后认为已解锁
                     isUnlocked = true
                     authErrorMessage = nil
                 }
@@ -121,45 +120,16 @@ struct NovelReaderApp: App {
         if isAuthenticating { return }
         isAuthenticating = true
         authErrorMessage = nil
-        let context = LAContext()
-        context.localizedCancelTitle = "取消"
-        var error: NSError?
-
-        let policy: LAPolicy = .deviceOwnerAuthentication
-        if context.canEvaluatePolicy(policy, error: &error) {
-            let reason = "验证以解锁应用"
-            context.evaluatePolicy(policy, localizedReason: reason) {
-                success,
-                evalError in
-                DispatchQueue.main.async {
-                    if success {
-                        isUnlocked = true
-                        authErrorMessage = nil
-                        isAuthenticating = false
-                        // 确保界面状态正确，防止 SecurityOverlayView 卡住
-                        self.ensureSecurityOverlayDismissed()
-                    } else {
-                        isUnlocked = false
-                        isAuthenticating = false
-                        if let laError = evalError as? LAError {
-                            authErrorMessage = errorDescription(for: laError)
-                        } else if let evalError = evalError {
-                            authErrorMessage = evalError.localizedDescription
-                        } else {
-                            authErrorMessage = "验证失败"
-                        }
-                    }
-                }
-            }
+        // 若未设置密码，直接解锁；否则显示提示，等待用户输入
+        if PasscodeManager.shared.isPasscodeSet {
+            isUnlocked = false
+            isAuthenticating = false
+            authErrorMessage = "请输入6位数字密码"
         } else {
-            // 无法评估策略（设备无生物识别/未设置密码等）
-            DispatchQueue.main.async {
-                isUnlocked = false
-                isAuthenticating = false
-                authErrorMessage =
-                    (error as NSError?)?.localizedDescription
-                    ?? "此设备不支持或未启用生物识别/密码"
-            }
+            isUnlocked = true
+            isAuthenticating = false
+            authErrorMessage = nil
+            self.ensureSecurityOverlayDismissed()
         }
     }
 
@@ -194,17 +164,15 @@ struct NovelReaderApp: App {
         }
     }
 
-    private func errorDescription(for laError: LAError) -> String {
-        switch laError.code {
-        case .authenticationFailed: return "身份验证失败"
-        case .userCancel: return "您已取消"
-        case .userFallback: return "请使用密码"
-        case .biometryNotAvailable: return "生物识别不可用"
-        case .biometryNotEnrolled: return "未录入生物识别信息"
-        case .biometryLockout: return "生物识别被锁定，请稍后再试"
-        case .appCancel: return "应用已取消验证"
-        case .systemCancel: return "系统已取消验证"
-        default: return "验证未完成"
+    // 校验输入的密码
+    private func onVerifyPasscode(_ code: String) {
+        if PasscodeManager.shared.verifyPasscode(code) {
+            isUnlocked = true
+            authErrorMessage = nil
+            ensureSecurityOverlayDismissed()
+        } else {
+            isUnlocked = false
+            authErrorMessage = "密码错误，请重试"
         }
     }
 }
@@ -213,7 +181,10 @@ private struct SecurityOverlayView: View {
     var showBlur: Bool
     var isUnlocked: Bool
     var message: String?
-    var onRetry: () -> Void
+    var onVerify: (String) -> Void
+
+    @State private var input: String = ""
+    @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         ZStack {
@@ -238,20 +209,42 @@ private struct SecurityOverlayView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
-                    Button(action: { onRetry() }) {
-                        HStack {
-                            Image(systemName: "faceid")
-                            Text("使用Face ID解锁")
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color.white)
-                        .foregroundColor(.black)
-                        .cornerRadius(10)
+                    VStack(spacing: 10) {
+                        SecureField("输入6位数字密码", text: $input)
+                            .keyboardType(.numberPad)
+                            .textContentType(.oneTimeCode)
+                            .multilineTextAlignment(.center)
+                            .focused($isFieldFocused)
+                            .onChange(of: input) { newValue, _ in
+                                let filtered = newValue.filter { $0.isNumber }
+                                input = String(filtered.prefix(6))
+
+                                if input.count == 6 {
+                                    onVerify(input)
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 10)
+                            .background(Color.white)
+                            .cornerRadius(10)
                     }
                     .padding(.top, 8)
                 }
                 .padding(24)
+            }
+        }
+        .onAppear {
+            input = ""
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                isFieldFocused = true
+            }
+        }
+        .onChange(of: isUnlocked) { newValue, _ in
+            if !newValue {
+                input = ""
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFieldFocused = true
+                }
             }
         }
     }
