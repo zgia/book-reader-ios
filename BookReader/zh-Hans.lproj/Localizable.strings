@@ -1,7 +1,2 @@
-//
-//  Localizable.strings
-//  BookReader
-//
-//  Created by zgia on 2025/9/17.
-//
-
+add_to_favorites = "添加到收藏";
+add_to_favorites_placeholder = "为本次收藏写点备注（可选）";

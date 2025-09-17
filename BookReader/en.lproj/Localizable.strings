@@ -1,7 +1,2 @@
-//
-//  Localizable.strings
-//  BookReader
-//
-//  Created by zgia on 2025/9/17.
-//
-
+add_to_favorites = "Add to Favorites";
+add_to_favorites_placeholder = "Write a note for this favorite (optional)";

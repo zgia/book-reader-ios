@@ -93,8 +93,8 @@ struct ReaderView: View {
             .overlay {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
-                        title: "添加到收藏",
-                        placeholder: "为本次收藏写点备注（可选）",
+                        title: String(localized: "add_to_favorites"),
+                        placeholder: String(localized: "add_to_favorites_placeholder"),
                         text: $draftExcerpt,
                         onCancel: {
                             showAddFavoriteDialog = false
@@ -967,7 +967,7 @@ struct ReaderView: View {
                     Button {
                         prepareAddFavorite(from: pageIndex)
                     } label: {
-                        Label("添加到收藏", systemImage: "bookmark")
+                        Label(String(localized: "add_to_favorites"), systemImage: "bookmark")
                     }
                 }
         }
