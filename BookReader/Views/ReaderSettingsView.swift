@@ -12,12 +12,36 @@ struct ReaderSettingsView: View {
     }
 
     private let presets: [ColorPreset] = [
-        ColorPreset(name: "浅色", backgroundHex: "#FFFFFF", textHex: "#000000"),
-        ColorPreset(name: "夜间", backgroundHex: "#000000", textHex: "#FFFFFF"),
-        ColorPreset(name: "柔和米黄", backgroundHex: "#F5ECD9", textHex: "#5B4636"),
-        ColorPreset(name: "暖白纸感", backgroundHex: "#FAF3E0", textHex: "#3A3A3A"),
-        ColorPreset(name: "护眼绿", backgroundHex: "#CCE8CF", textHex: "#2B3D2F"),
-        ColorPreset(name: "深灰", backgroundHex: "#121212", textHex: "#EAEAEA"),
+        ColorPreset(
+            name: String(localized: "color_light"),
+            backgroundHex: "#FFFFFF",
+            textHex: "#000000"
+        ),
+        ColorPreset(
+            name: String(localized: "color_dark"),
+            backgroundHex: "#000000",
+            textHex: "#FFFFFF"
+        ),
+        ColorPreset(
+            name: String(localized: "color_soft_yellow"),
+            backgroundHex: "#F5ECD9",
+            textHex: "#5B4636"
+        ),
+        ColorPreset(
+            name: String(localized: "color_warm_paper"),
+            backgroundHex: "#FAF3E0",
+            textHex: "#3A3A3A"
+        ),
+        ColorPreset(
+            name: String(localized: "color_green"),
+            backgroundHex: "#CCE8CF",
+            textHex: "#2B3D2F"
+        ),
+        ColorPreset(
+            name: String(localized: "color_deep_grey"),
+            backgroundHex: "#121212",
+            textHex: "#EAEAEA"
+        ),
     ]
 
     var body: some View {
@@ -40,9 +64,17 @@ struct ReaderSettingsView: View {
                 }
 
                 // 行间距设置
-                Section(header: Text("行间距")) {
+                Section(header: Text(String(localized: "setting.line_spacing")))
+                {
                     HStack {
-                        Text("当前间距: \(Int(reading.lineSpacing))")
+                        Text(
+                            String(
+                                format: String(
+                                    localized: "setting.current_line_spacing"
+                                ),
+                                Int(reading.lineSpacing)
+                            )
+                        )
                         Spacer()
                         Button("-") {
                             reading.lineSpacing = max(
@@ -62,9 +94,19 @@ struct ReaderSettingsView: View {
                 }
 
                 // 段间距设置
-                Section(header: Text("段间距")) {
+                Section(
+                    header: Text(String(localized: "setting.paragraph_spacing"))
+                ) {
                     HStack {
-                        Text("当前间距: \(Int(reading.paragraphSpacing))")
+                        Text(
+                            String(
+                                format: String(
+                                    localized:
+                                        "setting.current_paragraph_spacing"
+                                ),
+                                Int(reading.paragraphSpacing)
+                            )
+                        )
                         Spacer()
                         Button("-") {
                             reading.paragraphSpacing = max(
@@ -84,7 +126,9 @@ struct ReaderSettingsView: View {
                 }
 
                 // 预设配色
-                Section(header: Text("预设配色")) {
+                Section(
+                    header: Text(String(localized: "setting.color_presets"))
+                ) {
                     let columns = [
                         GridItem(.flexible()), GridItem(.flexible()),
                     ]
@@ -136,9 +180,11 @@ struct ReaderSettingsView: View {
                 }
 
                 // 自定义颜色
-                Section(header: Text("自定义颜色")) {
+                Section(
+                    header: Text(String(localized: "setting.color_customize"))
+                ) {
                     ColorPicker(
-                        "文字颜色",
+                        String(localized: "setting.color_font"),
                         selection: Binding(
                             get: { Color(hex: reading.textHex) ?? .black },
                             set: { newColor in
@@ -149,7 +195,7 @@ struct ReaderSettingsView: View {
                     )
 
                     ColorPicker(
-                        "背景颜色",
+                        String(localized: "setting.color_background"),
                         selection: Binding(
                             get: {
                                 Color(hex: reading.backgroundHex) ?? .white
@@ -165,17 +211,17 @@ struct ReaderSettingsView: View {
                 }
 
                 // 预览区域
-                Section(header: Text("预览")) {
+                Section(header: Text(String(localized: "setting.preview"))) {
                     VStack(
                         alignment: .leading,
                         spacing: reading.paragraphSpacing
                     ) {
-                        Text("这是预览文本")
+                        Text(String(localized: "setting.preview_text_1"))
                             .font(.system(size: reading.fontSize))
                             .foregroundColor(reading.textColor)
                             .lineSpacing(reading.lineSpacing)
 
-                        Text("您可以在这里看到字体大小、行间距和段间距的效果。")
+                        Text(String(localized: "setting.preview_text_2"))
                             .font(.system(size: reading.fontSize))
                             .foregroundColor(reading.textColor)
                             .lineSpacing(reading.lineSpacing)
@@ -186,11 +232,14 @@ struct ReaderSettingsView: View {
                 }
 
                 // 调试
-                Section(header: Text("调试")) {
-                    Toggle("启用阅读调试日志", isOn: $reading.debugEnabled)
+                Section(header: Text(String(localized: "setting.debug"))) {
+                    Toggle(
+                        String(localized: "setting.debug_log_enabled"),
+                        isOn: $reading.debugEnabled
+                    )
                 }
             }
-            .navigationTitle("阅读设置")
+            .navigationTitle(String(localized: "setting.reading_setting"))
             .navigationBarTitleDisplayMode(.inline)
         }
     }

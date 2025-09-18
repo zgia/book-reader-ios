@@ -25,7 +25,7 @@ struct BookListView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         ProgressView()
-                        Text("正在初始化数据库…")
+                        Text(String(localized: "db_initializing"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -41,7 +41,7 @@ struct BookListView: View {
                                 ReaderView(chapter: startChapter)
                             } else {
                                 VStack(spacing: 12) {
-                                    Text("无可阅读章节")
+                                    Text(String(localized: "chapter_not_fund"))
                                         .font(.headline)
                                         .foregroundColor(.secondary)
                                 }
@@ -83,7 +83,7 @@ struct BookListView: View {
                             } label: {
                                 Image(systemName: "trash")
                             }
-                            Button("重命名") {
+                            Button(String(localized: "btn_rename")) {
                                 renamingBook = bookRow
                                 newTitleText = bookRow.book.title
                             }
@@ -100,7 +100,7 @@ struct BookListView: View {
                             loadBooks(search: newValue)
                         }
                     }
-                    .navigationTitle("书籍")
+                    .navigationTitle(String(localized: "book"))
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             NavigationLink(destination: AppSettingsView()) {
@@ -128,8 +128,8 @@ struct BookListView: View {
                     .overlay {
                         if let renaming = renamingBook {
                             TextFieldDialog(
-                                title: "重命名",
-                                placeholder: "请输入新的书名",
+                                title: String(localized: "renaming_title"),
+                                placeholder: "renaming_new_name",
                                 text: $newTitleText,
                                 onCancel: { renamingBook = nil },
                                 onSave: {
@@ -154,11 +154,14 @@ struct BookListView: View {
                         }
                     }
                     .confirmationDialog(
-                        "删除确认",
+                        String(localized: "confirm_deleting"),
                         isPresented: $showDeleteConfirm,
                         presenting: deletingBook
                     ) { target in
-                        Button("删除", role: .destructive) {
+                        Button(
+                            String(localized: "btn_delete"),
+                            role: .destructive
+                        ) {
                             withAnimation {
                                 db.deleteBook(bookId: target.book.id)
                                 progressStore.clear(forBook: target.book.id)
@@ -166,12 +169,17 @@ struct BookListView: View {
                                 deletingBook = nil
                             }
                         }
-                        Button("取消", role: .cancel) {
+                        Button(String(localized: "btn_cancel"), role: .cancel) {
                             deletingBook = nil
                         }
                     } message: { target in
                         Text(
-                            "此操作将删除《\(target.book.title)》的所有内容与阅读进度，且不可恢复。是否继续？"
+                            String(
+                                format: String(
+                                    localized: "confirm_deleting_message"
+                                ),
+                                target.book.title
+                            )
                         )
                     }
                     .onChange(of: showDeleteConfirm) { oldValue, newValue in
@@ -237,7 +245,9 @@ struct BookListView: View {
         var parts: [String] = []
 
         // if !bookRow.book.wordcount.isEmpty { parts.append(bookRow.book.wordcount) }
-        if bookRow.book.isfinished == 1 { parts.append("完本") }
+        if bookRow.book.isfinished == 1 {
+            parts.append(String(localized: "bookinfo.finished"))
+        }
         if !bookRow.book.latest.isEmpty { parts.append(bookRow.book.latest) }
 
         return parts.joined(separator: "・")

@@ -25,11 +25,11 @@ struct TextFieldDialog: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     HStack {
-                        Button("取消") {
+                        Button(String(localized: "btn_cancel")) {
                             onCancel()
                         }
                         .frame(maxWidth: .infinity)
-                        Button("保存") {
+                        Button(String(localized: "btn_save")) {
                             onSave()
                         }
                         .frame(maxWidth: .infinity)
@@ -60,57 +60,65 @@ struct BookInfoSheetView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("基本信息") {
-                    infoRow(systemName: "book", label: "书名", value: book.title)
+                Section(String(localized: "bookinfo.basic_info")) {
+                    infoRow(
+                        systemName: "book",
+                        label: String(localized: "bookinfo.name"),
+                        value: book.title
+                    )
                     infoRow(
                         systemName: "person",
-                        label: "作者",
+                        label: String(localized: "bookinfo.author"),
                         value: book.author
                     )
                     if !book.category.isEmpty {
                         infoRow(
                             systemName: "tag",
-                            label: "分类",
+                            label: String(localized: "bookinfo.category"),
                             value: book.category
                         )
                     }
                     infoRow(
                         systemName: "textformat.123",
-                        label: "总字数",
-                        value: formatWordCount(book.wordcount)
+                        label: String(localized: "bookinfo.wordcount"),
+                        value: WordCountFormatter.string(from: book.wordcount)
                     )
                     infoRow(
                         systemName: book.isfinished == 1
                             ? "checkmark.seal" : "clock",
-                        label: "状态",
-                        value: book.isfinished == 1 ? "完本" : "连载"
+                        label: String(localized: "bookinfo.status"),
+                        value: book.isfinished == 1
+                            ? String(localized: "bookinfo.finished")
+                            : String(localized: "bookinfo.status_ongoing")
                     )
                     infoRow(
                         systemName: "calendar.badge.clock",
-                        label: "最近更新",
+                        label: String(localized: "bookinfo.last_updated_at"),
                         value: formatDate(book.updatedat)
                     )
                 }
 
-                Section("阅读") {
+                Section(String(localized: "bookinfo.reading")) {
                     infoRow(
                         systemName: "percent",
-                        label: "进度",
+                        label: String(localized: "bookinfo.reading_percent"),
                         value: progressText
                     )
                     if !book.latest.isEmpty {
                         infoRow(
                             systemName: "list.bullet",
-                            label: "最新章节",
+                            label: String(
+                                localized: "bookinfo.reading_latest_chapter"
+                            ),
                             value: book.latest
                         )
                     }
                 }
             }
-            .navigationTitle("书籍信息")
+            .navigationTitle(String(localized: "book_info"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { dismiss() }
+                    Button(String(localized: "btn_done")) { dismiss() }
                 }
             }
             .presentationDetents([.large])
@@ -139,15 +147,6 @@ struct BookInfoSheetView: View {
         .font(.subheadline)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label) \(value)")
-    }
-
-    private func formatWordCount(_ count: Int) -> String {
-        if count >= 10000 {
-            let n = Double(count) / 10000.0
-            return String(format: "%.1f万字", n)
-        } else {
-            return "\(count)字"
-        }
     }
 
     private func formatDate(_ ts: Int) -> String {

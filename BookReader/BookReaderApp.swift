@@ -39,9 +39,13 @@ struct NovelReaderApp: App {
                             )
                         ) {
                             Alert(
-                                title: Text("初始化数据库失败"),
+                                title: Text(
+                                    String(localized: "db_init_failed")
+                                ),
                                 message: Text(db.initError ?? ""),
-                                dismissButton: .default(Text("我知道了"))
+                                dismissButton: .default(
+                                    Text(String(localized: "btn_ok"))
+                                )
                             )
                         }
 
@@ -124,7 +128,7 @@ struct NovelReaderApp: App {
         if PasscodeManager.shared.isPasscodeSet {
             isUnlocked = false
             isAuthenticating = false
-            authErrorMessage = "请输入6位数字密码"
+            authErrorMessage = String(localized: "input_6_digital_passcode")
         } else {
             isUnlocked = true
             isAuthenticating = false
@@ -172,7 +176,7 @@ struct NovelReaderApp: App {
             ensureSecurityOverlayDismissed()
         } else {
             isUnlocked = false
-            authErrorMessage = "密码错误，请重试"
+            authErrorMessage = String(localized: "passcode_error_and_try_again")
         }
     }
 }
@@ -194,12 +198,11 @@ private struct SecurityOverlayView: View {
             }
 
             if !isUnlocked {
-                // Color.black.opacity(0.6)
                 VStack(spacing: 16) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 44, weight: .semibold))
                         .foregroundColor(.black.opacity(0.6))
-                    Text("需要验证解锁")
+                    Text(String(localized: "auth_to_unlock"))
                         .foregroundColor(.black)
                         .font(.headline)
                     if let message = message, !message.isEmpty {
@@ -210,23 +213,26 @@ private struct SecurityOverlayView: View {
                             .padding(.horizontal)
                     }
                     VStack(spacing: 10) {
-                        SecureField("输入6位数字密码", text: $input)
-                            .keyboardType(.numberPad)
-                            .textContentType(.oneTimeCode)
-                            .multilineTextAlignment(.center)
-                            .focused($isFieldFocused)
-                            .onChange(of: input) { newValue, _ in
-                                let filtered = newValue.filter { $0.isNumber }
-                                input = String(filtered.prefix(6))
+                        SecureField(
+                            String(localized: "input_6_digital_passcode"),
+                            text: $input
+                        )
+                        .keyboardType(.numberPad)
+                        .textContentType(.oneTimeCode)
+                        .multilineTextAlignment(.center)
+                        .focused($isFieldFocused)
+                        .onChange(of: input) { newValue, _ in
+                            let filtered = newValue.filter { $0.isNumber }
+                            input = String(filtered.prefix(6))
 
-                                if input.count == 6 {
-                                    onVerify(input)
-                                }
+                            if input.count == 6 {
+                                onVerify(input)
                             }
-                            .padding(.horizontal)
-                            .padding(.vertical, 10)
-                            .background(Color.white)
-                            .cornerRadius(10)
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
+                        .background(Color.white)
+                        .cornerRadius(10)
                     }
                     .padding(.top, 8)
                 }

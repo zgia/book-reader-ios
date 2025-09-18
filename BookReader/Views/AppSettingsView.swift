@@ -39,7 +39,7 @@ struct AppSettingsView: View {
                 // 数据库维护
                 databaseMaintainerView()
             }
-            .navigationTitle("设置")
+            .navigationTitle(String(localized: "system_setting"))
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
                 textBookFormatHelpView()
@@ -96,7 +96,9 @@ struct AppSettingsView: View {
             .navigationTitle("小说格式说明")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { showingFormatHelp = false }
+                    Button(String(localized: "btn_ok")) {
+                        showingFormatHelp = false
+                    }
                 }
             }
             .presentationDetents([.large])

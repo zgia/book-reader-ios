@@ -82,7 +82,7 @@ struct ReaderView: View {
                     } label: {
                         Image(systemName: "book")
                     }
-                    .accessibilityLabel("图书信息")
+                    .accessibilityLabel(String(localized: "book_info"))
                 }
             }
             .tint(reading.textColor)
@@ -94,7 +94,9 @@ struct ReaderView: View {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
                         title: String(localized: "add_to_favorites"),
-                        placeholder: String(localized: "add_to_favorites_placeholder"),
+                        placeholder: String(
+                            localized: "add_to_favorites_placeholder"
+                        ),
                         text: $draftExcerpt,
                         onCancel: {
                             showAddFavoriteDialog = false
@@ -128,7 +130,7 @@ struct ReaderView: View {
                             initialChapterId: currentChapter.id
                         )
                     } else {
-                        Text("正在加载目录...")
+                        Text(String(localized: "book_index_loading"))
                     }
                 }
             }
@@ -155,9 +157,16 @@ struct ReaderView: View {
                                             .lineLimit(2)
                                     }
                                     if let idx = row.favorite.pageindex {
-                                        Text("第 \(idx + 1) 页")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                        Text(
+                                            String(
+                                                format: String(
+                                                    localized: "favorite.page_n"
+                                                ),
+                                                idx + 1
+                                            )
+                                        )
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,12 +178,15 @@ struct ReaderView: View {
                                 Button(role: .destructive) {
                                     deleteFavorite(id: row.favorite.id)
                                 } label: {
-                                    Label("删除", systemImage: "trash")
+                                    Label(
+                                        String(localized: "btn_delete"),
+                                        systemImage: "trash"
+                                    )
                                 }
                             }
                         }
                     }
-                    .navigationTitle("收藏夹")
+                    .navigationTitle(String(localized: "favorite"))
                     .onAppear { loadFavorites() }
                 }
             }
@@ -192,7 +204,7 @@ struct ReaderView: View {
             .alert(isPresented: $showEdgeAlert) {
                 Alert(
                     title: Text(edgeAlertMessage),
-                    dismissButton: .default(Text("我知道了"))
+                    dismissButton: .default(Text(String(localized: "btn_ok")))
                 )
             }
             .gesture(horizontalSwipeGesture(geo.size))
@@ -507,7 +519,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text("上一章").font(.caption)
+                        Text(String(localized: "btn_prev")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -518,7 +530,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "list.bullet")
-                        Text("目录").font(.caption)
+                        Text(String(localized: "btn_index")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -529,7 +541,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "bookmark")
-                        Text("收藏").font(.caption)
+                        Text(String(localized: "btn_favorite")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -540,7 +552,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "gearshape")
-                        Text("设置").font(.caption)
+                        Text(String(localized: "btn_setting")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -554,7 +566,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "chevron.right")
-                        Text("下一章").font(.caption)
+                        Text(String(localized: "btn_next")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -693,7 +705,10 @@ struct ReaderView: View {
         containerWidth: CGFloat
     ) {
         guard let target = fetchAdjacentChapter(isNext: isNext) else {
-            edgeAlertMessage = isNext ? "已是最后一章。" : "已是第一章。"
+            edgeAlertMessage =
+                isNext
+                ? String(localized: "is_last_chapter")
+                : String(localized: "is_first_chapter")
             showEdgeAlert = true
             withAnimation(.easeInOut) { dragOffset = 0 }
             return
@@ -945,7 +960,7 @@ struct ReaderView: View {
 
     // MARK: - View helpers
     private var loadingView: some View {
-        Text("加载中...")
+        Text(String(localized: "loading"))
             .font(.system(size: reading.fontSize))
             .foregroundColor(reading.textColor)
             .padding()
@@ -967,7 +982,10 @@ struct ReaderView: View {
                     Button {
                         prepareAddFavorite(from: pageIndex)
                     } label: {
-                        Label(String(localized: "add_to_favorites"), systemImage: "bookmark")
+                        Label(
+                            String(localized: "add_to_favorites"),
+                            systemImage: "bookmark"
+                        )
                     }
                 }
         }
