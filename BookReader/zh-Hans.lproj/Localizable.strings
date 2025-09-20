@@ -59,28 +59,28 @@ btn_refresh = "刷新";
 
 // ReaderSettingsView
 "setting.title" = "设置";
-"setting.line_spacing"="行间距";
+"setting.line_spacing" = "行间距";
 "setting.current_line_spacing" = "当前间距: %d";
-"setting.paragraph_spacing"="段间距";
+"setting.paragraph_spacing" = "段间距";
 "setting.current_paragraph_spacing" = "当前间距: %d";
-"setting.color_presets"="预设配色";
-"setting.color_customize"="自定义颜色";
-"setting.color_font"="文字颜色";
-"setting.color_background"="背景颜色";
-"setting.color_light"="浅色";
-"setting.color_dark"="夜间";
-"setting.color_soft_yellow"="柔和米黄";
-"setting.color_warm_paper"="暖白纸感";
-"setting.color_green"="护眼绿";
-"setting.color_deep_grey"="深灰";
-"setting.font_size"="字体大小";
+"setting.color_presets" = "预设配色";
+"setting.color_customize" = "自定义颜色";
+"setting.color_font" = "文字颜色";
+"setting.color_background" = "背景颜色";
+"setting.color_light" = "浅色";
+"setting.color_dark" = "夜间";
+"setting.color_soft_yellow" = "柔和米黄";
+"setting.color_warm_paper" = "暖白纸感";
+"setting.color_green" = "护眼绿";
+"setting.color_deep_grey" = "深灰";
+"setting.font_size" = "字体大小";
 "setting.current_font_size" = "当前大小: %d";
-"setting.preview"="预览";
-"setting.preview_text_1"="这是预览文本";
-"setting.preview_text_2"="您可以在这里看到字体大小、行间距和段间距的效果。";
-"setting.debug"="调试";
-"setting.debug_log_enabled"="启用阅读调试日志";
-"setting.reading_setting"="阅读设置";
+"setting.preview" = "预览";
+"setting.preview_text_1" = "这是预览文本";
+"setting.preview_text_2" = "您可以在这里看到字体大小、行间距和段间距的效果。";
+"setting.debug" = "调试";
+"setting.debug_log_enabled" = "启用阅读调试日志";
+"setting.reading_setting" = "阅读设置";
 
 // AppSettingsView - TextBook format help
 "format.help.title" = "小说格式说明";
