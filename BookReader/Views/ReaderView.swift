@@ -82,7 +82,7 @@ struct ReaderView: View {
                     } label: {
                         Image(systemName: "book")
                     }
-                    .accessibilityLabel(String(localized: "book_info"))
+                    .accessibilityLabel(String(localized: "book_info.title"))
                 }
             }
             .tint(reading.textColor)
@@ -93,9 +93,9 @@ struct ReaderView: View {
             .overlay {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
-                        title: String(localized: "add_to_favorites"),
+                        title: String(localized: "favorite.add_to_favorites"),
                         placeholder: String(
-                            localized: "add_to_favorites_placeholder"
+                            localized: "favorite.add_to_favorites_placeholder"
                         ),
                         text: $draftExcerpt,
                         onCancel: {
@@ -130,7 +130,7 @@ struct ReaderView: View {
                             initialChapterId: currentChapter.id
                         )
                     } else {
-                        Text(String(localized: "book_index_loading"))
+                        Text(String(localized: "reading.book_index_loading"))
                     }
                 }
             }
@@ -186,7 +186,8 @@ struct ReaderView: View {
                             }
                         }
                     }
-                    .navigationTitle(String(localized: "favorite"))
+                    .navigationTitle(String(localized: "favorite.title"))
+                    .navigationBarTitleDisplayMode(.inline)
                     .onAppear { loadFavorites() }
                 }
             }
@@ -707,8 +708,8 @@ struct ReaderView: View {
         guard let target = fetchAdjacentChapter(isNext: isNext) else {
             edgeAlertMessage =
                 isNext
-                ? String(localized: "is_last_chapter")
-                : String(localized: "is_first_chapter")
+                ? String(localized: "reading.is_last_chapter")
+                : String(localized: "reading.is_first_chapter")
             showEdgeAlert = true
             withAnimation(.easeInOut) { dragOffset = 0 }
             return
@@ -960,7 +961,7 @@ struct ReaderView: View {
 
     // MARK: - View helpers
     private var loadingView: some View {
-        Text(String(localized: "loading"))
+        Text(String(localized: "reading.loading"))
             .font(.system(size: reading.fontSize))
             .foregroundColor(reading.textColor)
             .padding()
@@ -983,7 +984,7 @@ struct ReaderView: View {
                         prepareAddFavorite(from: pageIndex)
                     } label: {
                         Label(
-                            String(localized: "add_to_favorites"),
+                            String(localized: "favorite.add_to_favorites"),
                             systemImage: "bookmark"
                         )
                     }

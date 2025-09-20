@@ -13,32 +13,32 @@ struct ReaderSettingsView: View {
 
     private let presets: [ColorPreset] = [
         ColorPreset(
-            name: String(localized: "color_light"),
+            name: String(localized: "setting.color_light"),
             backgroundHex: "#FFFFFF",
             textHex: "#000000"
         ),
         ColorPreset(
-            name: String(localized: "color_dark"),
+            name: String(localized: "setting.color_dark"),
             backgroundHex: "#000000",
             textHex: "#FFFFFF"
         ),
         ColorPreset(
-            name: String(localized: "color_soft_yellow"),
+            name: String(localized: "setting.color_soft_yellow"),
             backgroundHex: "#F5ECD9",
             textHex: "#5B4636"
         ),
         ColorPreset(
-            name: String(localized: "color_warm_paper"),
+            name: String(localized: "setting.color_warm_paper"),
             backgroundHex: "#FAF3E0",
             textHex: "#3A3A3A"
         ),
         ColorPreset(
-            name: String(localized: "color_green"),
+            name: String(localized: "setting.color_green"),
             backgroundHex: "#CCE8CF",
             textHex: "#2B3D2F"
         ),
         ColorPreset(
-            name: String(localized: "color_deep_grey"),
+            name: String(localized: "setting.color_deep_grey"),
             backgroundHex: "#121212",
             textHex: "#EAEAEA"
         ),
@@ -48,9 +48,16 @@ struct ReaderSettingsView: View {
         NavigationStack {
             Form {
                 // 字体大小设置
-                Section(header: Text("字体大小")) {
+                Section(header: Text(String(localized: "setting.font_size"))) {
                     HStack {
-                        Text("当前大小: \(Int(reading.fontSize))")
+                        Text(
+                            String(
+                                format: String(
+                                    localized: "setting.current_font_size"
+                                ),
+                                Int(reading.fontSize)
+                            )
+                        )
                         Spacer()
                         Button("-") {
                             reading.fontSize = max(8, reading.fontSize - 2)

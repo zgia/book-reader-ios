@@ -115,7 +115,7 @@ struct BookInfoSheetView: View {
                     }
                 }
             }
-            .navigationTitle(String(localized: "book_info"))
+            .navigationTitle(String(localized: "book_info.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "btn_done")) { dismiss() }

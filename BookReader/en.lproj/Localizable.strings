@@ -1,72 +1,156 @@
-book = "书籍";
-system_setting = "设置";
-add_to_favorites = "Add to Favorites";
-favorite = "收藏夹";
-"favorite.page_n" ="第 %d 页";
-add_to_favorites_placeholder = "Write a note for this favorite (optional)";
-db_init_failed = "初始化数据库失败";
-db_initializing = "正在初始化数据库…";
-btn_ok = "确定";
-btn_cancel = "取消";
-btn_save = "保存";
-btn_delete = "删除";
-btn_prev = "上一章";
-btn_next = "下一章";
-btn_index = "目录";
-btn_favorite = "收藏";
-btn_setting = "设置";
-btn_done = "完成";
-btn_rename = "重命名";
-renaming_title = "重命名";
-renaming_new_name = "请输入新的书名";
-confirm_deleting = "确认删除";
-confirm_deleting_message = "此操作将删除《%s》的所有内容与阅读进度，且不可恢复。是否继续？";
-input_6_digital_passcode = "请输入6位数字密码";
-passcode_error_and_try_again = "密码错误，请重试";
-auth_to_unlock = "需要验证解锁";
-book_info = "图书信息";
-"bookinfo.basic_info" = "基本信息";
-"bookinfo.name" = "书名";
-"bookinfo.author" = "作者";
-"bookinfo.category" = "分类";
-"bookinfo.word_count" = "总字数";
+book = "Book";
+
+// Initialization
+"db.init_failed" = "Failed to initialize database";
+"db.initializing" = "Initializing database…";
+
+// Favorites
+"favorite.title" = "Favorites";
+"favorite.add_to_favorites" = "Add to Favorites";
+"favorite.page_n" = "Page %d";
+"favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
+
+// Buttons
+btn_ok = "OK";
+btn_cancel = "Cancel";
+btn_save = "Save";
+btn_delete = "Delete";
+btn_prev = "Previous";
+btn_next = "Next";
+btn_index = "Index";
+btn_favorite = "Favorite";
+btn_setting = "Settings";
+btn_done = "Done";
+btn_rename = "Rename";
+btn_refresh = "Refresh";
+
+// BookListView
+"book.renaming_title" = "Rename";
+"book.renaming_new_name" = "Please enter a new book name";
+"book.confirm_deleting" = "Confirm Deletion";
+"book.confirm_deleting_message" = "This operation will delete all content and reading progress of \"%s\" and cannot be undone. Continue?";
+
+// ReaderView - Book Info
+"book_info.title" = "Book Info";
+"bookinfo.basic_info" = "Basic Info";
+"bookinfo.name" = "Title";
+"bookinfo.author" = "Author";
+"bookinfo.category" = "Category";
+"bookinfo.wordcount" = "Total Words";
 "bookinfo.wordcount_format" = "%@ words";
-"bookinfo.wordcount_plain_en" = "%d words";
-"bookinfo.wordcount_format_thousand" = "%@K words";
-"bookinfo.wordcount_format_million" = "%@M words";
-"bookinfo.wordcount_format_billion" = "%@B words";
-"bookinfo.status" = "状态";
-"bookinfo.status_ongoing" = "连载";
-"bookinfo.finished" = "完本";
-"bookinfo.last_updated_at" = "最近更新";
-"bookinfo.reading" = "阅读";
-"bookinfo.reading_percent" = "进度";
-"bookinfo.reading_latest_chapter" = "最新章节";
-book_index_loading = "正在加载目录...";
-loading = "加载中...";
-chapter_not_fund = "无可阅读章节";
-is_first_chapter = "已是第一章。";
-is_last_chapter = "已是最后一章。";
-"setting.line_spacing"="行间距";
-"setting.current_line_spacing" = "当前间距: %d";
-"setting.paragraph_spacing"="段间距";
-"setting.current_paragraph_spacing" = "当前间距: %d";
-"setting.color_presets"="预设配色";
-"setting.color_customize"="自定义颜色";
-"setting.color_font"="文字颜色";
-"setting.color_background"="背景颜色";
-"setting.color_light"="浅色";
-"setting.color_dark"="夜间";
-"setting.color_soft_yellow"="柔和米黄";
-"setting.color_warm_paper"="暖白纸感";
-"setting.color_green"="护眼绿";
-"setting.color_deep_grey"="深灰";
-"setting.preview"="预览";
-"setting.preview_text_1"="这是预览文本";
-"setting.preview_text_2"="您可以在这里看到字体大小、行间距和段间距的效果。";
-"setting.debug"="调试";
-"setting.debug_log_enabled"="启用阅读调试日志";
-"setting.reading_setting"="阅读设置";
+"bookinfo.wordcount_plain_zh" = "%d words";
+"bookinfo.wordcount_format_wan" = "%@ ten thousand words";
+"bookinfo.wordcount_format_yi" = "%@ hundred million words";
+"bookinfo.status" = "Status";
+"bookinfo.status_ongoing" = "Ongoing";
+"bookinfo.finished" = "Completed";
+"bookinfo.last_updated_at" = "Last Updated";
+"bookinfo.reading" = "Reading";
+"bookinfo.reading_percent" = "Progress";
+"bookinfo.reading_latest_chapter" = "Latest Chapter";
 
+// ReaderView
+"reading.book_index_loading" = "Loading table of contents...";
+"reading.loading" = "Loading...";
+"reading.chapter_not_fund" = "No readable chapters";
+"reading.is_first_chapter" = "Already at the first chapter.";
+"reading.is_last_chapter" = "Already at the last chapter.";
 
+// ReaderSettingsView
+"setting.title" = "Settings";
+"setting.line_spacing" = "Line Spacing";
+"setting.current_line_spacing" = "Current spacing: %d";
+"setting.paragraph_spacing" = "Paragraph Spacing";
+"setting.current_paragraph_spacing" = "Current spacing: %d";
+"setting.color_presets" = "Color Presets";
+"setting.color_customize" = "Custom Color";
+"setting.color_font" = "Font Color";
+"setting.color_background" = "Background Color";
+"setting.color_light" = "Light";
+"setting.color_dark" = "Dark";
+"setting.color_soft_yellow" = "Soft Yellow";
+"setting.color_warm_paper" = "Warm";
+"setting.color_green" = "Green";
+"setting.color_deep_grey" = "Deep Grey";
+"setting.font_size"="Font Size";
+"setting.current_font_size" = "Current Size: %d";
+"setting.preview" = "Preview";
+"setting.preview_text_1" = "This is preview text";
+"setting.preview_text_2" = "You can see the effect of font size, line spacing, and paragraph spacing here.";
+"setting.debug" = "Debug";
+"setting.debug_log_enabled" = "Enable reading debug log";
+"setting.reading_setting" = "Reading Settings";
 
+// AppSettingsView - TextBook format help
+"format.help.title" = "Novel Format Instructions";
+"format.help.button" = "Novel Format Instructions...";
+"format.help.format" = "Format: Only text files (*.txt) are supported.";
+"format.help.book_name" = "Title: Supports \"Title: xxx\" or just \"《xxx》\"; if not recognized, the file name (without extension) will be used.";
+"format.help.author" = "Author: \"Author: xxx\" on a separate line.";
+"format.help.volume" = "Volume: Start of line with \"Volume X Volume Name\" (supports Chinese or Arabic numerals), do not leave spaces at the beginning of the line.";
+"format.help.chapter" = "Chapter: Start of line with \"Chapter X Chapter Name\" (supports Chinese or Arabic numerals), do not leave spaces at the beginning of the line.";
+"format.help.default" = "Default: Content before the first chapter will be ignored; if no volume appears, a \"Main Text\" volume will be created automatically.";
+
+// AppSettingsView - Database maintenance
+"db.maintenance.title" = "Database Maintenance";
+"db.maintenance.tip" = "When deleting books, space may not be released automatically and needs to be released manually.";
+"db.stats.title" = "Database Statistics";
+"db.compact" = "Release Space (Full Vacuum)";
+"db.compacting" = "Full vacuum in progress…";
+"db.compact.confirm_title" = "Confirm Full Vacuum?";
+"db.compact.confirm_message" = "This operation will perform VACUUM, which may take a long time. Please proceed when idle.";
+"db.compact.started" = "Full vacuum (VACUUM) started and will run in the background.";
+"db.compact.done" = "Full vacuum completed.";
+"db.stats.book_count" = "Total books: %d";
+"db.stats.db_size" = "Database: %@";
+"db.stats.wal_size" = "WAL: %@";
+"db.stats.shm_size" = "SHM: %@";
+"db.stats.page_size" = "Page size: %d B";
+"db.stats.freelist_count" = "Free pages: %d";
+"db.stats.estimated_reclaimable" = "Estimated reclaimable: %@";
+
+// AppSettingsView - Data/import
+"data.section" = "Data";
+"import.preview" = "Preview Parsing (Not Imported)";
+"import.start" = "Import Novel";
+"import.in_progress" = "Importing…";
+"import.done" = "Import Completed";
+"import.failed" = "Import failed: %@";
+"import.preview_failed" = "Preview failed: %@";
+"import.file_select_failed" = "File selection failed: %@";
+
+// AppSettingsView - Security
+"security.title" = "Privacy & Security";
+"security.tip" = "When a passcode is set, a security overlay will appear and require passcode entry to unlock when the app launches or returns to the foreground. Removing the passcode will disable this requirement.";
+"security.passcode_set" = "6-digit passcode set";
+"security.remove_passcode" = "Remove Passcode";
+"security.passcode_not_set" = "No passcode set";
+"security.set_passcode" = "Set Passcode";
+"security.set_passcode_title" = "Set Passcode";
+"security.remove_passcode_title" = "Remove Passcode";
+"security.passcode_requirement" = "Passcode must be 6 digits";
+"security.enter_new_passcode" = "Enter new passcode";
+"security.enter_again" = "Enter again";
+"security.enter_current_passcode_to_remove" = "Enter current 6-digit passcode to confirm removal";
+"security.current_passcode" = "Current passcode";
+"security.passcode_mismatch_or_invalid" = "Entries do not match or are not 6 digits";
+"security.passcode_set_done" = "Passcode set";
+"security.save_failed" = "Save failed: %@";
+"security.passcode_removed" = "Passcode removed";
+"security.remove_failed" = "Remove failed: %@";
+"security.passcode_error" = "Incorrect passcode";
+"security.input_6_digital_passcode" = "Please enter a 6-digit passcode";
+"security.passcode_error_and_try_again" = "Incorrect passcode, please try again";
+"security.auth_to_unlock" = "Authentication required to unlock";
+"security.keychain_error" = "Keychain error: %d";
+
+// Appearance
+"appearance.title" = "Appearance";
+"appearance.set_appearance" = "App Appearance";
+"appearance.system" = "Follow System";
+"appearance.light" = "Light";
+"appearance.dark" = "Dark";
+
+// TxtBookImporter
+"txt_book_importer.missing_title" = "Book title not parsed. Please check the TXT file format (e.g., first line contains: Title: xxx)";
+"txt_book_importer.article_title" = "Main Text";

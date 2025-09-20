@@ -1,6 +1,6 @@
+import CryptoKit
 import Foundation
 import Security
-import CryptoKit
 
 /// 管理应用的6位数字密码，使用 Keychain 安全存储（仅存储哈希）
 struct PasscodeManager {
@@ -27,7 +27,9 @@ struct PasscodeManager {
 
     /// 校验输入密码是否正确
     func verifyPasscode(_ passcode: String) -> Bool {
-        guard Self.isValid(passcode), let stored = loadHash() else { return false }
+        guard Self.isValid(passcode), let stored = loadHash() else {
+            return false
+        }
         return stored == Self.sha256(passcode)
     }
 
@@ -106,10 +108,13 @@ enum PasscodeError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidFormat: return "密码必须是6位数字"
-        case .keychain(let status): return "Keychain错误: \(status)"
+        case .invalidFormat:
+            return String(localized: "security.passcode_requirement")
+        case .keychain(let status):
+            return String(
+                format: String(localized: "security.keychain_error"),
+                status
+            )
         }
     }
 }
-
-

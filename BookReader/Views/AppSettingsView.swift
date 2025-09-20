@@ -39,7 +39,7 @@ struct AppSettingsView: View {
                 // 数据库维护
                 databaseMaintainerView()
             }
-            .navigationTitle(String(localized: "system_setting"))
+            .navigationTitle(String(localized: "setting.title"))
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
                 textBookFormatHelpView()
@@ -61,39 +61,39 @@ struct AppSettingsView: View {
             List {
                 Section {
                     Label {
-                        Text("格式：仅支持文本格式：*.txt。")
+                        Text(String(localized: "format.help.format"))
                     } icon: {
                         Image(systemName: "text.page")
                     }
                     Label {
-                        Text("书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。")
+                        Text(String(localized: "format.help.book_name"))
                     } icon: {
                         Image(systemName: "character.book.closed")
                     }
                     Label {
-                        Text("作者：“作者：xxx”独立一行。")
+                        Text(String(localized: "format.help.author"))
                     } icon: {
                         Image(systemName: "person")
                     }
                     Label {
-                        Text("卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                        Text(String(localized: "format.help.volume"))
                     } icon: {
                         Image(systemName: "text.book.closed")
                     }
                     Label {
-                        Text("章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。")
+                        Text(String(localized: "format.help.chapter"))
                     } icon: {
                         Image(systemName: "book.pages")
                     }
                     Label {
-                        Text("默认：章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。")
+                        Text(String(localized: "format.help.default"))
                     } icon: {
                         Image(systemName: "book.and.wrench")
                     }
 
                 }
             }
-            .navigationTitle("小说格式说明")
+            .navigationTitle(String(localized: "format.help.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "btn_ok")) {
@@ -111,17 +111,17 @@ struct AppSettingsView: View {
     @ViewBuilder
     private func databaseMaintainerView() -> some View {
         Section(
-            header: Text("数据库维护"),
+            header: Text(String(localized: "db.maintenance.title")),
             footer: VStack(alignment: .leading, spacing: 6) {
-                Text("删除图书时，可能不会自动释放空间，需要手动释放。")
+                Text(String(localized: "db.maintenance.tip"))
                     .font(.footnote)
                     .foregroundColor(.secondary)
             }
         ) {
             HStack {
-                Text("数据库统计")
+                Text(String(localized: "db.stats.title"))
                 Spacer()
-                Button("刷新") { refreshStats() }
+                Button(String(localized: "btn_refresh")) { refreshStats() }
                     .font(.footnote)
             }
             if !statsText.isEmpty {
@@ -137,20 +137,24 @@ struct AppSettingsView: View {
                     }
                     Text(
                         dbManager.isCompacting
-                            ? "正在全量压缩…" : "释放空间（全量压缩）"
+                            ? String(localized: "db.compacting")
+                            : String(localized: "db.compact")
                     )
                 }
             }
             .disabled(dbManager.isCompacting)
             .buttonStyle(.borderedProminent)
             .tint(.red)
-            .alert("确认执行全量压缩？", isPresented: $showingCompactConfirm) {
-                Button("取消", role: .cancel) {}
-                Button("确定", role: .destructive) {
+            .alert(
+                String(localized: "db.compact.confirm_title"),
+                isPresented: $showingCompactConfirm
+            ) {
+                Button(String(localized: "btn_cancel"), role: .cancel) {}
+                Button(String(localized: "btn_ok"), role: .destructive) {
                     onCompactButtonTapped()
                 }
             } message: {
-                Text("该操作将执行 VACUUM，可能耗时较长，请在空闲时进行。")
+                Text(String(localized: "db.compact.confirm_message"))
             }
             if let cmsg = compressionMessage {
                 Text(cmsg).font(.footnote).foregroundColor(.secondary)
@@ -161,9 +165,9 @@ struct AppSettingsView: View {
     @ViewBuilder
     private func bookImporterView() -> some View {
         Section(
-            header: Text("数据"),
+            header: Text(String(localized: "data.section")),
             footer: Button(action: { showingFormatHelp = true }) {
-                Text("小说格式说明...")
+                Text(String(localized: "format.help.button"))
                     .font(.footnote)
                     .foregroundColor(.accentColor)
             }
@@ -171,7 +175,7 @@ struct AppSettingsView: View {
         ) {
             if showPreviewButton {
                 Button(action: onPreviewButtonTapped) {
-                    Text("预览解析（不入库）")
+                    Text(String(localized: "import.preview"))
                 }
                 .fileImporter(
                     isPresented: $showingPreviewImporter,
@@ -185,7 +189,11 @@ struct AppSettingsView: View {
                     if importInProgress {
                         ProgressView().scaleEffect(0.8)
                     }
-                    Text(importInProgress ? "正在导入…" : "导入小说")
+                    Text(
+                        importInProgress
+                            ? String(localized: "import.in_progress")
+                            : String(localized: "import.start")
+                    )
                 }
             }
             .disabled(importInProgress)
@@ -204,17 +212,20 @@ struct AppSettingsView: View {
     @ViewBuilder
     private func securityView() -> some View {
         Section(
-            header: Text("隐私与安全"),
-            footer: Text("已设置密码时，应用启动或回到前台将显示安全遮罩并需要输入密码解锁。移除密码则不再需要解锁。").font(
+            header: Text(String(localized: "security.title")),
+            footer: Text(String(localized: "security.tip")).font(
                 .footnote
             ).foregroundColor(.secondary)
         ) {
             if PasscodeManager.shared.isPasscodeSet {
                 HStack {
                     Image(systemName: "key.fill").foregroundColor(.green)
-                    Text("已设置6位数字密码")
+                    Text(String(localized: "security.passcode_set"))
                     Spacer()
-                    Button("移除密码", role: .destructive) {
+                    Button(
+                        String(localized: "security.remove_passcode"),
+                        role: .destructive
+                    ) {
                         passcodeInput = ""
                         passcodeTip = nil
                         securityDialog = .removePasscode
@@ -226,9 +237,9 @@ struct AppSettingsView: View {
                     Image(systemName: "key.slash.fill").foregroundColor(
                         .secondary
                     )
-                    Text("未设置密码")
+                    Text(String(localized: "security.passcode_not_set"))
                     Spacer()
-                    Button("设置密码") {
+                    Button(String(localized: "security.set_passcode")) {
                         passcodeInput = ""
                         passcodeConfirmInput = ""
                         passcodeTip = nil
@@ -246,52 +257,75 @@ struct AppSettingsView: View {
         NavigationStack {
             Form {
                 Section(
-                    footer: Text(passcodeTip ?? "密码需为6位数字").font(.footnote)
+                    footer: Text(
+                        passcodeTip
+                            ?? String(
+                                localized: "security.passcode_requirement"
+                            )
+                    ).font(.footnote)
                         .foregroundColor(.secondary)
                 ) {
-                    SecureField("输入新密码", text: $passcodeInput)
-                        .keyboardType(.numberPad)
-                        .onChange(of: passcodeInput) { newValue, _ in
-                            passcodeInput = String(
-                                newValue.filter { $0.isNumber }.prefix(6)
-                            )
-                        }
-                        .focused($setPasscodeFieldFocused)
-                    SecureField("再次输入", text: $passcodeConfirmInput)
-                        .keyboardType(.numberPad)
-                        .onChange(of: passcodeConfirmInput) { newValue, _ in
-                            passcodeConfirmInput = String(
-                                newValue.filter { $0.isNumber }.prefix(6)
-                            )
-                        }
-                        .focused($confirmPasscodeFieldFocused)
+                    SecureField(
+                        String(localized: "security.enter_new_passcode"),
+                        text: $passcodeInput
+                    )
+                    .keyboardType(.numberPad)
+                    .onChange(of: passcodeInput) { newValue, _ in
+                        passcodeInput = String(
+                            newValue.filter { $0.isNumber }.prefix(6)
+                        )
+                    }
+                    .focused($setPasscodeFieldFocused)
+                    SecureField(
+                        String(localized: "security.enter_again"),
+                        text: $passcodeConfirmInput
+                    )
+                    .keyboardType(.numberPad)
+                    .onChange(of: passcodeConfirmInput) { newValue, _ in
+                        passcodeConfirmInput = String(
+                            newValue.filter { $0.isNumber }.prefix(6)
+                        )
+                    }
+                    .focused($confirmPasscodeFieldFocused)
                 }
             }
-            .navigationTitle("设置密码")
+            .navigationTitle(String(localized: "security.set_passcode_title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { securitySheet = nil }
+                    Button(String(localized: "btn_cancel")) {
+                        securitySheet = nil
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("保存") {
+                    Button(String(localized: "btn_save")) {
                         guard passcodeInput.count == 6,
                             passcodeInput == passcodeConfirmInput
                         else {
-                            passcodeTip = "两次输入不一致或非6位"
+                            passcodeTip = String(
+                                localized:
+                                    "security.passcode_mismatch_or_invalid"
+                            )
                             return
                         }
                         do {
                             try PasscodeManager.shared.setPasscode(
                                 passcodeInput
                             )
-                            passcodeTip = "已设置密码"
+                            passcodeTip = String(
+                                localized: "security.passcode_set_done"
+                            )
                             securitySheet = nil
                             NotificationCenter.default.post(
                                 name: .passcodeDidChange,
                                 object: nil
                             )
                         } catch {
-                            passcodeTip = "保存失败：\(error.localizedDescription)"
+                            passcodeTip = String(
+                                format: String(
+                                    localized: "security.save_failed"
+                                ),
+                                error.localizedDescription
+                            )
                         }
                     }
                     .disabled(
@@ -323,32 +357,48 @@ struct AppSettingsView: View {
         NavigationStack {
             Form {
                 Section(
-                    footer: Text(passcodeTip ?? "请输入当前6位密码以确认移除").font(
+                    footer: Text(
+                        passcodeTip
+                            ?? String(
+                                localized:
+                                    "security.enter_current_passcode_to_remove"
+                            )
+                    ).font(
                         .footnote
                     ).foregroundColor(.secondary)
                 ) {
-                    SecureField("当前密码", text: $passcodeInput)
-                        .keyboardType(.numberPad)
-                        .onChange(of: passcodeInput) { newValue, _ in
-                            passcodeInput = String(
-                                newValue.filter { $0.isNumber }.prefix(6)
-                            )
-                        }
-                        .focused($removePasscodeFieldFocused)
+                    SecureField(
+                        String(localized: "security.current_passcode"),
+                        text: $passcodeInput
+                    )
+                    .keyboardType(.numberPad)
+                    .onChange(of: passcodeInput) { newValue, _ in
+                        passcodeInput = String(
+                            newValue.filter { $0.isNumber }.prefix(6)
+                        )
+                    }
+                    .focused($removePasscodeFieldFocused)
                 }
             }
-            .navigationTitle("移除密码")
+            .navigationTitle(
+                String(localized: "security.remove_passcode_title")
+            )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { securitySheet = nil }
+                    Button(String(localized: "btn_cancel")) {
+                        securitySheet = nil
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("移除", role: .destructive) {
+                    Button(String(localized: "btn_remove"), role: .destructive)
+                    {
                         if PasscodeManager.shared.verifyPasscode(passcodeInput)
                         {
                             do {
                                 try PasscodeManager.shared.removePasscode()
-                                passcodeTip = "已移除密码"
+                                passcodeTip = String(
+                                    localized: "security.passcode_removed"
+                                )
                                 securitySheet = nil
                                 NotificationCenter.default.post(
                                     name: .passcodeDidChange,
@@ -356,10 +406,17 @@ struct AppSettingsView: View {
                                 )
                             } catch {
                                 passcodeTip =
-                                    "移除失败：\(error.localizedDescription)"
+                                    String(
+                                        format: String(
+                                            localized: "security.remove_failed"
+                                        ),
+                                        error.localizedDescription
+                                    )
                             }
                         } else {
-                            passcodeTip = "密码错误"
+                            passcodeTip = String(
+                                localized: "security.passcode_error"
+                            )
                         }
                     }
                     .disabled(passcodeInput.count != 6)
@@ -389,9 +446,9 @@ struct AppSettingsView: View {
 
     @ViewBuilder
     private func appAppearanceView() -> some View {
-        Section(header: Text("外观")) {
+        Section(header: Text(String(localized: "appearance.title"))) {
             Picker(
-                "应用外观",
+                String(localized: "appearance.set_appearance"),
                 selection: Binding(
                     get: { appAppearance.option },
                     set: { appAppearance.setOption($0) }
@@ -415,10 +472,10 @@ struct AppSettingsView: View {
 
     private func onCompactButtonTapped() {
         dbManager.compactDatabase(hard: true) {
-            compressionMessage = "全量压缩完成。"
+            compressionMessage = String(localized: "db.compact.done")
             refreshStats()
         }
-        compressionMessage = "已开始全量压缩（VACUUM），将在后台执行。"
+        compressionMessage = String(localized: "db.compact.started")
     }
 
     private func showStats(result: DatabaseManager.DatabaseStats?) {
@@ -431,13 +488,34 @@ struct AppSettingsView: View {
                 return "\(bytes) B"
             }
             let lines = [
-                "书籍总数: \(s.bookCount)",
-                "数据库: \(fmt(s.dbSize))",
-                "WAL: \(fmt(s.walSize))",
-                "SHM: \(fmt(s.shmSize))",
-                "页大小: \(s.pageSize) B",
-                "空闲页: \(s.freelistCount)",
-                "估算可回收: \(fmt(s.estimatedReclaimableBytes))",
+                String(
+                    format: String(localized: "db.stats.book_count"),
+                    s.bookCount
+                ),
+                String(
+                    format: String(localized: "db.stats.db_size"),
+                    fmt(s.dbSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.wal_size"),
+                    fmt(s.walSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.shm_size"),
+                    fmt(s.shmSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.page_size"),
+                    s.pageSize
+                ),
+                String(
+                    format: String(localized: "db.stats.freelist_count"),
+                    s.freelistCount
+                ),
+                String(
+                    format: String(localized: "db.stats.estimated_reclaimable"),
+                    fmt(s.estimatedReclaimableBytes)
+                ),
             ]
             statsText = lines.joined(separator: "\n")
         } else {
@@ -469,12 +547,22 @@ struct AppSettingsView: View {
                     try importer.importTxtPreview(at: url)
                 } catch {
                     DispatchQueue.main.async {
-                        importMessage = "预览失败：\(error.localizedDescription)"
+                        importMessage = String(
+                            format: String(
+                                localized: "import.preview_failed"
+                            ),
+                            error.localizedDescription
+                        )
                     }
                 }
             }
         case .failure(let error):
-            importMessage = "选择文件失败：\(error.localizedDescription)"
+            importMessage = String(
+                format: String(
+                    localized: "import.file_select_failed"
+                ),
+                error.localizedDescription
+            )
         }
     }
 
@@ -490,17 +578,27 @@ struct AppSettingsView: View {
                     try importer.importTxt(at: url)
                     DispatchQueue.main.async {
                         importInProgress = false
-                        importMessage = "导入完成"
+                        importMessage = String(localized: "import.done")
                     }
                 } catch {
                     DispatchQueue.main.async {
                         importInProgress = false
-                        importMessage = "导入失败：\(error.localizedDescription)"
+                        importMessage = String(
+                            format: String(
+                                localized: "import.failed"
+                            ),
+                            error.localizedDescription
+                        )
                     }
                 }
             }
         case .failure(let error):
-            importMessage = "选择文件失败：\(error.localizedDescription)"
+            importMessage = String(
+                format: String(
+                    localized: "import.file_select_failed"
+                ),
+                error.localizedDescription
+            )
         }
     }
 
@@ -511,54 +609,29 @@ struct AppSettingsView: View {
             ZStack {
                 Color.black.opacity(0.35).ignoresSafeArea()
                 VStack(spacing: 16) {
-                    Text(dialog.title)
-                        .font(.headline)
+                    Text(
+                        dialog == .setPasscode
+                            ? String(localized: "security.set_passcode_title")
+                            : String(
+                                localized: "security.remove_passcode_title"
+                            )
+                    )
+                    .font(.headline)
                     if dialog == .setPasscode {
                         VStack(spacing: 10) {
-                            SecureField("输入新密码", text: $passcodeInput)
-                                .keyboardType(.numberPad)
-                                .focused($setPasscodeFieldFocused)
-                                .onChange(of: passcodeInput) { newValue, _ in
-                                    let filtered = String(
-                                        newValue.filter { $0.isNumber }.prefix(
-                                            6
-                                        )
-                                    )
-                                    if filtered != newValue {
-                                        passcodeInput = filtered
-                                    }
-                                }
-                                .textContentType(.oneTimeCode)
-                                .padding(10)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                            SecureField("再次输入", text: $passcodeConfirmInput)
-                                .keyboardType(.numberPad)
-                                .focused($confirmPasscodeFieldFocused)
-                                .onChange(of: passcodeConfirmInput) {
-                                    newValue,
-                                    _ in
-                                    let filtered = String(
-                                        newValue.filter { $0.isNumber }.prefix(
-                                            6
-                                        )
-                                    )
-                                    if filtered != newValue {
-                                        passcodeConfirmInput = filtered
-                                    }
-                                }
-                                .textContentType(.oneTimeCode)
-                                .padding(10)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    } else {
-                        SecureField("当前密码", text: $passcodeInput)
+                            SecureField(
+                                String(
+                                    localized: "security.enter_new_passcode"
+                                ),
+                                text: $passcodeInput
+                            )
                             .keyboardType(.numberPad)
-                            .focused($removePasscodeFieldFocused)
+                            .focused($setPasscodeFieldFocused)
                             .onChange(of: passcodeInput) { newValue, _ in
                                 let filtered = String(
-                                    newValue.filter { $0.isNumber }.prefix(6)
+                                    newValue.filter { $0.isNumber }.prefix(
+                                        6
+                                    )
                                 )
                                 if filtered != newValue {
                                     passcodeInput = filtered
@@ -568,6 +641,48 @@ struct AppSettingsView: View {
                             .padding(10)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
+                            SecureField(
+                                String(localized: "security.enter_again"),
+                                text: $passcodeConfirmInput
+                            )
+                            .keyboardType(.numberPad)
+                            .focused($confirmPasscodeFieldFocused)
+                            .onChange(of: passcodeConfirmInput) {
+                                newValue,
+                                _ in
+                                let filtered = String(
+                                    newValue.filter { $0.isNumber }.prefix(
+                                        6
+                                    )
+                                )
+                                if filtered != newValue {
+                                    passcodeConfirmInput = filtered
+                                }
+                            }
+                            .textContentType(.oneTimeCode)
+                            .padding(10)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    } else {
+                        SecureField(
+                            String(localized: "security.current_passcode"),
+                            text: $passcodeInput
+                        )
+                        .keyboardType(.numberPad)
+                        .focused($removePasscodeFieldFocused)
+                        .onChange(of: passcodeInput) { newValue, _ in
+                            let filtered = String(
+                                newValue.filter { $0.isNumber }.prefix(6)
+                            )
+                            if filtered != newValue {
+                                passcodeInput = filtered
+                            }
+                        }
+                        .textContentType(.oneTimeCode)
+                        .padding(10)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                     if let tip = passcodeTip, !tip.isEmpty {
                         Text(tip)
@@ -576,9 +691,15 @@ struct AppSettingsView: View {
                             .multilineTextAlignment(.center)
                     }
                     HStack {
-                        Button("取消") { securityDialog = nil }
-                            .frame(maxWidth: .infinity)
-                        Button(dialog.primaryActionTitle) {
+                        Button(String(localized: "btn_cancel")) {
+                            securityDialog = nil
+                        }
+                        .frame(maxWidth: .infinity)
+                        Button(
+                            dialog == .setPasscode
+                                ? String(localized: "btn_save")
+                                : String(localized: "btn_remove")
+                        ) {
                             handleSecurityDialogPrimaryAction(dialog)
                         }
                         .disabled(
@@ -614,35 +735,43 @@ struct AppSettingsView: View {
             guard passcodeInput.count == 6,
                 passcodeInput == passcodeConfirmInput
             else {
-                passcodeTip = "两次输入不一致或非6位"
+                passcodeTip = String(
+                    localized: "security.passcode_mismatch_or_invalid"
+                )
                 return
             }
             do {
                 try PasscodeManager.shared.setPasscode(passcodeInput)
-                passcodeTip = "已设置密码"
+                passcodeTip = String(localized: "security.passcode_set_done")
                 securityDialog = nil
                 NotificationCenter.default.post(
                     name: .passcodeDidChange,
                     object: nil
                 )
             } catch {
-                passcodeTip = "保存失败：\(error.localizedDescription)"
+                passcodeTip = String(
+                    format: String(localized: "security.save_failed"),
+                    error.localizedDescription
+                )
             }
         case .removePasscode:
             if PasscodeManager.shared.verifyPasscode(passcodeInput) {
                 do {
                     try PasscodeManager.shared.removePasscode()
-                    passcodeTip = "已移除密码"
+                    passcodeTip = String(localized: "security.passcode_removed")
                     securityDialog = nil
                     NotificationCenter.default.post(
                         name: .passcodeDidChange,
                         object: nil
                     )
                 } catch {
-                    passcodeTip = "移除失败：\(error.localizedDescription)"
+                    passcodeTip = String(
+                        format: String(localized: "security.remove_failed"),
+                        error.localizedDescription
+                    )
                 }
             } else {
-                passcodeTip = "密码错误"
+                passcodeTip = String(localized: "security.passcode_error")
             }
         }
         passcodeInput = ""
@@ -652,12 +781,20 @@ struct AppSettingsView: View {
     private enum SecurityDialog: Equatable {
         case setPasscode
         case removePasscode
-        var title: String { self == .setPasscode ? "设置密码" : "移除密码" }
-        var primaryActionTitle: String { self == .setPasscode ? "保存" : "移除" }
+        var title: String {
+            self == .setPasscode
+                ? String(localized: "security.set_passcode_title")
+                : String(localized: "security.remove_passcode_title")
+        }
+        var primaryActionTitle: String {
+            self == .setPasscode
+                ? String(localized: "btn_save")
+                : String(localized: "btn_remove")
+        }
     }
 }
 
-#Preview("设置") {
+#Preview("AppSettingsView") {
     AppSettingsView()
         .environmentObject(AppAppearanceSettings())
         .environmentObject(DatabaseManager.shared)

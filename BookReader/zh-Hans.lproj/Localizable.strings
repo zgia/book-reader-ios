@@ -1,11 +1,16 @@
 book = "书籍";
-system_setting = "设置";
-add_to_favorites = "添加到收藏";
-favorite = "收藏夹";
+
+// 初始化
+"db.init_failed" = "初始化数据库失败";
+"db.initializing" = "正在初始化数据库…";
+
+// 收藏夹
+"favorite.title" = "收藏夹";
+"favorite.add_to_favorites" = "添加到收藏";
 "favorite.page_n" ="第 %d 页";
-add_to_favorites_placeholder = "为本次收藏写点备注（可选）";
-db_init_failed = "初始化数据库失败";
-db_initializing = "正在初始化数据库…";
+"favorite.add_to_favorites_placeholder" = "为本次收藏写点备注（可选）";
+
+// 按钮
 btn_ok = "确定";
 btn_cancel = "取消";
 btn_save = "保存";
@@ -17,14 +22,16 @@ btn_favorite = "收藏";
 btn_setting = "设置";
 btn_done = "完成";
 btn_rename = "重命名";
-renaming_title = "重命名";
-renaming_new_name = "请输入新的书名";
-confirm_deleting = "确认删除";
-confirm_deleting_message = "此操作将删除《%s》的所有内容与阅读进度，且不可恢复。是否继续？";
-input_6_digital_passcode = "请输入6位数字密码";
-passcode_error_and_try_again = "密码错误，请重试";
-auth_to_unlock = "需要验证解锁";
-book_info = "图书信息";
+btn_refresh = "刷新";
+
+// BookListView
+"book.renaming_title" = "重命名";
+"book.renaming_new_name" = "请输入新的书名";
+"book.confirm_deleting" = "确认删除";
+"book.confirm_deleting_message" = "此操作将删除《%s》的所有内容与阅读进度，且不可恢复。是否继续？";
+
+// ReaderView - 图书信息
+"book_info.title" = "图书信息";
 "bookinfo.basic_info" = "基本信息";
 "bookinfo.name" = "书名";
 "bookinfo.author" = "作者";
@@ -41,11 +48,16 @@ book_info = "图书信息";
 "bookinfo.reading" = "阅读";
 "bookinfo.reading_percent" = "进度";
 "bookinfo.reading_latest_chapter" = "最新章节";
-book_index_loading = "正在加载目录...";
-loading = "加载中...";
-chapter_not_fund = "无可阅读章节";
-is_first_chapter = "已是第一章。";
-is_last_chapter = "已是最后一章。";
+
+// ReaderView
+"reading.book_index_loading" = "正在加载目录...";
+"reading.loading" = "加载中...";
+"reading.chapter_not_fund" = "无可阅读章节";
+"reading.is_first_chapter" = "已是第一章。";
+"reading.is_last_chapter" = "已是最后一章。";
+
+// ReaderSettingsView
+"setting.title" = "设置";
 "setting.line_spacing"="行间距";
 "setting.current_line_spacing" = "当前间距: %d";
 "setting.paragraph_spacing"="段间距";
@@ -60,6 +72,8 @@ is_last_chapter = "已是最后一章。";
 "setting.color_warm_paper"="暖白纸感";
 "setting.color_green"="护眼绿";
 "setting.color_deep_grey"="深灰";
+"setting.font_size"="字体大小";
+"setting.current_font_size" = "当前大小: %d";
 "setting.preview"="预览";
 "setting.preview_text_1"="这是预览文本";
 "setting.preview_text_2"="您可以在这里看到字体大小、行间距和段间距的效果。";
@@ -67,5 +81,76 @@ is_last_chapter = "已是最后一章。";
 "setting.debug_log_enabled"="启用阅读调试日志";
 "setting.reading_setting"="阅读设置";
 
+// AppSettingsView - TextBook format help
+"format.help.title" = "小说格式说明";
+"format.help.button" = "小说格式说明...";
+"format.help.format" = "格式：仅支持文本格式：*.txt。";
+"format.help.book_name" = "书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。";
+"format.help.author" = "作者：“作者：xxx”独立一行。";
+"format.help.volume" = "卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。";
+"format.help.chapter" = "章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。";
+"format.help.default" = "默认：章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。";
 
+// AppSettingsView - Database maintenance
+"db.maintenance.title" = "数据库维护";
+"db.maintenance.tip" = "删除图书时，可能不会自动释放空间，需要手动释放。";
+"db.stats.title" = "数据库统计";
+"db.compact" = "释放空间（全量压缩）";
+"db.compacting" = "正在全量压缩…";
+"db.compact.confirm_title" = "确认执行全量压缩？";
+"db.compact.confirm_message" = "该操作将执行 VACUUM，可能耗时较长，请在空闲时进行。";
+"db.compact.started" = "已开始全量压缩（VACUUM），将在后台执行。";
+"db.compact.done" = "全量压缩完成。";
+"db.stats.book_count" = "书籍总数: %d";
+"db.stats.db_size" = "数据库: %@";
+"db.stats.wal_size" = "WAL: %@";
+"db.stats.shm_size" = "SHM: %@";
+"db.stats.page_size" = "页大小: %d B";
+"db.stats.freelist_count" = "空闲页: %d";
+"db.stats.estimated_reclaimable" = "估算可回收: %@";
 
+// AppSettingsView - Data/import
+"data.section" = "数据";
+"import.preview" = "预览解析（不入库）";
+"import.start" = "导入小说";
+"import.in_progress" = "正在导入…";
+"import.done" = "导入完成";
+"import.failed" = "导入失败：%@";
+"import.preview_failed" = "预览失败：%@";
+"import.file_select_failed" = "选择文件失败：%@";
+
+// AppSettingsView - Security
+"security.title" = "隐私与安全";
+"security.tip" = "已设置密码时，应用启动或回到前台将显示安全遮罩并需要输入密码解锁。移除密码则不再需要解锁。";
+"security.passcode_set" = "已设置6位数字密码";
+"security.remove_passcode" = "移除密码";
+"security.passcode_not_set" = "未设置密码";
+"security.set_passcode" = "设置密码";
+"security.set_passcode_title" = "设置密码";
+"security.remove_passcode_title" = "移除密码";
+"security.passcode_requirement" = "密码需为6位数字";
+"security.enter_new_passcode" = "输入新密码";
+"security.enter_again" = "再次输入";
+"security.enter_current_passcode_to_remove" = "请输入当前6位密码以确认移除";
+"security.current_passcode" = "当前密码";
+"security.passcode_mismatch_or_invalid" = "两次输入不一致或非6位";
+"security.passcode_set_done" = "已设置密码";
+"security.save_failed" = "保存失败：%@";
+"security.passcode_removed" = "已移除密码";
+"security.remove_failed" = "移除失败：%@";
+"security.passcode_error" = "密码错误";
+"security.input_6_digital_passcode" = "请输入6位数字密码";
+"security.passcode_error_and_try_again" = "密码错误，请重试";
+"security.auth_to_unlock" = "需要验证解锁";
+"security.keychain_error" = "Keychain错误: %d";
+
+// 外观
+"appearance.title" = "外观";
+"appearance.set_appearance" = "应用外观";
+"appearance.system" = "跟随系统";
+"appearance.light" = "浅色";
+"appearance.dark" = "深色";
+
+// TxtBookImporter
+"txt_book_importer.missing_title" = "未解析到书名，请检查TXT文件格式（例如首行包含：书名：xxx）";
+"txt_book_importer.article_title" = "正文";

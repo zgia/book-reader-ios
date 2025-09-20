@@ -40,7 +40,7 @@ struct NovelReaderApp: App {
                         ) {
                             Alert(
                                 title: Text(
-                                    String(localized: "db_init_failed")
+                                    String(localized: "db.init_failed")
                                 ),
                                 message: Text(db.initError ?? ""),
                                 dismissButton: .default(
@@ -128,7 +128,9 @@ struct NovelReaderApp: App {
         if PasscodeManager.shared.isPasscodeSet {
             isUnlocked = false
             isAuthenticating = false
-            authErrorMessage = String(localized: "input_6_digital_passcode")
+            authErrorMessage = String(
+                localized: "security.input_6_digital_passcode"
+            )
         } else {
             isUnlocked = true
             isAuthenticating = false
@@ -176,7 +178,9 @@ struct NovelReaderApp: App {
             ensureSecurityOverlayDismissed()
         } else {
             isUnlocked = false
-            authErrorMessage = String(localized: "passcode_error_and_try_again")
+            authErrorMessage = String(
+                localized: "security.passcode_error_and_try_again"
+            )
         }
     }
 }
@@ -202,7 +206,7 @@ private struct SecurityOverlayView: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 44, weight: .semibold))
                         .foregroundColor(.black.opacity(0.6))
-                    Text(String(localized: "auth_to_unlock"))
+                    Text(String(localized: "security.auth_to_unlock"))
                         .foregroundColor(.black)
                         .font(.headline)
                     if let message = message, !message.isEmpty {
@@ -214,7 +218,9 @@ private struct SecurityOverlayView: View {
                     }
                     VStack(spacing: 10) {
                         SecureField(
-                            String(localized: "input_6_digital_passcode"),
+                            String(
+                                localized: "security.input_6_digital_passcode"
+                            ),
                             text: $input
                         )
                         .keyboardType(.numberPad)

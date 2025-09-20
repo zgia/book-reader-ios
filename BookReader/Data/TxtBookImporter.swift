@@ -7,13 +7,21 @@ enum TxtImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingTitle:
-            return "未解析到书名，请检查TXT文件格式（例如首行包含：书名：xxx）"
+            return String(localized: "txt_book_importer.missing_title")
         }
     }
 }
 
 final class TxtBookImporter {
     private let dbManager: DatabaseManager
+
+    private static let volumeRegexPattern =
+        "^第([一二三四五六七八九十百零〇两\\d]+)卷[ \t]*(\\S.*)$"
+    private static let chapterRegexPattern =
+        "^第([一二三四五六七八九十百零〇两\\d]+)章[ \t]*(\\S.*)$"
+    private static let titleRegexPattern = "^书名[:：]\\s*《?(.+?)》?\\s*$"
+    private static let bracketTitleRegexPattern = "^[《〈]\\s*(.+?)\\s*[》〉]\\s*$"
+    private static let authorRegexPattern = "^作者[:：]\\s*(.+?)\\s*$"
 
     init(dbManager: DatabaseManager = .shared) {
         self.dbManager = dbManager
@@ -36,10 +44,10 @@ final class TxtBookImporter {
         }()
 
         let volumeRegex = try NSRegularExpression(
-            pattern: "^第([一二三四五六七八九十百零〇两\\d]+)卷[ \t]*(\\S.*)$"
+            pattern: TxtBookImporter.volumeRegexPattern
         )
         let chapterRegex = try NSRegularExpression(
-            pattern: "^第([一二三四五六七八九十百零〇两\\d]+)章[ \t]*(\\S.*)$"
+            pattern: TxtBookImporter.chapterRegexPattern
         )
 
         let bookTitle: String? = presetTitle
@@ -127,7 +135,9 @@ final class TxtBookImporter {
                     if currentVolumeId == nil, let bid = bookId {
                         currentVolumeId = try dbManager.insertVolume(
                             bookId: bid,
-                            title: "正文",
+                            title: String(
+                                localized: "txt_book_importer.article_title"
+                            ),
                             in: db
                         )
                     }
@@ -197,10 +207,10 @@ final class TxtBookImporter {
         }()
 
         let volumeRegex = try NSRegularExpression(
-            pattern: "^第([一二三四五六七八九十百零〇两\\d]+)卷[ \t]*(\\S.*)$"
+            pattern: TxtBookImporter.volumeRegexPattern
         )
         let chapterRegex = try NSRegularExpression(
-            pattern: "^第([一二三四五六七八九十百零〇两\\d]+)章[ \t]*(\\S.*)$"
+            pattern: TxtBookImporter.chapterRegexPattern
         )
 
         // 优先打印预检测到的书名/作者（若后续遇到相同内容则跳过）
@@ -230,13 +240,13 @@ final class TxtBookImporter {
         title: String?, author: String?
     ) {
         let titleRegex = try! NSRegularExpression(
-            pattern: "^书名[:：]\\s*《?(.+?)》?\\s*$"
+            pattern: titleRegexPattern
         )
         let bracketTitleRegex = try! NSRegularExpression(
-            pattern: "^[《〈]\\s*(.+?)\\s*[》〉]\\s*$"
+            pattern: bracketTitleRegexPattern
         )
         let authorRegex = try! NSRegularExpression(
-            pattern: "^作者[:：]\\s*(.+?)\\s*$"
+            pattern: authorRegexPattern
         )
         var title: String? = nil
         var author: String? = nil

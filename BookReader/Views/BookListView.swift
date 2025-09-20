@@ -25,7 +25,7 @@ struct BookListView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         ProgressView()
-                        Text(String(localized: "db_initializing"))
+                        Text(String(localized: "db.initializing"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -41,9 +41,14 @@ struct BookListView: View {
                                 ReaderView(chapter: startChapter)
                             } else {
                                 VStack(spacing: 12) {
-                                    Text(String(localized: "chapter_not_fund"))
-                                        .font(.headline)
-                                        .foregroundColor(.secondary)
+                                    Text(
+                                        String(
+                                            localized:
+                                                "reading.chapter_not_fund"
+                                        )
+                                    )
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
@@ -128,8 +133,10 @@ struct BookListView: View {
                     .overlay {
                         if let renaming = renamingBook {
                             TextFieldDialog(
-                                title: String(localized: "renaming_title"),
-                                placeholder: "renaming_new_name",
+                                title: String(localized: "book.renaming_title"),
+                                placeholder: String(
+                                    localized: "book.renaming_new_name"
+                                ),
                                 text: $newTitleText,
                                 onCancel: { renamingBook = nil },
                                 onSave: {
@@ -154,7 +161,7 @@ struct BookListView: View {
                         }
                     }
                     .confirmationDialog(
-                        String(localized: "confirm_deleting"),
+                        String(localized: "book.confirm_deleting"),
                         isPresented: $showDeleteConfirm,
                         presenting: deletingBook
                     ) { target in
@@ -176,7 +183,7 @@ struct BookListView: View {
                         Text(
                             String(
                                 format: String(
-                                    localized: "confirm_deleting_message"
+                                    localized: "book.confirm_deleting_message"
                                 ),
                                 target.book.title
                             )
