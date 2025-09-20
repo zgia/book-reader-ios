@@ -194,6 +194,13 @@ private struct SecurityOverlayView: View {
     @State private var input: String = ""
     @FocusState private var isFieldFocused: Bool
 
+    private var displayMessage: String {
+        if let message, !message.isEmpty {
+            return message
+        }
+        return String(localized: "security.input_6_digital_passcode")
+    }
+
     var body: some View {
         ZStack {
             if showBlur {
@@ -209,13 +216,11 @@ private struct SecurityOverlayView: View {
                     Text(String(localized: "security.auth_to_unlock"))
                         .foregroundColor(.black)
                         .font(.headline)
-                    if let message = message, !message.isEmpty {
-                        Text(message)
-                            .foregroundColor(.black.opacity(0.6))
-                            .font(.subheadline)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                    }
+                    Text(displayMessage)
+                        .foregroundColor(.black.opacity(0.6))
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
                     VStack(spacing: 10) {
                         SecureField(
                             String(
