@@ -88,9 +88,12 @@ struct BookListView: View {
                             } label: {
                                 Image(systemName: "trash")
                             }
-                            Button(String(localized: "btn_rename")) {
+                            Button() {
                                 renamingBook = bookRow
                                 newTitleText = bookRow.book.title
+                            }
+                            label: {
+                                Image(systemName: "pencil")
                             }
                             .tint(.blue)
                         }
@@ -189,7 +192,7 @@ struct BookListView: View {
                             )
                         )
                     }
-                    .onChange(of: showDeleteConfirm) { oldValue, newValue in
+                    .onChange(of: showDeleteConfirm) { _, newValue in
                         if !newValue { deletingBook = nil }
                     }
                 }

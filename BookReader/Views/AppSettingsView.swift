@@ -6,6 +6,8 @@ struct AppSettingsView: View {
     @EnvironmentObject private var dbManager: DatabaseManager
     // 由是否设置密码决定是否启用安全遮罩
 
+    @ObservedObject private var webServer = WebUploadServer.shared
+
     @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
     @State private var showingWriteImporter: Bool = false
@@ -55,6 +57,7 @@ struct AppSettingsView: View {
         }
     }
 
+    // MARK: - 导入图书
     @ViewBuilder
     private func textBookFormatHelpView() -> some View {
         NavigationStack {
@@ -108,56 +111,33 @@ struct AppSettingsView: View {
         }
     }
 
-    @ViewBuilder
-    private func databaseMaintainerView() -> some View {
-        Section(
-            header: Text(String(localized: "db.maintenance.title")),
-            footer: VStack(alignment: .leading, spacing: 6) {
-                Text(String(localized: "db.maintenance.tip"))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
-        ) {
-            HStack {
-                Text(String(localized: "db.stats.title"))
-                Spacer()
-                Button(String(localized: "btn_refresh")) { refreshStats() }
-                    .font(.footnote)
-            }
-            if !statsText.isEmpty {
-                Text(statsText)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
+    private func onPreviewButtonTapped() {
+        showingPreviewImporter = true
+    }
 
-            Button(action: { showingCompactConfirm = true }) {
-                HStack {
-                    if dbManager.isCompacting {
-                        ProgressView().scaleEffect(0.8)
-                    }
-                    Text(
-                        dbManager.isCompacting
-                            ? String(localized: "db.compacting")
-                            : String(localized: "db.compact")
+    private func onImportButtonTapped() {
+        showingWriteImporter = true
+    }
+
+    private func onWebImportButtonTapped(url: URL) {
+        importInProgress = true
+        importMessage = nil
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let importer = TxtBookImporter(dbManager: dbManager)
+                try importer.importTxt(at: url)
+                DispatchQueue.main.async {
+                    importInProgress = false
+                    importMessage = String(localized: "import.done")
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    importInProgress = false
+                    importMessage = String(
+                        format: String(localized: "import.failed"),
+                        error.localizedDescription
                     )
                 }
-            }
-            .disabled(dbManager.isCompacting)
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .alert(
-                String(localized: "db.compact.confirm_title"),
-                isPresented: $showingCompactConfirm
-            ) {
-                Button(String(localized: "btn_cancel"), role: .cancel) {}
-                Button(String(localized: "btn_ok"), role: .destructive) {
-                    onCompactButtonTapped()
-                }
-            } message: {
-                Text(String(localized: "db.compact.confirm_message"))
-            }
-            if let cmsg = compressionMessage {
-                Text(cmsg).font(.footnote).foregroundColor(.secondary)
             }
         }
     }
@@ -165,14 +145,35 @@ struct AppSettingsView: View {
     @ViewBuilder
     private func bookImporterView() -> some View {
         Section(
-            header: Text(String(localized: "data.section")),
-            footer: Button(action: { showingFormatHelp = true }) {
-                Text(String(localized: "format.help.button"))
+            header: Text(String(localized: "import.book.title")),
+            footer: VStack(alignment: .leading, spacing: 6) {
+                if let reason = webServer.unavailableReason {
+                    Text(reason).font(.footnote).foregroundColor(.secondary)
+                } else if let url = webServer.serverURL {
+                    Text(
+                        String(
+                            format: String(localized: "import.web_url"),
+                            url.absoluteString
+                        )
+                    )
                     .font(.footnote)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(.secondary)
+                } else {
+                    Text(String(localized: "import.web_tip"))
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
             }
-            .buttonStyle(.plain)
         ) {
+            HStack {
+                Image(systemName: "questionmark.circle").foregroundColor(
+                    .secondary
+                )
+                Button(action: { showingFormatHelp = true }) {
+                    Text(String(localized: "format.help.button"))
+                }
+            }
+
             if showPreviewButton {
                 Button(action: onPreviewButtonTapped) {
                     Text(String(localized: "import.preview"))
@@ -184,31 +185,183 @@ struct AppSettingsView: View {
                 ) { handlePreviewFileImport($0) }
             }
 
-            Button(action: onImportButtonTapped) {
-                HStack {
-                    if importInProgress {
-                        ProgressView().scaleEffect(0.8)
+            HStack {
+                Image(systemName: "square.and.arrow.down").foregroundColor(
+                    .secondary
+                )
+                Button(action: onImportButtonTapped) {
+                    HStack {
+                        if importInProgress {
+                            ProgressView().scaleEffect(0.8)
+                        }
+                        Text(
+                            importInProgress
+                                ? String(localized: "import.in_progress")
+                                : String(localized: "import.start")
+                        )
                     }
-                    Text(
-                        importInProgress
-                            ? String(localized: "import.in_progress")
-                            : String(localized: "import.start")
-                    )
                 }
+                .disabled(importInProgress)
+                .fileImporter(
+                    isPresented: $showingWriteImporter,
+                    allowedContentTypes: [.plainText],
+                    allowsMultipleSelection: false
+                ) { handleWriteFileImport($0) }
             }
-            .disabled(importInProgress)
-            .fileImporter(
-                isPresented: $showingWriteImporter,
-                allowedContentTypes: [.plainText],
-                allowsMultipleSelection: false
-            ) { handleWriteFileImport($0) }
+
+            HStack {
+                Image(
+                    systemName: webServer.isRunning
+                        ? "wifi" : "wifi.slash"
+                ).foregroundColor(
+                    .secondary
+                )
+                Button(
+                    webServer.isRunning
+                        ? String(localized: "btn_stop_web_server")
+                        : String(localized: "btn_start_web_server")
+                ) {
+                    if webServer.isRunning {
+                        Task { await webServer.stop() }
+                    } else {
+                        Task { await webServer.start() }
+                    }
+                }
+                //.buttonStyle(.borderedProminent)
+                .tint(webServer.isRunning ? .red : .accentColor)
+            }
+            HStack {
+                Text(String(localized: "import.uploaded_books"))
+                Spacer()
+                Button(String(localized: "btn_refresh")) {
+                    webServer.refreshUploadedFiles()
+                }
+                .font(.footnote)
+            }
+
+            if !webServer.uploadedFiles.isEmpty {
+                ForEach(webServer.uploadedFiles) { file in
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(file.fileName)
+                            Text(WordCountFormatter.formatBytes(file.fileSize))
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if importInProgress {
+                            ProgressView().scaleEffect(0.8)
+                        }
+                        Menu {
+                            Button(String(localized: "btn_import")) {
+                                onWebImportButtonTapped(url: file.id)
+                            }
+                            Button(
+                                String(localized: "btn_delete"),
+                                role: .destructive
+                            ) {
+                                do { try webServer.delete(file: file) } catch {
+                                    importMessage =
+                                        String(
+                                            format: String(
+                                                localized:
+                                                    "import.delete_failed"
+                                            ),
+                                            error.localizedDescription
+                                        )
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
+            } else {
+                Text(String(localized: "import.no_uploaded_files"))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
 
             if let msg = importMessage {
-                Text(msg).font(.footnote).foregroundColor(.secondary)
+                Text(msg)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .task {
+                        try? await Task.sleep(for: .seconds(3))
+                        withAnimation {
+                            importMessage = nil
+                        }
+                    }
             }
         }
     }
 
+    private func handlePreviewFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let importer = TxtBookImporter(dbManager: dbManager)
+                    try importer.importTxtPreview(at: url)
+                } catch {
+                    DispatchQueue.main.async {
+                        importMessage = String(
+                            format: String(
+                                localized: "import.preview_failed"
+                            ),
+                            error.localizedDescription
+                        )
+                    }
+                }
+            }
+        case .failure(let error):
+            importMessage = String(
+                format: String(
+                    localized: "import.file_select_failed"
+                ),
+                error.localizedDescription
+            )
+        }
+    }
+
+    private func handleWriteFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            importInProgress = true
+            importMessage = nil
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let importer = TxtBookImporter(dbManager: dbManager)
+                    try importer.importTxt(at: url)
+                    DispatchQueue.main.async {
+                        importInProgress = false
+                        importMessage = String(localized: "import.done")
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        importInProgress = false
+                        importMessage = String(
+                            format: String(
+                                localized: "import.failed"
+                            ),
+                            error.localizedDescription
+                        )
+                    }
+                }
+            }
+        case .failure(let error):
+            importMessage = String(
+                format: String(
+                    localized: "import.file_select_failed"
+                ),
+                error.localizedDescription
+            )
+        }
+    }
+
+    // MARK: - 隐私与安全
     @ViewBuilder
     private func securityView() -> some View {
         Section(
@@ -252,7 +405,6 @@ struct AppSettingsView: View {
 
     }
 
-    // MARK: - Sheets
     private func setPasscodeSheetView() -> some View {
         NavigationStack {
             Form {
@@ -445,165 +597,6 @@ struct AppSettingsView: View {
     }
 
     @ViewBuilder
-    private func appAppearanceView() -> some View {
-        Section(header: Text(String(localized: "appearance.title"))) {
-            Picker(
-                String(localized: "appearance.set_appearance"),
-                selection: Binding(
-                    get: { appAppearance.option },
-                    set: { appAppearance.setOption($0) }
-                )
-            ) {
-                ForEach(AppAppearanceOption.allCases) { option in
-                    Text(option.title).tag(option)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    private func onPreviewButtonTapped() {
-        showingPreviewImporter = true
-    }
-
-    private func onImportButtonTapped() {
-        showingWriteImporter = true
-    }
-
-    private func onCompactButtonTapped() {
-        dbManager.compactDatabase(hard: true) {
-            compressionMessage = String(localized: "db.compact.done")
-            refreshStats()
-        }
-        compressionMessage = String(localized: "db.compact.started")
-    }
-
-    private func showStats(result: DatabaseManager.DatabaseStats?) {
-        if let s = result {
-            func fmt(_ bytes: Int64) -> String {
-                let kb = Double(bytes) / 1024
-                let mb = kb / 1024
-                if mb >= 1 { return String(format: "%.2f MB", mb) }
-                if kb >= 1 { return String(format: "%.2f KB", kb) }
-                return "\(bytes) B"
-            }
-            let lines = [
-                String(
-                    format: String(localized: "db.stats.book_count"),
-                    s.bookCount
-                ),
-                String(
-                    format: String(localized: "db.stats.db_size"),
-                    fmt(s.dbSize)
-                ),
-                String(
-                    format: String(localized: "db.stats.wal_size"),
-                    fmt(s.walSize)
-                ),
-                String(
-                    format: String(localized: "db.stats.shm_size"),
-                    fmt(s.shmSize)
-                ),
-                String(
-                    format: String(localized: "db.stats.page_size"),
-                    s.pageSize
-                ),
-                String(
-                    format: String(localized: "db.stats.freelist_count"),
-                    s.freelistCount
-                ),
-                String(
-                    format: String(localized: "db.stats.estimated_reclaimable"),
-                    fmt(s.estimatedReclaimableBytes)
-                ),
-            ]
-            statsText = lines.joined(separator: "\n")
-        } else {
-            statsText = ""
-        }
-    }
-
-    private func refreshStats() {
-        let result = dbManager.getDatabaseStats()
-        showStats(result: result)
-    }
-
-    private func refreshStatsAsync() {
-        DispatchQueue.global(qos: .utility).async {
-            let result = dbManager.getDatabaseStats()
-            DispatchQueue.main.async {
-                showStats(result: result)
-            }
-        }
-    }
-
-    private func handlePreviewFileImport(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let importer = TxtBookImporter(dbManager: dbManager)
-                    try importer.importTxtPreview(at: url)
-                } catch {
-                    DispatchQueue.main.async {
-                        importMessage = String(
-                            format: String(
-                                localized: "import.preview_failed"
-                            ),
-                            error.localizedDescription
-                        )
-                    }
-                }
-            }
-        case .failure(let error):
-            importMessage = String(
-                format: String(
-                    localized: "import.file_select_failed"
-                ),
-                error.localizedDescription
-            )
-        }
-    }
-
-    private func handleWriteFileImport(_ result: Result<[URL], Error>) {
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            importInProgress = true
-            importMessage = nil
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let importer = TxtBookImporter(dbManager: dbManager)
-                    try importer.importTxt(at: url)
-                    DispatchQueue.main.async {
-                        importInProgress = false
-                        importMessage = String(localized: "import.done")
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        importInProgress = false
-                        importMessage = String(
-                            format: String(
-                                localized: "import.failed"
-                            ),
-                            error.localizedDescription
-                        )
-                    }
-                }
-            }
-        case .failure(let error):
-            importMessage = String(
-                format: String(
-                    localized: "import.file_select_failed"
-                ),
-                error.localizedDescription
-            )
-        }
-    }
-
-    // MARK: - Dialog Overlay
-    @ViewBuilder
     private func securityDialogOverlay() -> some View {
         if let dialog = securityDialog {
             ZStack {
@@ -792,6 +785,148 @@ struct AppSettingsView: View {
                 : String(localized: "btn_remove")
         }
     }
+
+    // MARK: - 阅读外观
+    @ViewBuilder
+    private func appAppearanceView() -> some View {
+        Section(header: Text(String(localized: "appearance.title"))) {
+            Picker(
+                String(localized: "appearance.set_appearance"),
+                selection: Binding(
+                    get: { appAppearance.option },
+                    set: { appAppearance.setOption($0) }
+                )
+            ) {
+                ForEach(AppAppearanceOption.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - 数据库维护
+    @ViewBuilder
+    private func databaseMaintainerView() -> some View {
+        Section(
+            header: Text(String(localized: "db.maintenance.title")),
+            footer: VStack(alignment: .leading, spacing: 6) {
+                Text(String(localized: "db.maintenance.tip"))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+        ) {
+            HStack {
+                Text(String(localized: "db.stats.title"))
+                Spacer()
+                Button(String(localized: "btn_refresh")) { refreshStats() }
+                    .font(.footnote)
+            }
+            if !statsText.isEmpty {
+                Text(statsText)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+
+            Button(action: { showingCompactConfirm = true }) {
+                HStack {
+                    if dbManager.isCompacting {
+                        ProgressView().scaleEffect(0.8)
+                    }
+                    Text(
+                        dbManager.isCompacting
+                            ? String(localized: "db.compacting")
+                            : String(localized: "db.compact")
+                    )
+                }
+            }
+            .disabled(dbManager.isCompacting)
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .alert(
+                String(localized: "db.compact.confirm_title"),
+                isPresented: $showingCompactConfirm
+            ) {
+                Button(String(localized: "btn_cancel"), role: .cancel) {}
+                Button(String(localized: "btn_ok"), role: .destructive) {
+                    onCompactButtonTapped()
+                }
+            } message: {
+                Text(String(localized: "db.compact.confirm_message"))
+            }
+            if let cmsg = compressionMessage {
+                Text(cmsg).font(.footnote).foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func onCompactButtonTapped() {
+        dbManager.compactDatabase(hard: true) {
+            compressionMessage = String(localized: "db.compact.done")
+            refreshStats()
+        }
+        compressionMessage = String(localized: "db.compact.started")
+    }
+
+    private func showStats(result: DatabaseManager.DatabaseStats?) {
+        if let s = result {
+            func fmt(_ bytes: Int64) -> String {
+                let kb = Double(bytes) / 1024
+                let mb = kb / 1024
+                if mb >= 1 { return String(format: "%.2f MB", mb) }
+                if kb >= 1 { return String(format: "%.2f KB", kb) }
+                return "\(bytes) B"
+            }
+            let lines = [
+                String(
+                    format: String(localized: "db.stats.book_count"),
+                    s.bookCount
+                ),
+                String(
+                    format: String(localized: "db.stats.db_size"),
+                    fmt(s.dbSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.wal_size"),
+                    fmt(s.walSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.shm_size"),
+                    fmt(s.shmSize)
+                ),
+                String(
+                    format: String(localized: "db.stats.page_size"),
+                    s.pageSize
+                ),
+                String(
+                    format: String(localized: "db.stats.freelist_count"),
+                    s.freelistCount
+                ),
+                String(
+                    format: String(localized: "db.stats.estimated_reclaimable"),
+                    fmt(s.estimatedReclaimableBytes)
+                ),
+            ]
+            statsText = lines.joined(separator: "\n")
+        } else {
+            statsText = ""
+        }
+    }
+
+    private func refreshStats() {
+        let result = dbManager.getDatabaseStats()
+        showStats(result: result)
+    }
+
+    private func refreshStatsAsync() {
+        DispatchQueue.global(qos: .utility).async {
+            let result = dbManager.getDatabaseStats()
+            DispatchQueue.main.async {
+                showStats(result: result)
+            }
+        }
+    }
+
 }
 
 #Preview("AppSettingsView") {

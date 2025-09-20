@@ -1,1 +1,2 @@
 CFBundleDisplayName = "阅读";
+NSLocalNetworkUsageDescription = "允许在局域网内与电脑浏览器传输小说文本文件以导入书籍。";

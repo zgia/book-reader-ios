@@ -1,1 +1,2 @@
 CFBundleDisplayName = "BookReader";
+NSLocalNetworkUsageDescription = "Allow local network transfer of text files from desktop browser to import books.";

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F98A0CF32E7EAC0D00B0DF32 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = F98A0CF22E7EAC0D00B0DF32 /* FlyingFox */; };
+		F98A0CF52E7EAC0D00B0DF32 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = F98A0CF42E7EAC0D00B0DF32 /* FlyingSocks */; };
 		F9952EDF2E6156E900E4F0ED /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = F9952EDE2E6156E900E4F0ED /* GRDB */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +43,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				F9952EDF2E6156E900E4F0ED /* GRDB in Frameworks */,
+				F98A0CF52E7EAC0D00B0DF32 /* FlyingSocks in Frameworks */,
+				F98A0CF32E7EAC0D00B0DF32 /* FlyingFox in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +96,8 @@
 			name = BookReader;
 			packageProductDependencies = (
 				F9952EDE2E6156E900E4F0ED /* GRDB */,
+				F98A0CF22E7EAC0D00B0DF32 /* FlyingFox */,
+				F98A0CF42E7EAC0D00B0DF32 /* FlyingSocks */,
 			);
 			productName = BookReader;
 			productReference = F9EF87642E5AD30100BD3264 /* BookReader.app */;
@@ -124,6 +130,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */,
+				F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F9EF87652E5AD30100BD3264 /* Products */;
@@ -371,7 +378,28 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swhitty/FlyingFox";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.25.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		F98A0CF22E7EAC0D00B0DF32 /* FlyingFox */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingFox;
+		};
+		F98A0CF42E7EAC0D00B0DF32 /* FlyingSocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingSocks;
+		};
 		F9952EDE2E6156E900E4F0ED /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */;

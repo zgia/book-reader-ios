@@ -22,14 +22,16 @@ btn_index = "目录";
 btn_favorite = "收藏";
 btn_setting = "设置";
 btn_done = "完成";
-btn_rename = "重命名";
 btn_refresh = "刷新";
+btn_import = "导入";
+btn_start_web_server = "开启网页服务";
+btn_stop_web_server = "停止网页服务";
 
 // BookListView
 "book.renaming_title" = "重命名";
 "book.renaming_new_name" = "请输入新的书名";
 "book.confirm_deleting" = "确认删除";
-"book.confirm_deleting_message" = "此操作将删除《%s》的所有内容与阅读进度，且不可恢复。是否继续？";
+"book.confirm_deleting_message" = "此操作将删除《%@》的所有内容与阅读进度，且不可恢复。是否继续？";
 
 // ReaderView - 图书信息
 "book_info.title" = "图书信息";
@@ -83,8 +85,8 @@ btn_refresh = "刷新";
 "setting.reading_setting" = "阅读设置";
 
 // AppSettingsView - TextBook format help
-"format.help.title" = "小说格式说明";
-"format.help.button" = "小说格式说明...";
+"format.help.title" = "图书格式说明";
+"format.help.button" = "图书格式说明...";
 "format.help.format" = "格式：仅支持文本格式：*.txt。";
 "format.help.book_name" = "书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。";
 "format.help.author" = "作者：“作者：xxx”独立一行。";
@@ -111,14 +113,19 @@ btn_refresh = "刷新";
 "db.stats.estimated_reclaimable" = "估算可回收: %@";
 
 // AppSettingsView - Data/import
-"data.section" = "数据";
+"import.book.title" = "网页上传/从文件导入图书";
 "import.preview" = "预览解析（不入库）";
-"import.start" = "导入小说";
+"import.start" = "从 文件 App 导入图书";
 "import.in_progress" = "正在导入…";
 "import.done" = "导入完成";
 "import.failed" = "导入失败：%@";
 "import.preview_failed" = "预览失败：%@";
 "import.file_select_failed" = "选择文件失败：%@";
+"import.web_url" = "在同一局域网浏览器访问：%@";
+"import.web_tip" = "在同一局域网内用电脑浏览器访问上传页面，支持 .txt 文件";
+"import.uploaded_books" = "上传的图书";
+"import.no_uploaded_files" = "暂无上传文件";
+"import.delete_failed" = "删除失败：%@";
 
 // AppSettingsView - Security
 "security.title" = "隐私与安全";

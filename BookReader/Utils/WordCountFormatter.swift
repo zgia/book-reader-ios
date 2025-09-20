@@ -1,6 +1,15 @@
 import Foundation
 
 struct WordCountFormatter {
+    static func formatBytes(_ bytes: Int64) -> String {
+        let kb = Double(bytes) / 1024
+        let mb = kb / 1024
+        let gb = mb / 1024
+        if gb >= 1 { return String(format: "%.2f GB", gb) }
+        if mb >= 1 { return String(format: "%.2f MB", mb) }
+        if kb >= 1 { return String(format: "%.2f KB", kb) }
+        return "\(bytes) B"
+    }
     static func string(from count: Int, locale: Locale = .current) -> String {
         if #available(iOS 16, *) {
             let formatted = count.formatted(

@@ -1,0 +1,15 @@
+{
+  "originHash" : "69a83949c77aaf95a5dda5027a4063a19ee36549b8c7775f9b6e18522b6ebd17",
+  "pins" : [
+    {
+      "identity" : "flyingfox",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swhitty/FlyingFox",
+      "state" : {
+        "revision" : "76b2d2d0eb54f0b53e8b661cc8007c487d94f8da",
+        "version" : "0.25.0"
+      }
+    }
+  ],
+  "version" : 3
+}

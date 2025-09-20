@@ -22,14 +22,16 @@ btn_index = "Index";
 btn_favorite = "Favorite";
 btn_setting = "Settings";
 btn_done = "Done";
-btn_rename = "Rename";
 btn_refresh = "Refresh";
+btn_import = "Import";
+btn_start_web_server = "Start Web Server";
+btn_stop_web_server = "Stop Web Server";
 
 // BookListView
 "book.renaming_title" = "Rename";
 "book.renaming_new_name" = "Please enter a new book name";
 "book.confirm_deleting" = "Confirm Deletion";
-"book.confirm_deleting_message" = "This operation will delete all content and reading progress of \"%s\" and cannot be undone. Continue?";
+"book.confirm_deleting_message" = "This operation will delete all content and reading progress of \"%@\" and cannot be undone. Continue?";
 
 // ReaderView - Book Info
 "book_info.title" = "Book Info";
@@ -83,8 +85,8 @@ btn_refresh = "Refresh";
 "setting.reading_setting" = "Reading Settings";
 
 // AppSettingsView - TextBook format help
-"format.help.title" = "Novel Format Instructions";
-"format.help.button" = "Novel Format Instructions...";
+"format.help.title" = "Book Format Instructions";
+"format.help.button" = "Book Format Instructions...";
 "format.help.format" = "Format: Only text files (*.txt) are supported.";
 "format.help.book_name" = "Title: Supports \"Title: xxx\" or just \"《xxx》\"; if not recognized, the file name (without extension) will be used.";
 "format.help.author" = "Author: \"Author: xxx\" on a separate line.";
@@ -110,15 +112,20 @@ btn_refresh = "Refresh";
 "db.stats.freelist_count" = "Free pages: %d";
 "db.stats.estimated_reclaimable" = "Estimated reclaimable: %@";
 
-// AppSettingsView - Data/import
-"data.section" = "Data";
+// AppSettingsView - import
+"import.book.title" = "Import from WIFI & File App";
 "import.preview" = "Preview Parsing (Not Imported)";
-"import.start" = "Import Novel";
+"import.start" = "Import Book from File App";
 "import.in_progress" = "Importing…";
 "import.done" = "Import Completed";
 "import.failed" = "Import failed: %@";
 "import.preview_failed" = "Preview failed: %@";
 "import.file_select_failed" = "File selection failed: %@";
+"import.web_url" = "Access in the same LAN browser: %@";
+"import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting .txt files";
+"import.uploaded_books" = "Uploaded Books";
+"import.no_uploaded_files" = "No uploaded files";
+"import.delete_failed" = "Delete failed: %@";
 
 // AppSettingsView - Security
 "security.title" = "Privacy & Security";
