@@ -9,6 +9,7 @@ book = "Book";
 "favorite.add_to_favorites" = "Add to Favorites";
 "favorite.page_n" = "Page %d";
 "favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
+"favorite.empty" = "No favorites yet";
 
 // Buttons
 btn_ok = "OK";

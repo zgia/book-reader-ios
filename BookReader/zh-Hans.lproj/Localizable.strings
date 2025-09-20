@@ -9,6 +9,7 @@ book = "书籍";
 "favorite.add_to_favorites" = "添加到收藏";
 "favorite.page_n" ="第 %d 页";
 "favorite.add_to_favorites_placeholder" = "为本次收藏写点备注（可选）";
+"favorite.empty" = "还没有收藏的内容";
 
 // 按钮
 btn_ok = "确定";

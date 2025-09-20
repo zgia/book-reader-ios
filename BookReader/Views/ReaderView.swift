@@ -45,7 +45,6 @@ struct ReaderView: View {
 
     // 收藏
     @State private var showFavorites: Bool = false
-    @State private var favorites: [FavoriteRow] = []
     @State private var showAddFavoriteDialog: Bool = false
     @State private var draftExcerpt: String = ""
     @State private var draftFavoritePageIndex: Int? = nil
@@ -138,57 +137,9 @@ struct ReaderView: View {
                 ReaderSettingsView()
             }
             .sheet(isPresented: $showFavorites) {
-                NavigationStack {
-                    List {
-                        ForEach(favorites) { row in
-                            Button {
-                                jump(to: row.favorite)
-                                showFavorites = false
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(row.chapterTitle)
-                                        .font(.headline)
-                                    if let ex = row.favorite.excerpt,
-                                        !ex.isEmpty
-                                    {
-                                        Text(ex)
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(2)
-                                    }
-                                    if let idx = row.favorite.pageindex {
-                                        Text(
-                                            String(
-                                                format: String(
-                                                    localized: "favorite.page_n"
-                                                ),
-                                                idx + 1
-                                            )
-                                        )
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .swipeActions(
-                                edge: .trailing,
-                                allowsFullSwipe: true
-                            ) {
-                                Button(role: .destructive) {
-                                    deleteFavorite(id: row.favorite.id)
-                                } label: {
-                                    Label(
-                                        String(localized: "btn_delete"),
-                                        systemImage: "trash"
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    .navigationTitle(String(localized: "favorite.title"))
-                    .navigationBarTitleDisplayMode(.inline)
-                    .onAppear { loadFavorites() }
+                FavoritesView(bookId: currentChapter.bookid) { fav in
+                    jump(to: fav)
+                    showFavorites = false
                 }
             }
             .sheet(isPresented: $showBookInfo) {
@@ -1139,12 +1090,6 @@ struct ReaderView: View {
     }
 
     // MARK: - 收藏相关
-    private func loadFavorites() {
-        favorites = DatabaseManager.shared.fetchFavorites(
-            bookId: currentChapter.bookid
-        )
-    }
-
     private func prepareAddFavorite(from pageIndex: Int) {
         draftFavoritePageIndex = pageIndex
         let raw = pages[pageIndex]
@@ -1178,13 +1123,9 @@ struct ReaderView: View {
             percent: percent,
             excerpt: excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
         )
-        loadFavorites()
     }
 
-    private func deleteFavorite(id: Int) {
-        DatabaseManager.shared.deleteFavorite(id: id)
-        loadFavorites()
-    }
+    // 删除收藏由 FavoritesView 负责
 
     private func jump(to fav: Favorite) {
         dlog(
