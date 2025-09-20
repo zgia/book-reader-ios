@@ -24,6 +24,7 @@ final class WebUploadServer: ObservableObject {
     private let uploadsDirectoryURL: URL
     private var server: HTTPServer?
     private var serverTask: Task<Void, Never>?
+    private var bonjourService: NetService?
 
     private init() {
         let docs = FileManager.default.urls(
@@ -141,9 +142,11 @@ final class WebUploadServer: ObservableObject {
             serverURL = URL(string: "http://<设备IP>:\(WebUploadServer.webPort)/")
         }
         refreshUploadedFiles()
+        startBonjour()
     }
 
     func stop() async {
+        stopBonjour()
         await server?.stop()
         server = nil
         serverTask?.cancel()
@@ -190,6 +193,24 @@ final class WebUploadServer: ObservableObject {
     func uploadsDirectory() -> URL { uploadsDirectoryURL }
 
     // MARK: - Helpers
+    private func startBonjour() {
+        stopBonjour()
+        let service = NetService(
+            domain: "local.",
+            type: "_http._tcp.",
+            name: "BookReader Upload",
+            port: Int32(Self.webPort)
+        )
+        service.includesPeerToPeer = true
+        service.publish()
+        bonjourService = service
+    }
+
+    private func stopBonjour() {
+        bonjourService?.stop()
+        bonjourService = nil
+    }
+
     private func uniqueDestinationURL(fileName: String) -> URL {
         var candidate = uploadsDirectoryURL.appendingPathComponent(fileName)
         let name = (fileName as NSString).deletingPathExtension

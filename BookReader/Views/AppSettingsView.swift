@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 struct AppSettingsView: View {
     @EnvironmentObject private var appAppearance: AppAppearanceSettings
     @EnvironmentObject private var dbManager: DatabaseManager
-    // 由是否设置密码决定是否启用安全遮罩
 
     @ObservedObject private var webServer = WebUploadServer.shared
 
