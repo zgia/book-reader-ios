@@ -11,6 +11,7 @@ struct WordCountFormatter {
         return "\(bytes) B"
     }
     static func string(from count: Int, locale: Locale = .current) -> String {
+        print("总字数：\(count)")
         if #available(iOS 16, *) {
             let formatted = count.formatted(
                 .number
@@ -19,7 +20,7 @@ struct WordCountFormatter {
                     .precision(.fractionLength(0...1))  // 保留 0~1 位小数
             )
             return String(
-                format: String(localized: "wordcount.format"),
+                format: String(localized: "bookinfo.wordcount_format"),
                 formatted
             )
         } else {

@@ -44,7 +44,7 @@ struct AppSettingsView: View {
             .navigationTitle(String(localized: "setting.title"))
             .onAppear { refreshStatsAsync() }
             .sheet(isPresented: $showingFormatHelp) {
-                textBookFormatHelpView()
+                TextBookFormatView()
             }
             .overlay(securityDialogOverlay())
             .sheet(item: $securitySheet) { sheet in
@@ -69,59 +69,6 @@ struct AppSettingsView: View {
     }
 
     // MARK: - 导入图书
-    @ViewBuilder
-    private func textBookFormatHelpView() -> some View {
-        NavigationStack {
-            List {
-                Section {
-                    Label {
-                        Text(String(localized: "format.help.format"))
-                    } icon: {
-                        Image(systemName: "text.page")
-                    }
-                    Label {
-                        Text(String(localized: "format.help.book_name"))
-                    } icon: {
-                        Image(systemName: "character.book.closed")
-                    }
-                    Label {
-                        Text(String(localized: "format.help.author"))
-                    } icon: {
-                        Image(systemName: "person")
-                    }
-                    Label {
-                        Text(String(localized: "format.help.volume"))
-                    } icon: {
-                        Image(systemName: "text.book.closed")
-                    }
-                    Label {
-                        Text(String(localized: "format.help.chapter"))
-                    } icon: {
-                        Image(systemName: "book.pages")
-                    }
-                    Label {
-                        Text(String(localized: "format.help.default"))
-                    } icon: {
-                        Image(systemName: "book.and.wrench")
-                    }
-
-                }
-            }
-            .navigationTitle(String(localized: "format.help.title"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "btn_ok")) {
-                        showingFormatHelp = false
-                    }
-                }
-            }
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-            .presentationBackgroundInteraction(.enabled)
-            .interactiveDismissDisabled(false)
-        }
-    }
-
     private func onPreviewButtonTapped() {
         showingPreviewImporter = true
     }

@@ -96,6 +96,15 @@ struct BookInfoSheetView: View {
                         label: String(localized: "bookinfo.last_updated_at"),
                         value: formatDate(book.updatedat)
                     )
+                    if !book.latest.isEmpty {
+                        infoRow(
+                            systemName: "list.bullet",
+                            label: String(
+                                localized: "bookinfo.latest_chapter"
+                            ),
+                            value: book.latest
+                        )
+                    }
                 }
 
                 Section(String(localized: "bookinfo.reading")) {
@@ -104,15 +113,6 @@ struct BookInfoSheetView: View {
                         label: String(localized: "bookinfo.reading_percent"),
                         value: progressText
                     )
-                    if !book.latest.isEmpty {
-                        infoRow(
-                            systemName: "list.bullet",
-                            label: String(
-                                localized: "bookinfo.reading_latest_chapter"
-                            ),
-                            value: book.latest
-                        )
-                    }
                 }
             }
             .navigationTitle(String(localized: "book_info.title"))

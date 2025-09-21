@@ -50,9 +50,9 @@ btn_stop_web_server = "停止网页服务";
 "bookinfo.status_ongoing" = "连载";
 "bookinfo.finished" = "完本";
 "bookinfo.last_updated_at" = "最近更新";
+"bookinfo.latest_chapter" = "最新章节";
 "bookinfo.reading" = "阅读";
 "bookinfo.reading_percent" = "进度";
-"bookinfo.reading_latest_chapter" = "最新章节";
 
 // ReaderView
 "reading.book_index_loading" = "正在加载目录...";

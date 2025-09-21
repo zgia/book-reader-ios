@@ -50,9 +50,9 @@ btn_stop_web_server = "Stop Web Server";
 "bookinfo.status_ongoing" = "Ongoing";
 "bookinfo.finished" = "Completed";
 "bookinfo.last_updated_at" = "Last Updated";
+"bookinfo.latest_chapter" = "Latest Chapter";
 "bookinfo.reading" = "Reading";
 "bookinfo.reading_percent" = "Progress";
-"bookinfo.reading_latest_chapter" = "Latest Chapter";
 
 // ReaderView
 "reading.book_index_loading" = "Loading table of contents...";
