@@ -82,7 +82,14 @@ final class WebUploadServer: ObservableObject {
                 return HTTPResponse(
                     statusCode: .internalServerError,
                     headers: [.contentType: "text/plain; charset=utf-8"],
-                    body: Data("保存失败: \(error.localizedDescription)".utf8)
+                    body: Data(
+                        String(
+                            format: String(
+                                localized: "import.web.srv_save_failed"
+                            ),
+                            error.localizedDescription
+                        ).utf8
+                    )
                 )
             }
         }
@@ -126,8 +133,12 @@ final class WebUploadServer: ObservableObject {
                     // no-op
                 } else {
                     DispatchQueue.main.async {
-                        self?.unavailableReason =
-                            "服务运行失败：\(error.localizedDescription)"
+                        self?.unavailableReason = String(
+                            format: String(
+                                localized: "import.web.srv_run_failed"
+                            ),
+                            error.localizedDescription
+                        )
                         self?.isRunning = false
                         self?.serverURL = nil
                     }
@@ -139,7 +150,12 @@ final class WebUploadServer: ObservableObject {
         if let ip = Self.currentWiFiIPv4Address() {
             serverURL = URL(string: "http://\(ip):\(WebUploadServer.webPort)/")
         } else {
-            serverURL = URL(string: "http://<设备IP>:\(WebUploadServer.webPort)/")
+            serverURL = URL(
+                string: String(
+                    format: String(localized: "import.web.srv_url"),
+                    WebUploadServer.webPort
+                )
+            )
         }
         refreshUploadedFiles()
         startBonjour()
@@ -225,14 +241,14 @@ final class WebUploadServer: ObservableObject {
     }
 
     private func renderUploadHTML() -> String {
-        let title = "BookReader 网页上传"
-        let hint = "请选择 .txt 文件上传。已上传文件可在 App 设置 - 网页上传 中导入或删除。"
-        let btnText = "上传"
-        let msgUploading = "上传中..."
-        let msgSuccess = "上传成功"
-        let msgFailed = "上传失败: "
-        let msgException = "上传异常: "
-        let msgChooseFile = "请选择文件"
+        let title = String(localized: "import.html.title")
+        let hint = String(localized: "import.html.hint")
+        let btnText = String(localized: "import.html.btn_upload")
+        let msgUploading = String(localized: "import.html.msg_uploading")
+        let msgSuccess = String(localized: "import.html.msg_success")
+        let msgFailed = String(localized: "import.html.msg_failed")
+        let msgException = String(localized: "import.html.msg_exception")
+        let msgChooseFile = String(localized: "import.html.msg_choose_file")
 
         return """
             <!doctype html>

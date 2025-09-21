@@ -165,23 +165,26 @@ struct AppSettingsView: View {
             }
         ) {
             HStack {
-                Image(systemName: "questionmark.circle").foregroundColor(
-                    .secondary
-                )
+                Image(systemName: "questionmark.circle")
+                    .foregroundColor(.secondary)
                 Button(action: { showingFormatHelp = true }) {
                     Text(String(localized: "format.help.button"))
                 }
             }
 
             if showPreviewButton {
-                Button(action: onPreviewButtonTapped) {
-                    Text(String(localized: "import.preview"))
+                HStack {
+                    Image(systemName: "square.and.arrow.down.badge.clock")
+                        .foregroundColor(.secondary)
+                    Button(action: onPreviewButtonTapped) {
+                        Text(String(localized: "import.preview"))
+                    }
+                    .fileImporter(
+                        isPresented: $showingPreviewImporter,
+                        allowedContentTypes: [.plainText],
+                        allowsMultipleSelection: false
+                    ) { handlePreviewFileImport($0) }
                 }
-                .fileImporter(
-                    isPresented: $showingPreviewImporter,
-                    allowedContentTypes: [.plainText],
-                    allowsMultipleSelection: false
-                ) { handlePreviewFileImport($0) }
             }
 
             HStack {
@@ -212,9 +215,7 @@ struct AppSettingsView: View {
                 Image(
                     systemName: webServer.isRunning
                         ? "wifi" : "wifi.slash"
-                ).foregroundColor(
-                    .secondary
-                )
+                ).foregroundColor(.secondary)
                 Button(
                     webServer.isRunning
                         ? String(localized: "btn_stop_web_server")
@@ -295,14 +296,32 @@ struct AppSettingsView: View {
         }
     }
 
+    /// 在安全作用域下访问文件，解决审计到iOS26后，没有权限查看文件的问题
+    private func withSecurityScopedAccess<T>(
+        to url: URL,
+        block: (URL) throws -> T
+    ) rethrows -> T {
+        let didAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if didAccess {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        return try block(url)
+    }
+
     private func handlePreviewFileImport(_ result: Result<[URL], Error>) {
+        print("handlePreviewFileImport", result)
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
             DispatchQueue.global(qos: .userInitiated).async {
+
                 do {
-                    let importer = TxtBookImporter(dbManager: dbManager)
-                    try importer.importTxtPreview(at: url)
+                    try withSecurityScopedAccess(to: url) { securedURL in
+                        let importer = TxtBookImporter(dbManager: dbManager)
+                        try importer.importTxtPreview(at: securedURL)
+                    }
                 } catch {
                     DispatchQueue.main.async {
                         importMessage = String(
@@ -331,9 +350,13 @@ struct AppSettingsView: View {
             importInProgress = true
             importMessage = nil
             DispatchQueue.global(qos: .userInitiated).async {
+
                 do {
-                    let importer = TxtBookImporter(dbManager: dbManager)
-                    try importer.importTxt(at: url)
+                    try withSecurityScopedAccess(to: url) { securedURL in
+                        let importer = TxtBookImporter(dbManager: dbManager)
+                        try importer.importTxt(at: securedURL)
+                    }
+
                     DispatchQueue.main.async {
                         importInProgress = false
                         importMessage = String(localized: "import.done")

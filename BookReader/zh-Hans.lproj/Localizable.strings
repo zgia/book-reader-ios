@@ -126,6 +126,17 @@ btn_stop_web_server = "停止网页服务";
 "import.uploaded_books" = "上传的图书";
 "import.no_uploaded_files" = "暂无上传文件";
 "import.delete_failed" = "删除失败：%@";
+"import.web.srv_run_failed" = "服务运行失败：%@";
+"import.web.srv_save_failed" = "保存失败：%@";
+"import.web.srv_url" = "http://<设备IP>:%d/";
+"import.html.title" = "BookReader 网页上传";
+"import.html.hint" = "请选择 .txt 文件上传。已上传文件可在 App 设置 - 网页上传 中导入或删除。";
+"import.html.btn_upload" = "上传";
+"import.html.msg_uploading" = "上传中...";
+"import.html.msg_success" = "上传成功";
+"import.html.msg_failed" = "上传失败: ";
+"import.html.msg_exception" = "上传异常: ";
+"import.html.msg_choose_file" = "请选择文件";
 
 // AppSettingsView - Security
 "security.title" = "隐私与安全";

@@ -126,6 +126,17 @@ btn_stop_web_server = "Stop Web Server";
 "import.uploaded_books" = "Uploaded Books";
 "import.no_uploaded_files" = "No uploaded files";
 "import.delete_failed" = "Delete failed: %@";
+"import.web.srv_run_failed" = "Service failed: %@";
+"import.web.srv_save_failed" = "Save failed: %@";
+"import.web.srv_url" = "http://<Device IP>:%d/";
+"import.html.title" = "BookReader Web Upload";
+"import.html.hint" = "Please select .txt files to upload. Uploaded files can be imported or deleted in App Settings - Web Upload.";
+"import.html.btn_upload" = "Upload";
+"import.html.msg_uploading" = "Uploading...";
+"import.html.msg_success" = "Upload success";
+"import.html.msg_failed" = "Upload failed: ";
+"import.html.msg_exception" = "Upload exception: ";
+"import.html.msg_choose_file" = "Please choose a file";
 
 // AppSettingsView - Security
 "security.title" = "Privacy & Security";
