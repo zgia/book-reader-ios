@@ -1,5 +1,7 @@
 book = "书籍";
 
+"unknown_msg" = "未知消息";
+
 // 初始化
 "db.init_failed" = "初始化数据库失败";
 "db.initializing" = "正在初始化数据库…";

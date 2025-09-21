@@ -82,17 +82,18 @@ struct BookListView: View {
                             edge: .trailing,
                             allowsFullSwipe: false
                         ) {
-                            Button(role: .destructive) {
+                            Button {
                                 deletingBook = bookRow
                                 showDeleteConfirm = true
                             } label: {
                                 Image(systemName: "trash")
                             }
-                            Button() {
+                            .tint(.red)
+
+                            Button {
                                 renamingBook = bookRow
                                 newTitleText = bookRow.book.title
-                            }
-                            label: {
+                            } label: {
                                 Image(systemName: "pencil")
                             }
                             .tint(.blue)
@@ -163,38 +164,38 @@ struct BookListView: View {
                             .zIndex(1)
                         }
                     }
-                    .confirmationDialog(
-                        String(localized: "book.confirm_deleting"),
-                        isPresented: $showDeleteConfirm,
-                        presenting: deletingBook
-                    ) { target in
-                        Button(
-                            String(localized: "btn_delete"),
-                            role: .destructive
-                        ) {
-                            withAnimation {
-                                db.deleteBook(bookId: target.book.id)
-                                progressStore.clear(forBook: target.book.id)
-                                loadBooks(search: searchText)
-                                deletingBook = nil
-                            }
-                        }
-                        Button(String(localized: "btn_cancel"), role: .cancel) {
-                            deletingBook = nil
-                        }
-                    } message: { target in
-                        Text(
-                            String(
-                                format: String(
-                                    localized: "book.confirm_deleting_message"
-                                ),
-                                target.book.title
-                            )
-                        )
-                    }
                     .onChange(of: showDeleteConfirm) { _, newValue in
                         if !newValue { deletingBook = nil }
                     }
+                }
+                .confirmationDialog(
+                    String(localized: "book.confirm_deleting"),
+                    isPresented: $showDeleteConfirm,
+                    presenting: deletingBook
+                ) { target in
+                    Button(
+                        String(localized: "btn_delete"),
+                        role: .destructive
+                    ) {
+                        withAnimation {
+                            db.deleteBook(bookId: target.book.id)
+                            progressStore.clear(forBook: target.book.id)
+                            loadBooks(search: searchText)
+                            deletingBook = nil
+                        }
+                    }
+                    Button(String(localized: "btn_cancel"), role: .cancel) {
+                        deletingBook = nil
+                    }
+                } message: { target in
+                    Text(
+                        String(
+                            format: String(
+                                localized: "book.confirm_deleting_message"
+                            ),
+                            target.book.title
+                        )
+                    )
                 }
             }
         }

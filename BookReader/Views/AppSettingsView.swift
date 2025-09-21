@@ -1,3 +1,4 @@
+import AlertToast
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -53,6 +54,17 @@ struct AppSettingsView: View {
                     removePasscodeSheetView()
                 }
             }
+        }
+        .toast(
+            isPresenting: Binding(
+                get: { importMessage != nil },
+                set: { if !$0 { importMessage = nil } }
+            )
+        ) {
+            AlertToast(
+                type: .complete(.green),
+                title: importMessage ?? String(localized: "unknown_msg")
+            )
         }
     }
 
@@ -230,6 +242,7 @@ struct AppSettingsView: View {
                 //.buttonStyle(.borderedProminent)
                 .tint(webServer.isRunning ? .red : .accentColor)
             }
+            
             HStack {
                 Text(String(localized: "import.uploaded_books"))
                 Spacer()

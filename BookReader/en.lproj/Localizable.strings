@@ -1,5 +1,7 @@
 book = "Book";
 
+"unknown_msg" = "Unknown Message";
+
 // Initialization
 "db.init_failed" = "Failed to initialize database";
 "db.initializing" = "Initializing database…";

@@ -10,6 +10,7 @@
 		F98A0CF32E7EAC0D00B0DF32 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = F98A0CF22E7EAC0D00B0DF32 /* FlyingFox */; };
 		F98A0CF52E7EAC0D00B0DF32 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = F98A0CF42E7EAC0D00B0DF32 /* FlyingSocks */; };
 		F9952EDF2E6156E900E4F0ED /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = F9952EDE2E6156E900E4F0ED /* GRDB */; };
+		F9CD1DB02E7FE99500633720 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = F9CD1DAF2E7FE99500633720 /* AlertToast */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F9952EDF2E6156E900E4F0ED /* GRDB in Frameworks */,
+				F9CD1DB02E7FE99500633720 /* AlertToast in Frameworks */,
 				F98A0CF52E7EAC0D00B0DF32 /* FlyingSocks in Frameworks */,
 				F98A0CF32E7EAC0D00B0DF32 /* FlyingFox in Frameworks */,
 			);
@@ -98,6 +100,7 @@
 				F9952EDE2E6156E900E4F0ED /* GRDB */,
 				F98A0CF22E7EAC0D00B0DF32 /* FlyingFox */,
 				F98A0CF42E7EAC0D00B0DF32 /* FlyingSocks */,
+				F9CD1DAF2E7FE99500633720 /* AlertToast */,
 			);
 			productName = BookReader;
 			productReference = F9EF87642E5AD30100BD3264 /* BookReader.app */;
@@ -131,6 +134,7 @@
 			packageReferences = (
 				F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */,
 				F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */,
+				F9CD1DAE2E7FE99500633720 /* XCRemoteSwiftPackageReference "AlertToast" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F9EF87652E5AD30100BD3264 /* Products */;
@@ -216,7 +220,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -274,7 +278,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -302,7 +306,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -334,7 +338,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -387,6 +391,14 @@
 				minimumVersion = 0.25.0;
 			};
 		};
+		F9CD1DAE2E7FE99500633720 /* XCRemoteSwiftPackageReference "AlertToast" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/elai950/AlertToast";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.9;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -404,6 +416,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */;
 			productName = GRDB;
+		};
+		F9CD1DAF2E7FE99500633720 /* AlertToast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F9CD1DAE2E7FE99500633720 /* XCRemoteSwiftPackageReference "AlertToast" */;
+			productName = AlertToast;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
