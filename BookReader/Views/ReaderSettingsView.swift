@@ -271,7 +271,7 @@ struct ReaderSettingsView: View {
     }
 }
 
-#Preview {
+#Preview("ReaderSettingsView") {
     ReaderSettingsView()
         .environmentObject(ReadingSettings())
 }

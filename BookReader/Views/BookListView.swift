@@ -264,7 +264,7 @@ struct BookListView: View {
     }
 }
 
-#Preview {
+#Preview("BookListView") {
     BookListView()
         .environmentObject(DatabaseManager.shared)
         .environmentObject(ProgressStore())
