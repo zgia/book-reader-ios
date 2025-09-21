@@ -116,13 +116,14 @@ struct BookInfoSheetView: View {
                 }
             }
             .navigationTitle(String(localized: "book_info.title"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "btn_done")) { dismiss() }
-                }
-            }
+            //.toolbar {
+            //    ToolbarItem(placement: .topBarTrailing) {
+            //        Button(String(localized: "btn_done")) { dismiss() }
+            //    }
+            //}
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .navigationBarTitleDisplayMode(.inline)
             .presentationBackgroundInteraction(.enabled)
             .interactiveDismissDisabled(false)
         }

@@ -247,7 +247,10 @@ struct ReaderSettingsView: View {
                 }
             }
             .navigationTitle(String(localized: "setting.reading_setting"))
+            .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(false)
         }
     }
 

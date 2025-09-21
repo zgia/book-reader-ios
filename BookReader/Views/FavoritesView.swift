@@ -68,7 +68,10 @@ struct FavoritesView: View {
                 }
             }
             .navigationTitle(String(localized: "favorite.title"))
+            .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(false)
             .onAppear { loadFavorites() }
         }
     }

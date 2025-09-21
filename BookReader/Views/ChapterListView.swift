@@ -126,7 +126,10 @@ struct ChapterListView: View {
             }
             .searchable(text: $searchText)
             .navigationTitle(book.title)
+            .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
+            .presentationBackgroundInteraction(.enabled)
+            .interactiveDismissDisabled(false)
             .onAppear {
                 loadData()
                 attemptAutoScroll(proxy)
