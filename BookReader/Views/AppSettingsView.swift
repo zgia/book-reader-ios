@@ -8,12 +8,12 @@ struct AppSettingsView: View {
 
     @ObservedObject private var webServer = WebUploadServer.shared
 
+    @State private var alertMessage: String?
+
     @State private var showPreviewButton: Bool = false
     @State private var showingPreviewImporter: Bool = false
     @State private var showingWriteImporter: Bool = false
     @State private var importInProgress: Bool = false
-    @State private var importMessage: String?
-    @State private var compressionMessage: String?
     @State private var showingCompactConfirm: Bool = false
     @State private var statsText: String = ""
     @State private var showingFormatHelp: Bool = false
@@ -57,13 +57,13 @@ struct AppSettingsView: View {
         }
         .toast(
             isPresenting: Binding(
-                get: { importMessage != nil },
-                set: { if !$0 { importMessage = nil } }
+                get: { alertMessage != nil },
+                set: { if !$0 { alertMessage = nil } }
             )
         ) {
             AlertToast(
                 type: .complete(.green),
-                title: importMessage ?? String(localized: "unknown_msg")
+                title: alertMessage ?? String(localized: "unknown_msg")
             )
         }
     }
@@ -79,19 +79,19 @@ struct AppSettingsView: View {
 
     private func onWebImportButtonTapped(url: URL) {
         importInProgress = true
-        importMessage = nil
+        alertMessage = nil
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let importer = TxtBookImporter(dbManager: dbManager)
                 try importer.importTxt(at: url)
                 DispatchQueue.main.async {
                     importInProgress = false
-                    importMessage = String(localized: "import.done")
+                    alertMessage = String(localized: "import.done")
                 }
             } catch {
                 DispatchQueue.main.async {
                     importInProgress = false
-                    importMessage = String(
+                    alertMessage = String(
                         format: String(localized: "import.failed"),
                         error.localizedDescription
                     )
@@ -189,7 +189,7 @@ struct AppSettingsView: View {
                 //.buttonStyle(.borderedProminent)
                 .tint(webServer.isRunning ? .red : .accentColor)
             }
-            
+
             HStack {
                 Text(String(localized: "import.uploaded_books"))
                 Spacer()
@@ -221,7 +221,7 @@ struct AppSettingsView: View {
                                 role: .destructive
                             ) {
                                 do { try webServer.delete(file: file) } catch {
-                                    importMessage =
+                                    alertMessage =
                                         String(
                                             format: String(
                                                 localized:
@@ -242,17 +242,6 @@ struct AppSettingsView: View {
                     .foregroundColor(.secondary)
             }
 
-            if let msg = importMessage {
-                Text(msg)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .task {
-                        try? await Task.sleep(for: .seconds(3))
-                        withAnimation {
-                            importMessage = nil
-                        }
-                    }
-            }
         }
     }
 
@@ -284,7 +273,7 @@ struct AppSettingsView: View {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        importMessage = String(
+                        alertMessage = String(
                             format: String(
                                 localized: "import.preview_failed"
                             ),
@@ -294,7 +283,7 @@ struct AppSettingsView: View {
                 }
             }
         case .failure(let error):
-            importMessage = String(
+            alertMessage = String(
                 format: String(
                     localized: "import.file_select_failed"
                 ),
@@ -308,7 +297,7 @@ struct AppSettingsView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             importInProgress = true
-            importMessage = nil
+            alertMessage = nil
             DispatchQueue.global(qos: .userInitiated).async {
 
                 do {
@@ -319,12 +308,12 @@ struct AppSettingsView: View {
 
                     DispatchQueue.main.async {
                         importInProgress = false
-                        importMessage = String(localized: "import.done")
+                        alertMessage = String(localized: "import.done")
                     }
                 } catch {
                     DispatchQueue.main.async {
                         importInProgress = false
-                        importMessage = String(
+                        alertMessage = String(
                             format: String(
                                 localized: "import.failed"
                             ),
@@ -334,7 +323,7 @@ struct AppSettingsView: View {
                 }
             }
         case .failure(let error):
-            importMessage = String(
+            alertMessage = String(
                 format: String(
                     localized: "import.file_select_failed"
                 ),
@@ -836,18 +825,15 @@ struct AppSettingsView: View {
             } message: {
                 Text(String(localized: "db.compact.confirm_message"))
             }
-            if let cmsg = compressionMessage {
-                Text(cmsg).font(.footnote).foregroundColor(.secondary)
-            }
         }
     }
 
     private func onCompactButtonTapped() {
         dbManager.compactDatabase(hard: true) {
-            compressionMessage = String(localized: "db.compact.done")
+            alertMessage = String(localized: "db.compact.done")
             refreshStats()
         }
-        compressionMessage = String(localized: "db.compact.started")
+        alertMessage = String(localized: "db.compact.started")
     }
 
     private func showStats(result: DatabaseManager.DatabaseStats?) {

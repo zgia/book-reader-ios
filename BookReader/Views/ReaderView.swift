@@ -16,7 +16,6 @@ struct ReaderView: View {
     @State private var showCatalog: Bool = false
     // 阅读设置
     @State private var showSettings: Bool = false
-    // 直接使用 ReadingSettings 提供的值，无需派生状态
 
     // 拖拽偏移（用于左右滑动动画）
     @State private var dragOffset: CGFloat = 0
@@ -24,6 +23,7 @@ struct ReaderView: View {
     @State private var isHorizontalSwiping: Bool = false
 
     // 段落渲染与缓存
+    @State private var screenSize: CGSize = .zero
     @State private var paragraphs: [String] = []
     @State private var paragraphsCache: [Int: [String]] = [:]  // chapterId -> paragraphs
     @State private var contentCache: [Int: Content] = [:]  // chapterId -> content
@@ -167,6 +167,9 @@ struct ReaderView: View {
                 dlog(
                     "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))"
                 )
+
+                screenSize = geo.size
+
                 loadContent(for: currentChapter)
                 loadCurrentBook()
                 updateAdjacentRefs()
@@ -190,6 +193,9 @@ struct ReaderView: View {
                     showBookInfo = false
                     showControls = false
                 }
+            }
+            .onChange(of: geo.size) { _, newSize in
+                screenSize = newSize
             }
             // 设置由 ReadingSettings 驱动，无需本地同步
             .onDisappear {
@@ -780,8 +786,7 @@ struct ReaderView: View {
 
     // MARK: - Pagination helpers
     private func geoSize() -> CGSize {
-        // 使用屏幕尺寸近似分页，避免在 body 外部拿 geo.size
-        let bounds = UIScreen.main.bounds
+        let bounds = screenSize
         // 减去大致的安全区/导航区和内边距
         return CGSize(width: bounds.width - 32, height: bounds.height - 140)
     }
@@ -920,26 +925,29 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func pageView(pageIndex: Int) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(pages[pageIndex])
-                .font(.system(size: reading.fontSize))
-                .foregroundColor(reading.textColor)
-                .lineSpacing(reading.lineSpacing)
-                .multilineTextAlignment(.leading)
-                .lineLimit(nil)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-                .contextMenu {
-                    Button {
-                        prepareAddFavorite(from: pageIndex)
-                    } label: {
-                        Label(
-                            String(localized: "favorite.add_to_favorites"),
-                            systemImage: "bookmark"
-                        )
-                    }
-                }
+        let parts = paragraphsInPage(pageIndex)
+        VStack(alignment: .leading, spacing: reading.paragraphSpacing) {
+            ForEach(parts.indices, id: \.self) { pIdx in
+                Text(parts[pIdx])
+                    .font(.system(size: reading.fontSize))
+                    .foregroundColor(reading.textColor)
+                    .lineSpacing(reading.lineSpacing)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+        }
+        .contextMenu {
+            Button {
+                prepareAddFavorite(from: pageIndex)
+            } label: {
+                Label(
+                    String(localized: "favorite.add_to_favorites"),
+                    systemImage: "bookmark"
+                )
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -1125,8 +1133,6 @@ struct ReaderView: View {
         )
     }
 
-    // 删除收藏由 FavoritesView 负责
-
     private func jump(to fav: Favorite) {
         dlog(
             "🎯 jump favorite id=\(fav.id) bookId=\(fav.bookid) chapterId=\(fav.chapterid) pageIndex=\(String(describing: fav.pageindex)) percent=\(String(describing: fav.percent)) currentChapterId=\(currentChapter.id) pages=\(pages.count)"
@@ -1166,15 +1172,26 @@ struct ReaderView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(pagesArray.indices, id: \.self) { idx in
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(pagesArray[idx])
-                            .font(.system(size: reading.fontSize))
-                            .foregroundColor(reading.textColor)
-                            .lineSpacing(reading.lineSpacing)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(nil)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    let parts = pagesArray[idx]
+                        .split(
+                            separator: "\n",
+                            omittingEmptySubsequences: false
+                        )
+                        .map(String.init)
+                    VStack(
+                        alignment: .leading,
+                        spacing: reading.paragraphSpacing
+                    ) {
+                        ForEach(parts.indices, id: \.self) { pIdx in
+                            Text(parts[pIdx])
+                                .font(.system(size: reading.fontSize))
+                                .foregroundColor(reading.textColor)
+                                .lineSpacing(reading.lineSpacing)
+                                .multilineTextAlignment(.leading)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
