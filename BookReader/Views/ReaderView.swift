@@ -164,7 +164,8 @@ struct ReaderView: View {
                     dismissButton: .default(Text(String(localized: "btn_ok")))
                 )
             }
-            .gesture(horizontalSwipeGesture(geo.size))
+            .contentShape(Rectangle())
+            .highPriorityGesture(horizontalSwipeGesture(geo.size))
             .onTapGesture {
                 withAnimation { showControls.toggle() }
             }
@@ -941,7 +942,7 @@ struct ReaderView: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
+                    .textSelection(.disabled)
             }
         }
         .contextMenu {
@@ -1007,7 +1008,7 @@ struct ReaderView: View {
     }
 
     private func horizontalSwipeGesture(_ size: CGSize) -> some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 5)
             .onChanged { value in
                 if abs(value.translation.width) > abs(value.translation.height)
                 {
@@ -1018,7 +1019,7 @@ struct ReaderView: View {
                 }
             }
             .onEnded { value in
-                let threshold = size.width * 0.25
+                let threshold = min(120, size.width * 0.18)
                 if abs(value.translation.width) <= abs(value.translation.height)
                 {
                     withAnimation(.easeInOut) { dragOffset = 0 }
