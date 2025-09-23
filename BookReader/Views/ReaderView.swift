@@ -67,6 +67,7 @@ struct ReaderView: View {
             }
             .navigationTitle(currentChapter.title)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(!showControls)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(currentChapter.title)
@@ -76,12 +77,16 @@ struct ReaderView: View {
                         .truncationMode(.tail)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showBookInfo = true
-                    } label: {
-                        Image(systemName: "book")
+                    if showControls {
+                        Button {
+                            showBookInfo = true
+                        } label: {
+                            Image(systemName: "book")
+                        }
+                        .accessibilityLabel(
+                            String(localized: "book_info.title")
+                        )
                     }
-                    .accessibilityLabel(String(localized: "book_info.title"))
                 }
             }
             .tint(reading.textColor)
