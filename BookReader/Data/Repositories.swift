@@ -397,4 +397,31 @@ extension DatabaseManager {
         } catch {
         }
     }
+
+    // MARK: - 图书分类维护
+    func getBookCategoryId(bookId: Int) -> Int? {
+        (try? dbQueue.read { db in
+            try Int.fetchOne(
+                db,
+                sql: "SELECT categoryid FROM book WHERE id = ? LIMIT 1",
+                arguments: [bookId]
+            )
+        }) ?? nil
+    }
+
+    func updateBookCategory(bookId: Int, categoryId: Int?) {
+        guard let dbQueue = dbQueue else { return }
+        let cid = categoryId ?? 0
+        let ts = Int(Date().timeIntervalSince1970)
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql:
+                        "UPDATE book SET categoryid = ?, updatedat = ? WHERE id = ?",
+                    arguments: [cid, ts, bookId]
+                )
+            }
+        } catch {
+        }
+    }
 }

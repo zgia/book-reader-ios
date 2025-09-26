@@ -2,28 +2,6 @@ book = "书籍";
 
 "unknown_msg" = "未知消息";
 
-// 初始化
-"db.init_failed" = "初始化数据库失败";
-"db.initializing" = "正在初始化数据库…";
-
-// 收藏夹
-"favorite.title" = "收藏夹";
-"favorite.add_to_favorites" = "添加到收藏";
-"favorite.page_n" ="第 %d 页";
-"favorite.add_to_favorites_placeholder" = "为本次收藏写点备注（可选）";
-"favorite.empty" = "还没有收藏的内容";
-
-// 分类
-"category.title" = "分类";
-"category.management" = "分类管理";
-"category.all" = "全部分类";
-"category.new_placeholder" = "新分类名称";
-"category.empty" = "暂无分类";
-"category.visible" = "显示";
-"category.hidden" = "隐藏";
-"category.rename_title" = "重命名";
-"category.rename_placeholder" = "新分类名称";
-
 // 按钮
 btn_ok = "确定";
 btn_cancel = "取消";
@@ -44,9 +22,33 @@ btn_import = "导入";
 btn_start_web_server = "开启网页服务";
 btn_stop_web_server = "停止网页服务";
 
+// 初始化
+"db.init_failed" = "初始化数据库失败";
+"db.initializing" = "正在初始化数据库…";
+
+// 收藏夹
+"favorite.title" = "收藏夹";
+"favorite.add_to_favorites" = "添加到收藏";
+"favorite.page_n" ="第 %d 页";
+"favorite.add_to_favorites_placeholder" = "为本次收藏写点备注（可选）";
+"favorite.empty" = "还没有收藏的内容";
+
+// 分类
+"category.title" = "分类";
+"category.management" = "分类管理";
+"category.all" = "全部分类";
+"category.new_placeholder" = "新分类名称";
+"category.empty" = "暂无分类";
+"category.visible" = "显示";
+"category.hidden" = "隐藏";
+"category.renaming_title" = "重命名";
+"category.renaming_placeholder" = "新分类名称";
+"category.confirm_deleting" = "删除确认";
+"category.confirm_deleting_message" = "确认删除分类 %@ 吗？注：删除分类不会删除图书。";
+
 // BookListView
 "book.renaming_title" = "重命名";
-"book.renaming_new_name" = "请输入新的书名";
+"book.renaming_placeholder" = "请输入新的书名";
 "book.confirm_deleting" = "确认删除";
 "book.confirm_deleting_message" = "此操作将删除《%@》的所有内容与阅读进度，且不可恢复。是否继续？";
 
@@ -56,6 +58,7 @@ btn_stop_web_server = "停止网页服务";
 "bookinfo.name" = "书名";
 "bookinfo.author" = "作者";
 "bookinfo.category" = "分类";
+"bookinfo.set_category" = "选择分类";
 "bookinfo.wordcount" = "总字数";
 "bookinfo.wordcount_format" = "%@字";
 "bookinfo.wordcount_plain_zh" = "%d字";

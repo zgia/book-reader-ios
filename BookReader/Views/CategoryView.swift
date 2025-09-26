@@ -66,8 +66,7 @@ struct CategoryView: View {
                                     String(localized: "btn_delete"),
                                     role: .destructive
                                 ) {
-                                    db.deleteCategory(id: cat.id)
-                                    load()
+                                    deleting = cat
                                 }
                             } label: {
                                 Image(systemName: "ellipsis.circle")
@@ -80,6 +79,35 @@ struct CategoryView: View {
         .navigationTitle(String(localized: "category.title"))
         .onAppear { load() }
         .overlay(renamingOverlay())
+        .alert(
+            String(localized: "category.confirm_deleting"),
+            isPresented: Binding(
+                get: { deleting != nil },
+                set: { if !$0 { deleting = nil } }
+            )
+        ) {
+            Button(String(localized: "btn_cancel"), role: .cancel) {}
+            Button(String(localized: "btn_delete"), role: .destructive) {
+                if let target = deleting {
+                    db.deleteCategory(id: target.id)
+                    deleting = nil
+                    load()
+                }
+            }
+        } message: {
+            if let target = deleting {
+                Text(
+                    String(
+                        format: String(
+                            localized: "category.confirm_deleting_message"
+                        ),
+                        target.title
+                    )
+                )
+            } else {
+                Text("")
+            }
+        }
     }
 
     private func load() {
@@ -98,8 +126,8 @@ struct CategoryView: View {
     private func renamingOverlay() -> some View {
         if let cat = renaming {
             TextFieldDialog(
-                title: String(localized: "category.rename_title"),
-                placeholder: String(localized: "category.rename_placeholder"),
+                title: String(localized: "category.renaming_title"),
+                placeholder: String(localized: "category.renaming_placeholder"),
                 text: $renameText,
                 onCancel: { renaming = nil },
                 onSave: {
@@ -119,6 +147,8 @@ struct CategoryView: View {
             .zIndex(1)
         }
     }
+
+    @State private var deleting: Category? = nil
 }
 
 #Preview("CategoryView") {

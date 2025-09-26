@@ -229,7 +229,7 @@ struct BookListView: View {
             TextFieldDialog(
                 title: String(localized: "book.renaming_title"),
                 placeholder: String(
-                    localized: "book.renaming_new_name"
+                    localized: "book.renaming_placeholder"
                 ),
                 text: $newTitleText,
                 onCancel: { renamingBook = nil },

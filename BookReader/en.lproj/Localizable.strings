@@ -2,28 +2,6 @@ book = "Book";
 
 "unknown_msg" = "Unknown Message";
 
-// Initialization
-"db.init_failed" = "Failed to initialize database";
-"db.initializing" = "Initializing database…";
-
-// Favorites
-"favorite.title" = "Favorites";
-"favorite.add_to_favorites" = "Add to Favorites";
-"favorite.page_n" = "Page %d";
-"favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
-"favorite.empty" = "No favorites yet";
-
-// Category
-"category.title" = "Category";
-"category.management" = "Category Management";
-"category.all" = "All Category";
-"category.new_placeholder" = "New category title";
-"category.empty" = "Empty";
-"category.visible" = "Visible";
-"category.hidden" = "Hidden";
-"category.rename_title" = "Category Rename";
-"category.rename_placeholder" = "New category title";
-
 // Buttons
 btn_ok = "OK";
 btn_cancel = "Cancel";
@@ -44,9 +22,33 @@ btn_import = "Import";
 btn_start_web_server = "Start Web Server";
 btn_stop_web_server = "Stop Web Server";
 
+// Initialization
+"db.init_failed" = "Failed to initialize database";
+"db.initializing" = "Initializing database…";
+
+// Favorites
+"favorite.title" = "Favorites";
+"favorite.add_to_favorites" = "Add to Favorites";
+"favorite.page_n" = "Page %d";
+"favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
+"favorite.empty" = "No favorites yet";
+
+// Category
+"category.title" = "Category";
+"category.management" = "Category Management";
+"category.all" = "All Category";
+"category.new_placeholder" = "New category title";
+"category.empty" = "Empty";
+"category.visible" = "Visible";
+"category.hidden" = "Hidden";
+"category.renaming_title" = "Category Rename";
+"category.renaming_placeholder" = "New category title";
+"category.confirm_deleting" = "Confirm Deletion";
+"category.confirm_deleting_message" = "This operation will delete category \"%@\" and cannot be undone. Note: book with categroy cannot be deleted. Continue?";
+
 // BookListView
 "book.renaming_title" = "Rename";
-"book.renaming_new_name" = "Please enter a new book name";
+"book.renaming_placeholder" = "Please enter a new book name";
 "book.confirm_deleting" = "Confirm Deletion";
 "book.confirm_deleting_message" = "This operation will delete all content and reading progress of \"%@\" and cannot be undone. Continue?";
 
@@ -56,6 +58,7 @@ btn_stop_web_server = "Stop Web Server";
 "bookinfo.name" = "Title";
 "bookinfo.author" = "Author";
 "bookinfo.category" = "Category";
+"bookinfo.set_category" = "Set Category";
 "bookinfo.wordcount" = "Total Words";
 "bookinfo.wordcount_format" = "%@ words";
 "bookinfo.wordcount_plain_zh" = "%d words";
