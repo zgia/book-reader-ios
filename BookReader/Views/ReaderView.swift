@@ -149,7 +149,7 @@ struct ReaderView: View {
             }
             .sheet(isPresented: $showBookInfo) {
                 if let book = currentBook {
-                    BookInfoSheetView(
+                    BookInfoView(
                         book: book,
                         progressText: progressText(for: book)
                     )
@@ -208,6 +208,12 @@ struct ReaderView: View {
                 // 移除通知监听器
                 NotificationCenter.default.removeObserver(self)
             }
+        }
+    }
+    
+    private func dlog(_ message: String) {
+        if debugEnabled {
+            print(message)
         }
     }
 
@@ -1094,12 +1100,6 @@ struct ReaderView: View {
                 at: now
             )
             lastBookUpdatedAtTouchUnixTime = now
-        }
-    }
-
-    private func dlog(_ message: String) {
-        if debugEnabled {
-            print(message)
         }
     }
 

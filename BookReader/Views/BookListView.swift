@@ -33,171 +33,185 @@ struct BookListView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding()
             } else {
-                NavigationStack {
-                    List(books) { bookRow in
-                        NavigationLink {
-                            if let startChapter = startingChapter(for: bookRow)
-                            {
-                                ReaderView(chapter: startChapter)
-                            } else {
-                                VStack(spacing: 12) {
-                                    Text(
-                                        String(
-                                            localized:
-                                                "reading.chapter_not_fund"
-                                        )
-                                    )
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding()
-                            }
-                        } label: {
-                            VStack(alignment: .leading) {
-                                Text(bookRow.book.title).font(.headline)
-                                let authorText = makeAuthorText(
-                                    bookRow: bookRow
-                                )
-                                if !authorText.isEmpty {
-                                    Text(authorText)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                listingBooksView()
+            }
+        }
+    }
 
-                                // 书籍额外信息：最新章节、总字数、完本状态
-                                HStack(spacing: 8) {
-                                    let chapterText = makeChapterText(
-                                        bookRow: bookRow
-                                    )
-                                    if !chapterText.isEmpty {
-                                        Text(chapterText)
-                                    }
-                                }
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
-                        }
-                        .swipeActions(
-                            edge: .trailing,
-                            allowsFullSwipe: false
-                        ) {
-                            Button {
-                                deletingBook = bookRow
-                                showDeleteConfirm = true
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .tint(.red)
-
-                            Button {
-                                renamingBook = bookRow
-                                newTitleText = bookRow.book.title
-                            } label: {
-                                Image(systemName: "pencil")
-                            }
-                            .tint(.blue)
-                        }
-                    }
-                    .animation(.default, value: books)
-                    .searchable(text: $searchText)
-                    .onChange(of: searchText) { oldValue, newValue in
-                        // 防抖：避免输入法组合期间频繁刷新
-                        searchDebounceTask?.cancel()
-                        searchDebounceTask = Task { @MainActor in
-                            try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3s
-                            loadBooks(search: newValue)
-                        }
-                    }
-                    .navigationTitle(String(localized: "book"))
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            NavigationLink(destination: AppSettingsView()) {
-                                Image(systemName: "gear")
-                            }
-                        }
-                    }
-                    .onAppear {
-                        loadBooks(search: searchText)
-                        // 监听取消模态视图的通知
-                        NotificationCenter.default.addObserver(
-                            forName: .dismissAllModals,
-                            object: nil,
-                            queue: .main
-                        ) { _ in
-                            showDeleteConfirm = false
-                            renamingBook = nil
-                        }
-                    }
-                    .onDisappear {
-                        // 移除通知监听器
-                        NotificationCenter.default.removeObserver(self)
-                    }
-                    // 基于目的地闭包的导航，已不再使用基于值的目的地
-                    .overlay {
-                        if let renaming = renamingBook {
-                            TextFieldDialog(
-                                title: String(localized: "book.renaming_title"),
-                                placeholder: String(
-                                    localized: "book.renaming_new_name"
-                                ),
-                                text: $newTitleText,
-                                onCancel: { renamingBook = nil },
-                                onSave: {
-                                    let trimmed =
-                                        newTitleText.trimmingCharacters(
-                                            in: .whitespacesAndNewlines
-                                        )
-                                    guard !trimmed.isEmpty else {
-                                        renamingBook = nil
-                                        return
-                                    }
-                                    db.updateBookTitle(
-                                        bookId: renaming.book.id,
-                                        title: trimmed
-                                    )
-                                    loadBooks(search: searchText)
-                                    renamingBook = nil
-                                }
-                            )
-                            .transition(.opacity)
-                            .zIndex(1)
-                        }
-                    }
-                    .onChange(of: showDeleteConfirm) { _, newValue in
-                        if !newValue { deletingBook = nil }
-                    }
-                }
-                .confirmationDialog(
-                    String(localized: "book.confirm_deleting"),
-                    isPresented: $showDeleteConfirm,
-                    presenting: deletingBook
-                ) { target in
-                    Button(
-                        String(localized: "btn_delete"),
-                        role: .destructive
-                    ) {
-                        withAnimation {
-                            db.deleteBook(bookId: target.book.id)
-                            progressStore.clear(forBook: target.book.id)
-                            loadBooks(search: searchText)
-                            deletingBook = nil
-                        }
-                    }
-                    Button(String(localized: "btn_cancel"), role: .cancel) {
-                        deletingBook = nil
-                    }
-                } message: { target in
-                    Text(
-                        String(
-                            format: String(
-                                localized: "book.confirm_deleting_message"
-                            ),
-                            target.book.title
-                        )
-                    )
+    @ViewBuilder
+    private func listingBooksView() -> some View {
+        NavigationStack {
+            List(books) { bookRow in
+                linkingBookView(bookRow: bookRow)
+            }
+            .animation(.default, value: books)
+            .searchable(text: $searchText)
+            .onChange(of: searchText) { oldValue, newValue in
+                // 防抖：避免输入法组合期间频繁刷新
+                searchDebounceTask?.cancel()
+                searchDebounceTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3s
+                    loadBooks(search: newValue)
                 }
             }
+            .navigationTitle(String(localized: "book"))
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: AppSettingsView()) {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
+            .onAppear {
+                loadBooks(search: searchText)
+                // 监听取消模态视图的通知
+                NotificationCenter.default.addObserver(
+                    forName: .dismissAllModals,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    showDeleteConfirm = false
+                    renamingBook = nil
+                }
+            }
+            .onDisappear {
+                // 移除通知监听器
+                NotificationCenter.default.removeObserver(self)
+            }
+            // 基于目的地闭包的导航，已不再使用基于值的目的地
+            .overlay {
+                renamingView()
+            }
+            .onChange(of: showDeleteConfirm) { _, newValue in
+                if !newValue { deletingBook = nil }
+            }
+        }
+        .confirmationDialog(
+            String(localized: "book.confirm_deleting"),
+            isPresented: $showDeleteConfirm,
+            presenting: deletingBook
+        ) { target in
+            Button(
+                String(localized: "btn_delete"),
+                role: .destructive
+            ) {
+                withAnimation {
+                    db.deleteBook(bookId: target.book.id)
+                    progressStore.clear(forBook: target.book.id)
+                    loadBooks(search: searchText)
+                    deletingBook = nil
+                }
+            }
+            Button(String(localized: "btn_cancel"), role: .cancel) {
+                deletingBook = nil
+            }
+        } message: { target in
+            Text(
+                String(
+                    format: String(
+                        localized: "book.confirm_deleting_message"
+                    ),
+                    target.book.title
+                )
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func linkingBookView(bookRow: BookRow) -> some View {
+        NavigationLink {
+            if let startChapter = startingChapter(for: bookRow) {
+                ReaderView(chapter: startChapter)
+            } else {
+                VStack(spacing: 12) {
+                    Text(
+                        String(
+                            localized:
+                                "reading.chapter_not_fund"
+                        )
+                    )
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding()
+            }
+        } label: {
+            VStack(alignment: .leading) {
+                Text(bookRow.book.title).font(.headline)
+                let authorText = makeAuthorText(
+                    bookRow: bookRow
+                )
+                if !authorText.isEmpty {
+                    Text(authorText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // 书籍额外信息：最新章节、总字数、完本状态
+                HStack(spacing: 8) {
+                    let chapterText = makeChapterText(
+                        bookRow: bookRow
+                    )
+                    if !chapterText.isEmpty {
+                        Text(chapterText)
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+        }
+        .swipeActions(
+            edge: .trailing,
+            allowsFullSwipe: false
+        ) {
+            Button {
+                deletingBook = bookRow
+                showDeleteConfirm = true
+            } label: {
+                Image(systemName: "trash")
+            }
+            .tint(.red)
+
+            Button {
+                renamingBook = bookRow
+                newTitleText = bookRow.book.title
+            } label: {
+                Image(systemName: "pencil")
+            }
+            .tint(.blue)
+        }
+    }
+
+    @ViewBuilder
+    private func renamingView() -> some View {
+        if let renaming = renamingBook {
+            TextFieldDialog(
+                title: String(localized: "book.renaming_title"),
+                placeholder: String(
+                    localized: "book.renaming_new_name"
+                ),
+                text: $newTitleText,
+                onCancel: { renamingBook = nil },
+                onSave: {
+                    let trimmed =
+                        newTitleText.trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        )
+                    guard !trimmed.isEmpty else {
+                        renamingBook = nil
+                        return
+                    }
+                    db.updateBookTitle(
+                        bookId: renaming.book.id,
+                        title: trimmed
+                    )
+                    loadBooks(search: searchText)
+                    renamingBook = nil
+                }
+            )
+            .transition(.opacity)
+            .zIndex(1)
         }
     }
 
