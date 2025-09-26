@@ -256,6 +256,14 @@ struct BookListView: View {
     }
 
     private func loadBooks(search: String? = nil) {
+        // 若当前选择的分类已被删除或已隐藏，则自动切换为全部分类
+        let visibleCategories = db.fetchCategories(includeHidden: false)
+        if let cid = selectedCategoryId,
+            !visibleCategories.contains(where: { $0.id == cid })
+        {
+            selectedCategoryId = nil
+        }
+
         books = db.fetchBooks(
             search: search?.isEmpty == true ? nil : search,
             progressStore: progressStore,
