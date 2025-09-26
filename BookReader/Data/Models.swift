@@ -6,6 +6,7 @@ struct Category: Codable, FetchableRecord, PersistableRecord, Identifiable,
 {
     var id: Int
     var title: String  // 分类标题
+    var ishidden: Int  // 0: 显示，1: 隐藏
 }
 
 struct BookAuthor: Codable, FetchableRecord, PersistableRecord, Identifiable,

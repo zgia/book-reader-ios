@@ -13,9 +13,24 @@ book = "Book";
 "favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
 "favorite.empty" = "No favorites yet";
 
+// Category
+"category.title" = "Category";
+"category.management" = "Category Management";
+"category.all" = "All Category";
+"category.new_placeholder" = "New category title";
+"category.empty" = "Empty";
+"category.visible" = "Visible";
+"category.hidden" = "Hidden";
+"category.rename_title" = "Category Rename";
+"category.rename_placeholder" = "New category title";
+
 // Buttons
 btn_ok = "OK";
 btn_cancel = "Cancel";
+btn_add = "Add";
+btn_show = "Show";
+btn_hide = "Hide";
+btn_rename = "Rename";
 btn_save = "Save";
 btn_delete = "Delete";
 btn_prev = "Previous";

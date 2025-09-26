@@ -12,6 +12,8 @@ struct BookListView: View {
     @State private var newTitleText: String = ""
     @State private var deletingBook: BookRow? = nil
     @State private var showDeleteConfirm: Bool = false
+    @State private var selectedCategoryId: Int? = nil  // nil: 全部分类
+    @State private var showCategoryMenu: Bool = false
 
     var body: some View {
         Group {
@@ -59,6 +61,44 @@ struct BookListView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: AppSettingsView()) {
                         Image(systemName: "gear")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Menu {
+                        NavigationLink(destination: CategoryView()) {
+                            Label(
+                                String(localized: "category.management"),
+                                systemImage: "folder.badge.gearshape"
+                            )
+                        }
+                        Button {
+                            selectedCategoryId = nil
+                            loadBooks(search: searchText)
+                        } label: {
+                            Label(
+                                String(localized: "category.all"),
+                                systemImage: "square.grid.2x2"
+                            )
+                        }
+                        // 动态分类项（隐藏分类不显示）
+                        let cats = db.fetchCategories(includeHidden: false)
+                        if !cats.isEmpty {
+                            Divider()
+                            ForEach(cats, id: \.id) { cat in
+                                Button {
+                                    selectedCategoryId = cat.id
+                                    loadBooks(search: searchText)
+                                } label: {
+                                    Label(
+                                        cat.title,
+                                        systemImage: selectedCategoryId
+                                            == cat.id ? "checkmark" : "folder"
+                                    )
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
                     }
                 }
             }
@@ -218,7 +258,8 @@ struct BookListView: View {
     private func loadBooks(search: String? = nil) {
         books = db.fetchBooks(
             search: search?.isEmpty == true ? nil : search,
-            progressStore: progressStore
+            progressStore: progressStore,
+            categoryId: selectedCategoryId
         )
     }
 

@@ -44,8 +44,12 @@ extension DatabaseManager {
     }
 
     // 书籍列表（带分类名 & 进度）
-    func fetchBooks(search: String?, progressStore: ProgressStore) -> [BookRow]
-    {
+    // 可按分类筛选；当未指定分类时，自动过滤隐藏分类（ishidden = 1）
+    func fetchBooks(
+        search: String?,
+        progressStore: ProgressStore,
+        categoryId: Int? = nil
+    ) -> [BookRow] {
         let records: [BookRowRecord] =
             (try? dbQueue.read { db in
                 var sql = """
@@ -57,14 +61,27 @@ extension DatabaseManager {
                     """
                 var args: [DatabaseValueConvertible] = []
 
+                var whereClauses: [String] = []
                 if let q = search, !q.isEmpty {
-                    sql +=
-                        " WHERE b.title LIKE ? ESCAPE '\\' OR a.name LIKE ? ESCAPE '\\'"
-                    // 转义 % 和 _
+                    whereClauses.append(
+                        "(b.title LIKE ? ESCAPE '\\' OR a.name LIKE ? ESCAPE '\\')"
+                    )
                     let like =
                         "%\(q.replacingOccurrences(of: "%", with: "\\%").replacingOccurrences(of: "_", with: "\\_"))%"
                     args.append(like)
                     args.append(like)
+                }
+                if let cid = categoryId {
+                    whereClauses.append("b.categoryid = ?")
+                    args.append(cid)
+                    // 指定分类时，仍遵循隐藏策略：隐藏分类不显示
+                    whereClauses.append("IFNULL(c.ishidden, 0) = 0")
+                } else {
+                    // 未指定分类时，排除隐藏分类
+                    whereClauses.append("IFNULL(c.ishidden, 0) = 0")
+                }
+                if !whereClauses.isEmpty {
+                    sql += " WHERE " + whereClauses.joined(separator: " AND ")
                 }
 
                 sql += " ORDER BY b.updatedat DESC"
@@ -298,6 +315,86 @@ extension DatabaseManager {
             }
         } catch {
             // 静默失败
+        }
+    }
+
+    // MARK: - 分类
+    func fetchCategories(includeHidden: Bool = false) -> [Category] {
+        (try? dbQueue.read { db in
+            var sql =
+                "SELECT id, title, IFNULL(ishidden, 0) AS ishidden FROM category"
+            if !includeHidden {
+                sql += " WHERE IFNULL(ishidden, 0) = 0"
+            }
+            sql += " ORDER BY id ASC"
+            return try Category.fetchAll(db, sql: sql)
+        }) ?? []
+    }
+
+    @discardableResult
+    func insertCategory(title: String) -> Int? {
+        guard let dbQueue = dbQueue else { return nil }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        do {
+            var newId: Int = 0
+            try dbQueue.write { db in
+                newId = try nextId("category", in: db)
+                try db.execute(
+                    sql:
+                        "INSERT INTO category(id, parentid, title, ishidden) VALUES(?, 0, ?, 0)",
+                    arguments: [newId, trimmed]
+                )
+            }
+            return newId
+        } catch {
+            return nil
+        }
+    }
+
+    func updateCategoryTitle(id: Int, title: String) {
+        guard let dbQueue = dbQueue else { return }
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql: "UPDATE category SET title = ? WHERE id = ?",
+                    arguments: [trimmed, id]
+                )
+            }
+        } catch {
+        }
+    }
+
+    func updateCategoryHidden(id: Int, isHidden: Bool) {
+        guard let dbQueue = dbQueue else { return }
+        do {
+            try dbQueue.write { db in
+                try db.execute(
+                    sql: "UPDATE category SET ishidden = ? WHERE id = ?",
+                    arguments: [isHidden ? 1 : 0, id]
+                )
+            }
+        } catch {
+        }
+    }
+
+    func deleteCategory(id: Int) {
+        guard let dbQueue = dbQueue else { return }
+        do {
+            try dbQueue.write { db in
+                // 将该分类下书籍的分类重置为 0（未分类）
+                try db.execute(
+                    sql: "UPDATE book SET categoryid = 0 WHERE categoryid = ?",
+                    arguments: [id]
+                )
+                try db.execute(
+                    sql: "DELETE FROM category WHERE id = ?",
+                    arguments: [id]
+                )
+            }
+        } catch {
         }
     }
 }
