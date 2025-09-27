@@ -165,7 +165,7 @@ struct ReaderView: View {
                 )
             }
             .contentShape(Rectangle())
-            .highPriorityGesture(horizontalSwipeGesture(geo.size))
+            .SimultaneousGestureExample(horizontalSwipeGesture(geo.size))
             .onTapGesture {
                 withAnimation { showControls.toggle() }
             }
@@ -203,7 +203,6 @@ struct ReaderView: View {
             .onChange(of: geo.size) { _, newSize in
                 screenSize = newSize
             }
-            // 设置由 ReadingSettings 驱动，无需本地同步
             .onDisappear {
                 // 移除通知监听器
                 NotificationCenter.default.removeObserver(self)

@@ -8,6 +8,7 @@ enum DefaultsKeys {
     static let readerBackgroundColor = "ReaderBackgroundColor"
     static let readerTextColor = "ReaderTextColor"
     static let readerDebugLoggingEnabled = "ReaderDebugLoggingEnabled"
+    static let readerSavedColorPresets = "ReaderSavedColorPresetsJSON"
 
     // App
     static let securityOverlayEnabled = "SecurityOverlayEnabled"
