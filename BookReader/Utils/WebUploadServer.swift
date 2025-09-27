@@ -243,7 +243,7 @@ final class WebUploadServer: ObservableObject {
     private func renderUploadHTML() -> String {
         let title = String(localized: "import.html.title")
         let hint = String(localized: "import.html.hint")
-        let btnText = String(localized: "import.html.btn_upload")
+        let btnText = String(localized: "import.html.btn.upload")
         let msgUploading = String(localized: "import.html.msg_uploading")
         let msgSuccess = String(localized: "import.html.msg_success")
         let msgFailed = String(localized: "import.html.msg_failed")

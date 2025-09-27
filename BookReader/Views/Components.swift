@@ -25,11 +25,11 @@ struct TextFieldDialog: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     HStack {
-                        Button(String(localized: "btn_cancel")) {
+                        Button(String(localized: "btn.cancel")) {
                             onCancel()
                         }
                         .frame(maxWidth: .infinity)
-                        Button(String(localized: "btn_save")) {
+                        Button(String(localized: "btn.save")) {
                             onSave()
                         }
                         .frame(maxWidth: .infinity)

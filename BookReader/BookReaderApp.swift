@@ -46,7 +46,7 @@ struct NovelReaderApp: App {
                                 ),
                                 message: Text(db.initError ?? ""),
                                 dismissButton: .default(
-                                    Text(String(localized: "btn_ok"))
+                                    Text(String(localized: "btn.ok"))
                                 )
                             )
                         }

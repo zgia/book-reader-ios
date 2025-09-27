@@ -155,7 +155,7 @@ struct BookListView: View {
             presenting: deletingBook
         ) { target in
             Button(
-                String(localized: "btn_delete"),
+                String(localized: "btn.delete"),
                 role: .destructive
             ) {
                 withAnimation {
@@ -165,7 +165,7 @@ struct BookListView: View {
                     deletingBook = nil
                 }
             }
-            Button(String(localized: "btn_cancel"), role: .cancel) {
+            Button(String(localized: "btn.cancel"), role: .cancel) {
                 deletingBook = nil
             }
         } message: { target in

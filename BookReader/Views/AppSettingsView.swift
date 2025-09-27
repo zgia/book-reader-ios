@@ -180,8 +180,8 @@ struct AppSettingsView: View {
                 ).foregroundColor(.secondary)
                 Button(
                     webServer.isRunning
-                        ? String(localized: "btn_stop_web_server")
-                        : String(localized: "btn_start_web_server")
+                        ? String(localized: "btn.stop_web_server")
+                        : String(localized: "btn.start_web_server")
                 ) {
                     if webServer.isRunning {
                         Task { await webServer.stop() }
@@ -196,7 +196,7 @@ struct AppSettingsView: View {
             HStack {
                 Text(String(localized: "import.uploaded_books"))
                 Spacer()
-                Button(String(localized: "btn_refresh")) {
+                Button(String(localized: "btn.refresh")) {
                     webServer.refreshUploadedFiles()
                 }
                 .font(.footnote)
@@ -216,11 +216,11 @@ struct AppSettingsView: View {
                             ProgressView().scaleEffect(0.8)
                         }
                         Menu {
-                            Button(String(localized: "btn_import")) {
+                            Button(String(localized: "btn.import")) {
                                 onWebImportButtonTapped(url: file.id)
                             }
                             Button(
-                                String(localized: "btn_delete"),
+                                String(localized: "btn.delete"),
                                 role: .destructive
                             ) {
                                 do { try webServer.delete(file: file) } catch {
@@ -418,12 +418,12 @@ struct AppSettingsView: View {
             .navigationTitle(String(localized: "security.set_passcode_title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(String(localized: "btn_cancel")) {
+                    Button(String(localized: "btn.cancel")) {
                         securitySheet = nil
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "btn_save")) {
+                    Button(String(localized: "btn.save")) {
                         guard passcodeInput.count == 6,
                             passcodeInput == passcodeConfirmInput
                         else {
@@ -511,12 +511,12 @@ struct AppSettingsView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(String(localized: "btn_cancel")) {
+                    Button(String(localized: "btn.cancel")) {
                         securitySheet = nil
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "btn_remove"), role: .destructive)
+                    Button(String(localized: "btn.remove"), role: .destructive)
                     {
                         if PasscodeManager.shared.verifyPasscode(passcodeInput)
                         {
@@ -658,14 +658,14 @@ struct AppSettingsView: View {
                             .multilineTextAlignment(.center)
                     }
                     HStack {
-                        Button(String(localized: "btn_cancel")) {
+                        Button(String(localized: "btn.cancel")) {
                             securityDialog = nil
                         }
                         .frame(maxWidth: .infinity)
                         Button(
                             dialog == .setPasscode
-                                ? String(localized: "btn_save")
-                                : String(localized: "btn_remove")
+                                ? String(localized: "btn.save")
+                                : String(localized: "btn.remove")
                         ) {
                             handleSecurityDialogPrimaryAction(dialog)
                         }
@@ -755,8 +755,8 @@ struct AppSettingsView: View {
         }
         var primaryActionTitle: String {
             self == .setPasscode
-                ? String(localized: "btn_save")
-                : String(localized: "btn_remove")
+                ? String(localized: "btn.save")
+                : String(localized: "btn.remove")
         }
     }
 
@@ -809,7 +809,7 @@ struct AppSettingsView: View {
             HStack {
                 Text(String(localized: "db.stats.title"))
                 Spacer()
-                Button(String(localized: "btn_refresh")) { refreshStats() }
+                Button(String(localized: "btn.refresh")) { refreshStats() }
                     .font(.footnote)
             }
             if !statsText.isEmpty {
@@ -837,8 +837,8 @@ struct AppSettingsView: View {
                 String(localized: "db.compact.confirm_title"),
                 isPresented: $showingCompactConfirm
             ) {
-                Button(String(localized: "btn_cancel"), role: .cancel) {}
-                Button(String(localized: "btn_ok"), role: .destructive) {
+                Button(String(localized: "btn.cancel"), role: .cancel) {}
+                Button(String(localized: "btn.ok"), role: .destructive) {
                     onCompactButtonTapped()
                 }
             } message: {

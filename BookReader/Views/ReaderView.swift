@@ -161,7 +161,7 @@ struct ReaderView: View {
             .alert(isPresented: $showEdgeAlert) {
                 Alert(
                     title: Text(edgeAlertMessage),
-                    dismissButton: .default(Text(String(localized: "btn_ok")))
+                    dismissButton: .default(Text(String(localized: "btn.ok")))
                 )
             }
             .contentShape(Rectangle())
@@ -489,7 +489,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                        Text(String(localized: "btn_prev")).font(.caption)
+                        Text(String(localized: "btn.prev")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -500,7 +500,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "list.bullet")
-                        Text(String(localized: "btn_index")).font(.caption)
+                        Text(String(localized: "btn.index")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -511,7 +511,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "bookmark")
-                        Text(String(localized: "btn_favorite")).font(.caption)
+                        Text(String(localized: "btn.favorite")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -522,7 +522,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "gearshape")
-                        Text(String(localized: "btn_setting")).font(.caption)
+                        Text(String(localized: "btn.setting")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -536,7 +536,7 @@ struct ReaderView: View {
                 } label: {
                     VStack(spacing: 4) {
                         Image(systemName: "chevron.right")
-                        Text(String(localized: "btn_next")).font(.caption)
+                        Text(String(localized: "btn.next")).font(.caption)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)

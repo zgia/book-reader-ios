@@ -58,7 +58,7 @@ struct FavoritesView: View {
                                     deleteFavorite(id: row.favorite.id)
                                 } label: {
                                     Label(
-                                        String(localized: "btn_delete"),
+                                        String(localized: "btn.delete"),
                                         systemImage: "trash"
                                     )
                                 }

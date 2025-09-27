@@ -20,7 +20,7 @@ struct CategoryView: View {
                     )
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    Button(String(localized: "btn_add")) { addCategory() }
+                    Button(String(localized: "btn.add")) { addCategory() }
                         .disabled(
                             newTitle.trimmingCharacters(
                                 in: .whitespacesAndNewlines
@@ -62,7 +62,7 @@ struct CategoryView: View {
                                     renameText = cat.title
                                 } label: {
                                     Label(
-                                        String(localized: "btn_rename"),
+                                        String(localized: "btn.rename"),
                                         systemImage: "pencil"
                                     )
                                 }
@@ -75,8 +75,8 @@ struct CategoryView: View {
                                 } label: {
                                     Label(
                                         cat.ishidden == 1
-                                            ? String(localized: "btn_show")
-                                            : String(localized: "btn_hide"),
+                                            ? String(localized: "btn.show")
+                                            : String(localized: "btn.hide"),
                                         systemImage: cat.ishidden == 1
                                             ? "eye"
                                             : "eye.slash"
@@ -89,7 +89,7 @@ struct CategoryView: View {
                                     deleting = cat
                                 } label: {
                                     Label(
-                                        String(localized: "btn_delete"),
+                                        String(localized: "btn.delete"),
                                         systemImage: "trash"
                                     )
                                 }
@@ -114,8 +114,8 @@ struct CategoryView: View {
                 set: { if !$0 { deleting = nil } }
             )
         ) {
-            Button(String(localized: "btn_cancel"), role: .cancel) {}
-            Button(String(localized: "btn_delete"), role: .destructive) {
+            Button(String(localized: "btn.cancel"), role: .cancel) {}
+            Button(String(localized: "btn.delete"), role: .destructive) {
                 if let target = deleting {
                     db.deleteCategory(id: target.id)
                     deleting = nil

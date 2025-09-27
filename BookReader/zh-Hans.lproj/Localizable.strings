@@ -1,26 +1,26 @@
-book = "书籍";
+"book" = "书籍";
 
 "unknown_msg" = "未知消息";
 
 // 按钮
-btn_ok = "确定";
-btn_cancel = "取消";
-btn_add = "添加";
-btn_show = "显示";
-btn_hide = "隐藏";
-btn_rename = "重命名";
-btn_save = "保存";
-btn_delete = "删除";
-btn_prev = "上一章";
-btn_next = "下一章";
-btn_index = "目录";
-btn_favorite = "收藏";
-btn_setting = "设置";
-btn_done = "完成";
-btn_refresh = "刷新";
-btn_import = "导入";
-btn_start_web_server = "开启网页服务";
-btn_stop_web_server = "停止网页服务";
+"btn.ok" = "确定";
+"btn.cancel" = "取消";
+"btn.add" = "添加";
+"btn.show" = "显示";
+"btn.hide" = "隐藏";
+"btn.rename" = "重命名";
+"btn.save" = "保存";
+"btn.delete" = "删除";
+"btn.prev" = "上一章";
+"btn.next" = "下一章";
+"btn.index" = "目录";
+"btn.favorite" = "收藏";
+"btn.setting" = "设置";
+"btn.done" = "完成";
+"btn.refresh" = "刷新";
+"btn.import" = "导入";
+"btn.start_web_server" = "开启网页上传图书服务";
+"btn.stop_web_server" = "停止网页上传图书服务";
 
 // 初始化
 "db.init_failed" = "初始化数据库失败";
@@ -154,7 +154,7 @@ btn_stop_web_server = "停止网页服务";
 "import.web.srv_url" = "http://<设备IP>:%d/";
 "import.html.title" = "BookReader 网页上传";
 "import.html.hint" = "请选择 .txt 文件上传。已上传文件可在 App 设置 - 网页上传 中导入或删除。";
-"import.html.btn_upload" = "上传";
+"import.html.btn.upload" = "上传";
 "import.html.msg_uploading" = "上传中...";
 "import.html.msg_success" = "上传成功";
 "import.html.msg_failed" = "上传失败: ";

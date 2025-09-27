@@ -68,7 +68,7 @@ struct BookInfoView: View {
             .navigationTitle(String(localized: "book_info.title"))
             //.toolbar {
             //    ToolbarItem(placement: .topBarTrailing) {
-            //        Button(String(localized: "btn_done")) { dismiss() }
+            //        Button(String(localized: "btn.done")) { dismiss() }
             //    }
             //}
             .presentationDetents([.large])
@@ -126,7 +126,7 @@ struct BookInfoView: View {
                     .navigationTitle(String(localized: "bookinfo.set_category"))
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button(String(localized: "btn_done")) {
+                            Button(String(localized: "btn.done")) {
                                 showingCategorySheet = false
                             }
                         }
