@@ -331,6 +331,24 @@ extension DatabaseManager {
         }) ?? []
     }
 
+    // 统计：每个分类下的图书数量（key: categoryid，value: count）
+    func fetchBookCountsByCategory() -> [Int: Int] {
+        (try? dbQueue.read { db in
+            struct Row: Decodable, FetchableRecord {
+                let categoryid: Int
+                let cnt: Int
+            }
+            let rows = try Row.fetchAll(
+                db,
+                sql:
+                    "SELECT IFNULL(categoryid, 0) AS categoryid, COUNT(*) AS cnt FROM book GROUP BY IFNULL(categoryid, 0)"
+            )
+            var result: [Int: Int] = [:]
+            for r in rows { result[r.categoryid] = r.cnt }
+            return result
+        }) ?? [:]
+    }
+
     @discardableResult
     func insertCategory(title: String) -> Int? {
         guard let dbQueue = dbQueue else { return nil }
@@ -344,6 +362,13 @@ extension DatabaseManager {
                     sql:
                         "INSERT INTO category(id, parentid, title, ishidden) VALUES(?, 0, ?, 0)",
                     arguments: [newId, trimmed]
+                )
+            }
+            // 广播分类已变更
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .categoriesDidChange,
+                    object: nil
                 )
             }
             return newId
@@ -363,6 +388,12 @@ extension DatabaseManager {
                     arguments: [trimmed, id]
                 )
             }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .categoriesDidChange,
+                    object: nil
+                )
+            }
         } catch {
         }
     }
@@ -374,6 +405,12 @@ extension DatabaseManager {
                 try db.execute(
                     sql: "UPDATE category SET ishidden = ? WHERE id = ?",
                     arguments: [isHidden ? 1 : 0, id]
+                )
+            }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .categoriesDidChange,
+                    object: nil
                 )
             }
         } catch {
@@ -392,6 +429,12 @@ extension DatabaseManager {
                 try db.execute(
                     sql: "DELETE FROM category WHERE id = ?",
                     arguments: [id]
+                )
+            }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .categoriesDidChange,
+                    object: nil
                 )
             }
         } catch {
@@ -419,6 +462,12 @@ extension DatabaseManager {
                     sql:
                         "UPDATE book SET categoryid = ?, updatedat = ? WHERE id = ?",
                     arguments: [cid, ts, bookId]
+                )
+            }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .categoriesDidChange,
+                    object: nil
                 )
             }
         } catch {

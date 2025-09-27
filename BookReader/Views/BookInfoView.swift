@@ -6,6 +6,7 @@ struct BookInfoView: View {
     let progressText: String
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var db: DatabaseManager
+    @EnvironmentObject private var appAppearance: AppAppearanceSettings
 
     @State private var categoryTitle: String = ""
     @State private var currentCategoryId: Int? = nil
@@ -78,7 +79,10 @@ struct BookInfoView: View {
             .onAppear {
                 categoryTitle = book.category
                 currentCategoryId = db.getBookCategoryId(bookId: book.id)
-                categories = db.fetchCategories(includeHidden: false)
+                categories = db.fetchCategories(
+                    includeHidden: !appAppearance
+                        .hideHiddenCategoriesInManagement
+                )
             }
             .sheet(isPresented: $showingCategorySheet) {
                 NavigationStack {
@@ -86,11 +90,11 @@ struct BookInfoView: View {
                         Button {
                             selectCategory(
                                 nil,
-                                title: String(localized: "category.all")
+                                title: String(localized: "category.none")
                             )
                         } label: {
                             HStack {
-                                Text(String(localized: "category.all"))
+                                Text(String(localized: "category.none"))
                                 Spacer()
                                 if currentCategoryId == nil
                                     || currentCategoryId == 0
@@ -105,6 +109,10 @@ struct BookInfoView: View {
                                 selectCategory(cat.id, title: cat.title)
                             } label: {
                                 HStack {
+                                    let icon =
+                                        cat.ishidden == 1 ? "eye.slash" : "eye"
+                                    Image(systemName: icon)
+                                        .foregroundColor(.secondary)
                                     Text(cat.title)
                                     Spacer()
                                     if currentCategoryId == cat.id {
@@ -161,7 +169,9 @@ struct BookInfoView: View {
     @ViewBuilder
     private func categoryEditableRow() -> some View {
         Button {
-            categories = db.fetchCategories(includeHidden: false)
+            categories = db.fetchCategories(
+                includeHidden: !appAppearance.hideHiddenCategoriesInManagement
+            )
             showingCategorySheet = true
         } label: {
             HStack {
@@ -190,7 +200,7 @@ struct BookInfoView: View {
             }
             if !categoryTitle.isEmpty { return categoryTitle }
         }
-        return String(localized: "category.all")
+        return String(localized: "category.none")
     }
 
     private func selectCategory(_ id: Int?, title: String) {

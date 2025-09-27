@@ -2,11 +2,13 @@ import SwiftUI
 
 struct CategoryView: View {
     @EnvironmentObject private var db: DatabaseManager
+    @EnvironmentObject private var appAppearance: AppAppearanceSettings
 
     @State private var categories: [Category] = []
     @State private var newTitle: String = ""
     @State private var renaming: Category? = nil
     @State private var renameText: String = ""
+    @State private var bookCounts: [Int: Int] = [:]
 
     var body: some View {
         List {
@@ -35,38 +37,61 @@ struct CategoryView: View {
                 } else {
                     ForEach(categories) { cat in
                         HStack {
-                            VStack(alignment: .leading) {
-                                Text(cat.title)
-                                Text(
-                                    cat.ishidden == 1
-                                        ? String(localized: "category.hidden")
-                                        : String(localized: "category.visible")
-                                )
-                                .font(.caption2)
+                            let icon = cat.ishidden == 1 ? "eye.slash" : "eye"
+                            Image(systemName: icon)
                                 .foregroundColor(.secondary)
+
+                            VStack(alignment: .leading) {
+                                let count = bookCounts[cat.id] ?? 0
+                                let countText = String(
+                                    format: String(
+                                        localized: "category.book_count"
+                                    ),
+                                    count
+                                )
+
+                                Text(cat.title)
+                                Text(countText)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
                             }
                             Spacer()
                             Menu {
-                                Button(String(localized: "btn_rename")) {
+                                Button {
                                     renaming = cat
                                     renameText = cat.title
+                                } label: {
+                                    Label(
+                                        String(localized: "btn_rename"),
+                                        systemImage: "pencil"
+                                    )
                                 }
-                                Button(
-                                    cat.ishidden == 1
-                                        ? String(localized: "btn_show")
-                                        : String(localized: "btn_hide")
-                                ) {
+                                Button {
                                     db.updateCategoryHidden(
                                         id: cat.id,
                                         isHidden: cat.ishidden == 0
                                     )
                                     load()
+                                } label: {
+                                    Label(
+                                        cat.ishidden == 1
+                                            ? String(localized: "btn_show")
+                                            : String(localized: "btn_hide"),
+                                        systemImage: cat.ishidden == 1
+                                            ? "eye"
+                                            : "eye.slash"
+                                    )
                                 }
+                                Divider()
                                 Button(
-                                    String(localized: "btn_delete"),
                                     role: .destructive
                                 ) {
                                     deleting = cat
+                                } label: {
+                                    Label(
+                                        String(localized: "btn_delete"),
+                                        systemImage: "trash"
+                                    )
                                 }
                             } label: {
                                 Image(systemName: "ellipsis.circle")
@@ -78,6 +103,9 @@ struct CategoryView: View {
         }
         .navigationTitle(String(localized: "category.title"))
         .onAppear { load() }
+        .onChange(of: appAppearance.hideHiddenCategoriesInManagement) { _, _ in
+            load()
+        }
         .overlay(renamingOverlay())
         .alert(
             String(localized: "category.confirm_deleting"),
@@ -111,7 +139,9 @@ struct CategoryView: View {
     }
 
     private func load() {
-        categories = db.fetchCategories(includeHidden: true)
+        let includeHidden = !appAppearance.hideHiddenCategoriesInManagement
+        categories = db.fetchCategories(includeHidden: includeHidden)
+        bookCounts = db.fetchBookCountsByCategory()
     }
 
     private func addCategory() {

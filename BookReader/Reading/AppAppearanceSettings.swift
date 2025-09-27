@@ -19,6 +19,8 @@ enum AppAppearanceOption: String, CaseIterable, Identifiable {
 final class AppAppearanceSettings: ObservableObject {
     @AppStorage("AppAppearanceOption") private var storedOption: String =
         AppAppearanceOption.system.rawValue
+    @AppStorage(DefaultsKeys.hideHiddenCategoriesInManagement)
+    var hideHiddenCategoriesInManagement: Bool = false
 
     var option: AppAppearanceOption {
         AppAppearanceOption(rawValue: storedOption) ?? .system

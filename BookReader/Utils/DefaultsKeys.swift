@@ -11,6 +11,8 @@ enum DefaultsKeys {
 
     // App
     static let securityOverlayEnabled = "SecurityOverlayEnabled"
+    static let hideHiddenCategoriesInManagement =
+        "HideHiddenCategoriesInManagement"
 
     // ProgressStore
     static let readingProgress = "reading_progress_v1"

@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 // 通知名称扩展
 extension Notification.Name {
     static let dismissAllModals = Notification.Name("dismissAllModals")
     static let passcodeDidChange = Notification.Name("passcodeDidChange")
+    static let categoriesDidChange = Notification.Name("categoriesDidChange")
 }
 
 @main
@@ -212,12 +214,9 @@ private struct SecurityOverlayView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 44, weight: .semibold))
-                        .foregroundColor(.black.opacity(0.6))
                     Text(String(localized: "security.auth_to_unlock"))
-                        .foregroundColor(.black)
                         .font(.headline)
                     Text(displayMessage)
-                        .foregroundColor(.black.opacity(0.6))
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
@@ -242,8 +241,21 @@ private struct SecurityOverlayView: View {
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 10)
-                        .background(Color.white)
                         .cornerRadius(10)
+                        .background(
+                            RoundedRectangle(
+                                cornerRadius: 10,
+                                style: .continuous
+                            )
+                            .fill(.thinMaterial)
+                        )
+                        .overlay(
+                            RoundedRectangle(
+                                cornerRadius: 10,
+                                style: .continuous
+                            )
+                            .stroke(Color(UIColor.separator), lineWidth: 1)
+                        )
                     }
                     .padding(.top, 8)
                 }

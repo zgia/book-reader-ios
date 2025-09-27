@@ -18,9 +18,9 @@ struct ReaderSettingsView: View {
             textHex: "#000000"
         ),
         ColorPreset(
-            name: String(localized: "setting.color_dark"),
-            backgroundHex: "#000000",
-            textHex: "#FFFFFF"
+            name: String(localized: "setting.color_deep_grey"),
+            backgroundHex: "#121212",
+            textHex: "#EAEAEA"
         ),
         ColorPreset(
             name: String(localized: "setting.color_soft_yellow"),
@@ -28,25 +28,37 @@ struct ReaderSettingsView: View {
             textHex: "#5B4636"
         ),
         ColorPreset(
-            name: String(localized: "setting.color_warm_paper"),
-            backgroundHex: "#FAF3E0",
-            textHex: "#3A3A3A"
-        ),
-        ColorPreset(
             name: String(localized: "setting.color_green"),
             backgroundHex: "#CCE8CF",
             textHex: "#2B3D2F"
-        ),
-        ColorPreset(
-            name: String(localized: "setting.color_deep_grey"),
-            backgroundHex: "#121212",
-            textHex: "#EAEAEA"
         ),
     ]
 
     var body: some View {
         NavigationStack {
             Form {
+
+                // 预览区域
+                Section(header: Text(String(localized: "setting.preview"))) {
+                    VStack(
+                        alignment: .leading,
+                        spacing: reading.paragraphSpacing
+                    ) {
+                        Text(String(localized: "setting.preview_text_1"))
+                            .font(.system(size: reading.fontSize))
+                            .foregroundColor(reading.textColor)
+                            .lineSpacing(reading.lineSpacing)
+
+                        Text(String(localized: "setting.preview_text_2"))
+                            .font(.system(size: reading.fontSize))
+                            .foregroundColor(reading.textColor)
+                            .lineSpacing(reading.lineSpacing)
+                    }
+                    .padding()
+                    .background(reading.backgroundColor)
+                    .cornerRadius(8)
+                }
+
                 // 字体大小设置
                 Section(header: Text(String(localized: "setting.font_size"))) {
                     HStack {
@@ -215,27 +227,6 @@ struct ReaderSettingsView: View {
                         ),
                         supportsOpacity: false
                     )
-                }
-
-                // 预览区域
-                Section(header: Text(String(localized: "setting.preview"))) {
-                    VStack(
-                        alignment: .leading,
-                        spacing: reading.paragraphSpacing
-                    ) {
-                        Text(String(localized: "setting.preview_text_1"))
-                            .font(.system(size: reading.fontSize))
-                            .foregroundColor(reading.textColor)
-                            .lineSpacing(reading.lineSpacing)
-
-                        Text(String(localized: "setting.preview_text_2"))
-                            .font(.system(size: reading.fontSize))
-                            .foregroundColor(reading.textColor)
-                            .lineSpacing(reading.lineSpacing)
-                    }
-                    .padding()
-                    .background(reading.backgroundColor)
-                    .cornerRadius(8)
                 }
 
                 // 调试

@@ -14,6 +14,7 @@ struct BookListView: View {
     @State private var showDeleteConfirm: Bool = false
     @State private var selectedCategoryId: Int? = nil  // nil: 全部分类
     @State private var showCategoryMenu: Bool = false
+    @State private var categoriesVersion: Int = 0
 
     var body: some View {
         Group {
@@ -71,6 +72,7 @@ struct BookListView: View {
                                 systemImage: "folder.badge.gearshape"
                             )
                         }
+                        Divider()
                         Button {
                             selectedCategoryId = nil
                             loadBooks(search: searchText)
@@ -98,8 +100,22 @@ struct BookListView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .padding(6)
+                            .background(
+                                Group {
+                                    if selectedCategoryId != nil {
+                                        Circle().fill(
+                                            Color.accentColor.opacity(0.8)
+                                        )
+                                    } else {
+                                        Color.clear
+                                    }
+                                }
+                            )
+                            .clipShape(Circle())
                     }
+                    .id(categoriesVersion)
                 }
             }
             .onAppear {
@@ -117,6 +133,13 @@ struct BookListView: View {
             .onDisappear {
                 // 移除通知监听器
                 NotificationCenter.default.removeObserver(self)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .categoriesDidChange)
+            ) { _ in
+                // 分类新增/修改/隐藏/删除后刷新列表并强制重建菜单
+                categoriesVersion += 1
+                loadBooks(search: searchText)
             }
             // 基于目的地闭包的导航，已不再使用基于值的目的地
             .overlay {

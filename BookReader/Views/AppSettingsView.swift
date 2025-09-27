@@ -40,6 +40,9 @@ struct AppSettingsView: View {
 
                 // 数据库维护
                 databaseMaintainerView()
+
+                // 分类显示
+                categoryDisplaySettingsView()
             }
             .navigationTitle(String(localized: "setting.title"))
             .onAppear { refreshStatsAsync() }
@@ -773,6 +776,22 @@ struct AppSettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - 分类显示
+    @ViewBuilder
+    private func categoryDisplaySettingsView() -> some View {
+        Section(
+            header: Text(String(localized: "category.display.title")),
+            footer: Text(String(localized: "category.display.tip")).font(
+                .footnote
+            ).foregroundColor(.secondary)
+        ) {
+            Toggle(
+                String(localized: "category.display.hide_hidden"),
+                isOn: $appAppearance.hideHiddenCategoriesInManagement
+            )
         }
     }
 
