@@ -477,79 +477,63 @@ struct ReaderView: View {
     }
 
     @ViewBuilder
+    func circularButton(
+        systemName: String,
+        title: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(reading.textColor)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(reading.backgroundColor))
+                .overlay(Circle().stroke(reading.textColor, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            NSLocalizedString(title, comment: "")
+        )
+    }
+
+    @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
         if showControls {
-            HStack(spacing: 0) {
-                Button {
+            HStack(spacing: 16) {
+                circularButton(systemName: "chevron.left", title: "btn.prev") {
                     navigateToAdjacentChapter(
                         isNext: false,
                         containerWidth: geo.size.width
                     )
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text(String(localized: "btn.prev")).font(.caption)
-                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
 
-                Button {
+                circularButton(systemName: "list.bullet", title: "btn.index") {
                     showCatalog = true
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "list.bullet")
-                        Text(String(localized: "btn.index")).font(.caption)
-                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
 
-                Button {
+                circularButton(systemName: "bookmark", title: "btn.favorite") {
                     showFavorites = true
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "bookmark")
-                        Text(String(localized: "btn.favorite")).font(.caption)
-                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
 
-                Button {
+                circularButton(systemName: "gearshape", title: "btn.setting") {
                     showSettings = true
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "gearshape")
-                        Text(String(localized: "btn.setting")).font(.caption)
-                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
 
-                Button {
+                circularButton(systemName: "chevron.right", title: "btn.next") {
                     navigateToAdjacentChapter(
                         isNext: true,
                         containerWidth: geo.size.width
                     )
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "chevron.right")
-                        Text(String(localized: "btn.next")).font(.caption)
-                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .contentShape(Rectangle())
             }
-            .foregroundColor(reading.textColor)
             .padding(.horizontal)
             .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
+            .background(reading.backgroundColor)
             .cornerRadius(12)
             .padding(.horizontal)
             .padding(.bottom, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
+
         }
     }
 
