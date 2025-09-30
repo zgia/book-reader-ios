@@ -23,8 +23,6 @@ struct ReaderView: View {
     // 是否处于左右滑动中（用于临时隐藏滚动条）
     @State private var isHorizontalSwiping: Bool = false
 
-    // 章节标题大小
-    @State private var chapterTitleSize: CGFloat = 25
     // 章节标题额外上下间距
     @State private var chapterTitleTopPadding: CGFloat = 12
     @State private var chapterTitleBottomPadding: CGFloat = 10
@@ -941,7 +939,7 @@ struct ReaderView: View {
             // 显示章节标题
             if pageIndex == 0 {
                 Text(currentChapter.title)
-                    .font(.system(size: chapterTitleSize))
+                    .font(.system(size: reading.fontSize * 1.2))
                     .foregroundColor(reading.textColor)
                     .lineSpacing(reading.lineSpacing)
                     .multilineTextAlignment(.center)
@@ -1206,7 +1204,7 @@ struct ReaderView: View {
                     ) {
                         if idx == 0 {
                             Text(title)
-                                .font(.system(size: chapterTitleSize))
+                                .font(.system(size: reading.fontSize * 1.2))
                                 .foregroundColor(reading.textColor)
                                 .lineSpacing(reading.lineSpacing)
                                 .multilineTextAlignment(.center)
