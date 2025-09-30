@@ -67,57 +67,7 @@ struct BookListView: View {
                     .buttonStyle(.plain)
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        NavigationLink(destination: CategoryView()) {
-                            Label(
-                                String(localized: "category.management"),
-                                systemImage: "folder.badge.gearshape"
-                            )
-                        }
-                        Divider()
-                        Button {
-                            selectedCategoryId = nil
-                            loadBooks(search: searchText)
-                        } label: {
-                            Label(
-                                String(localized: "category.all"),
-                                systemImage: "square.grid.2x2"
-                            )
-                        }
-                        // 动态分类项（隐藏分类不显示）
-                        let cats = db.fetchCategories(includeHidden: false)
-                        if !cats.isEmpty {
-                            Divider()
-                            ForEach(cats, id: \.id) { cat in
-                                Button {
-                                    selectedCategoryId = cat.id
-                                    loadBooks(search: searchText)
-                                } label: {
-                                    Label(
-                                        cat.title,
-                                        systemImage: selectedCategoryId
-                                            == cat.id ? "checkmark" : "folder"
-                                    )
-                                }
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(
-                                selectedCategoryId != nil
-                                    ? Color.white : Color.primary
-                            )
-                            .frame(width: 28, height: 28)
-                            .background(
-                                Circle().fill(
-                                    selectedCategoryId != nil
-                                        ? Color.accentColor
-                                        : Color.clear
-                                )
-                            )
-                    }
-                    .id(categoriesVersion)
+                    categoryMenuView()
                 }
             }
             .onAppear {
@@ -179,6 +129,58 @@ struct BookListView: View {
                     target.book.title
                 )
             )
+        }
+    }
+
+    @ViewBuilder
+    private func categoryMenuView() -> some View {
+        Menu {
+            NavigationLink(destination: CategoryView()) {
+                Label(
+                    String(localized: "category.management"),
+                    systemImage: "folder.badge.gearshape"
+                )
+            }
+            Divider()
+            Button {
+                selectedCategoryId = nil
+                loadBooks(search: searchText)
+            } label: {
+                Label(
+                    String(localized: "category.all"),
+                    systemImage: "square.grid.2x2"
+                )
+            }
+            // 动态分类项（隐藏分类不显示）
+            let cats: [Category] = db.fetchCategories(includeHidden: false)
+            if !cats.isEmpty {
+                Divider()
+                ForEach(cats) { cat in
+                    categoryMenuItemButton(cat)
+                }
+            }
+        } label: {
+            let isFiltering = (selectedCategoryId != nil)
+            let fgColor: Color = isFiltering ? .white : .primary
+            let bgColor: Color = isFiltering ? .accentColor : .clear
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(fgColor)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(bgColor))
+        }
+        .id(categoriesVersion)
+    }
+
+    @ViewBuilder
+    private func categoryMenuItemButton(_ cat: Category) -> some View {
+        let iconName: String =
+            (selectedCategoryId == cat.id) ? "checkmark" : "folder"
+        Button {
+            selectedCategoryId = cat.id
+            loadBooks(search: searchText)
+        } label: {
+            Label(cat.title, systemImage: iconName)
         }
     }
 
