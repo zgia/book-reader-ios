@@ -8,6 +8,7 @@ struct ReaderView: View {
     @State private var content: Content?
     @EnvironmentObject var progressStore: ProgressStore
     @EnvironmentObject private var reading: ReadingSettings
+    @Environment(\.dismiss) private var dismiss
     // 使用 @AppStorage 作为持久化源
     @AppStorage(DefaultsKeys.readerDebugLoggingEnabled) private
         var debugEnabled: Bool = false
@@ -65,35 +66,10 @@ struct ReaderView: View {
                 contentScrollView(geo: geo)
                 rightPreviewView(geo: geo)
             }
-            .navigationTitle(currentChapter.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(!showControls)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(currentChapter.title)
-                        .font(.headline)
-                        .foregroundColor(reading.textColor)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    if showControls {
-                        Button {
-                            showBookInfo = true
-                        } label: {
-                            Image(systemName: "book")
-                        }
-                        .accessibilityLabel(
-                            String(localized: "book_info.title")
-                        )
-                    }
-                }
-            }
-            .tint(reading.textColor)
-            .toolbarBackground(reading.backgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar(.hidden, for: .navigationBar)
             .background(reading.backgroundColor)
             .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
+            .overlay(alignment: .top) { topControlsView() }
             .overlay {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
@@ -484,9 +460,9 @@ struct ReaderView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(reading.textColor)
-                .frame(width: 30, height: 30)
+                .frame(width: 44, height: 44)
                 .background(Circle().fill(reading.backgroundColor))
                 .overlay(Circle().stroke(reading.textColor, lineWidth: 0.5))
         }
@@ -534,6 +510,39 @@ struct ReaderView: View {
             .padding(.bottom, 12)
             .transition(.move(edge: .bottom).combined(with: .opacity))
 
+        }
+    }
+
+    @ViewBuilder
+    private func topControlsView() -> some View {
+        if showControls {
+            ZStack {
+                Text(currentChapter.title)
+                    .font(.headline)
+                    .foregroundColor(reading.textColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .overlay {
+                HStack {
+                    circularButton(
+                        systemName: "chevron.left",
+                        title: "btn.back"
+                    ) {
+                        dismiss()
+                    }
+                    Spacer()
+                    circularButton(systemName: "book", title: "book_info.title")
+                    {
+                        showBookInfo = true
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .frame(height: 44)
+            .background(reading.backgroundColor)
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 
