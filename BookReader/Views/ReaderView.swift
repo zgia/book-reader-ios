@@ -23,6 +23,12 @@ struct ReaderView: View {
     // 是否处于左右滑动中（用于临时隐藏滚动条）
     @State private var isHorizontalSwiping: Bool = false
 
+    // 章节标题大小
+    @State private var chapterTitleSize: CGFloat = 25
+    // 章节标题额外上下间距
+    @State private var chapterTitleTopPadding: CGFloat = 12
+    @State private var chapterTitleBottomPadding: CGFloat = 10
+
     // 段落渲染与缓存
     @State private var screenSize: CGSize = .zero
     @State private var paragraphs: [String] = []
@@ -208,7 +214,7 @@ struct ReaderView: View {
             let prev = prevChapterRef,
             let prevPages = pagesCache[prev.id]
         {
-            chapterContentView(pagesArray: prevPages)
+            chapterContentView(pagesArray: prevPages, title: prev.title)
                 .offset(x: -geo.size.width + dragOffset)
                 .accessibilityHidden(true)
         }
@@ -220,7 +226,7 @@ struct ReaderView: View {
             let next = nextChapterRef,
             let nextPages = pagesCache[next.id]
         {
-            chapterContentView(pagesArray: nextPages)
+            chapterContentView(pagesArray: nextPages, title: next.title)
                 .offset(x: geo.size.width + dragOffset)
                 .accessibilityHidden(true)
         }
@@ -931,6 +937,22 @@ struct ReaderView: View {
     private func pageView(pageIndex: Int) -> some View {
         let parts = paragraphsInPage(pageIndex)
         VStack(alignment: .leading, spacing: reading.paragraphSpacing) {
+
+            // 显示章节标题
+            if pageIndex == 0 {
+                Text(currentChapter.title)
+                    .font(.system(size: chapterTitleSize))
+                    .foregroundColor(reading.textColor)
+                    .lineSpacing(reading.lineSpacing)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .textSelection(.disabled)
+                    .padding(.top, chapterTitleTopPadding)
+                    .padding(.bottom, chapterTitleBottomPadding)
+            }
+
             ForEach(parts.indices, id: \.self) { pIdx in
                 Text(parts[pIdx])
                     .font(.system(size: reading.fontSize))
@@ -1166,7 +1188,9 @@ struct ReaderView: View {
 
     // 渲染某一章的内容（用于左右两侧的预览/滑入）
     @ViewBuilder
-    private func chapterContentView(pagesArray: [String]) -> some View {
+    private func chapterContentView(pagesArray: [String], title: String)
+        -> some View
+    {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(pagesArray.indices, id: \.self) { idx in
@@ -1180,6 +1204,19 @@ struct ReaderView: View {
                         alignment: .leading,
                         spacing: reading.paragraphSpacing
                     ) {
+                        if idx == 0 {
+                            Text(title)
+                                .font(.system(size: chapterTitleSize))
+                                .foregroundColor(reading.textColor)
+                                .lineSpacing(reading.lineSpacing)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .textSelection(.disabled)
+                                .padding(.top, chapterTitleTopPadding)
+                                .padding(.bottom, chapterTitleBottomPadding)
+                        }
                         ForEach(parts.indices, id: \.self) { pIdx in
                             Text(parts[pIdx])
                                 .font(.system(size: reading.fontSize))
