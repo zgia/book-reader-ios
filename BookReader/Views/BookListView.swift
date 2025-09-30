@@ -62,7 +62,9 @@ struct BookListView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: AppSettingsView()) {
                         Image(systemName: "gear")
+                            .frame(width: 28, height: 28)
                     }
+                    .buttonStyle(.plain)
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     Menu {
@@ -101,19 +103,19 @@ struct BookListView: View {
                         }
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
-                            .padding(6)
-                            .background(
-                                Group {
-                                    if selectedCategoryId != nil {
-                                        Circle().fill(
-                                            Color.accentColor.opacity(0.8)
-                                        )
-                                    } else {
-                                        Color.clear
-                                    }
-                                }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(
+                                selectedCategoryId != nil
+                                    ? Color.white : Color.primary
                             )
-                            .clipShape(Circle())
+                            .frame(width: 28, height: 28)
+                            .background(
+                                Circle().fill(
+                                    selectedCategoryId != nil
+                                        ? Color.accentColor
+                                        : Color.clear
+                                )
+                            )
                     }
                     .id(categoriesVersion)
                 }

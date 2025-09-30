@@ -165,7 +165,7 @@ struct ReaderView: View {
                 )
             }
             .contentShape(Rectangle())
-            .SimultaneousGestureExample(horizontalSwipeGesture(geo.size))
+            .simultaneousGesture(horizontalSwipeGesture(geo.size))
             .onTapGesture {
                 withAnimation { showControls.toggle() }
             }
@@ -209,7 +209,7 @@ struct ReaderView: View {
             }
         }
     }
-    
+
     private func dlog(_ message: String) {
         if debugEnabled {
             print(message)

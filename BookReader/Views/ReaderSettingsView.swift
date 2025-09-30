@@ -3,6 +3,10 @@ import UIKit
 
 struct ReaderSettingsView: View {
     @EnvironmentObject private var reading: ReadingSettings
+    @State private var newPresetName: String = ""
+    @State private var renamingPreset: ReadingSettings.SavedColorPreset?
+    @State private var renameText: String = ""
+    @State private var deletingPreset: ReadingSettings.SavedColorPreset?
 
     private struct ColorPreset: Identifiable {
         let id = UUID()
@@ -229,6 +233,98 @@ struct ReaderSettingsView: View {
                     )
                 }
 
+                // 保存当前配色
+                Section(
+                    header: Text(
+                        String(localized: "setting.save_current_palette")
+                    )
+                ) {
+                    HStack {
+                        TextField(
+                            String(localized: "setting.input_palette_name"),
+                            text: $newPresetName
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        Button(String(localized: "btn.save")) {
+                            let name = newPresetName.trimmingCharacters(
+                                in: .whitespacesAndNewlines
+                            )
+                            guard !name.isEmpty else { return }
+                            reading.saveCurrentAsPreset(named: name)
+                            newPresetName = ""
+                        }
+                        .disabled(
+                            newPresetName.trimmingCharacters(
+                                in: .whitespacesAndNewlines
+                            ).isEmpty
+                        )
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+
+                // 我的配色
+                Section(
+                    header: Text(
+                        String(localized: "setting.custom_palette_title")
+                    )
+                ) {
+                    if reading.savedPresets.isEmpty {
+                        Text(String(localized: "setting.custom_palette_empty"))
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(reading.savedPresets) { preset in
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(
+                                            Color(hex: preset.backgroundHex)
+                                                ?? .white
+                                        )
+                                        .frame(width: 44, height: 28)
+                                        .overlay(
+                                            Text("Aa")
+                                                .font(.headline)
+                                                .foregroundColor(
+                                                    Color(hex: preset.textHex)
+                                                        ?? .black
+                                                )
+                                        )
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(preset.name)
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                    Text(
+                                        "\(preset.backgroundHex) / \(preset.textHex)"
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                                }
+                                Spacer()
+                                Button(String(localized: "btn.apply")) {
+                                    reading.applyPreset(preset)
+                                }
+                                .buttonStyle(.bordered)
+                                Menu {
+                                    Button(String(localized: "btn.rename")) {
+                                        renamingPreset = preset
+                                        renameText = preset.name
+                                    }
+                                    Button(role: .destructive) {
+                                        deletingPreset = preset
+                                    } label: {
+                                        Text(String(localized: "btn.delete"))
+                                    }
+                                } label: {
+                                    Image(systemName: "ellipsis.circle")
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                    }
+                }
+
                 // 调试
                 Section(header: Text(String(localized: "setting.debug"))) {
                     Toggle(
@@ -242,6 +338,78 @@ struct ReaderSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackgroundInteraction(.enabled)
             .interactiveDismissDisabled(false)
+            .alert(
+                String(localized: "setting.delete_palette_confirm_title"),
+                isPresented: Binding(
+                    get: { deletingPreset != nil },
+                    set: { if !$0 { deletingPreset = nil } }
+                )
+            ) {
+                Button(String(localized: "btn.delete"), role: .destructive) {
+                    if let toDelete = deletingPreset {
+                        reading.deletePreset(toDelete)
+                    }
+                    deletingPreset = nil
+                }
+                Button(String(localized: "btn.cancel"), role: .cancel) {
+                    deletingPreset = nil
+                }
+            } message: {
+                if let preset = deletingPreset {
+                    Text(
+                        String(
+                            format: String(
+                                localized:
+                                    "setting.delete_palette_confirm_message"
+                            ),
+                            preset.name
+                        )
+                    )
+                } else {
+                    Text("")
+                }
+            }
+            .sheet(item: $renamingPreset) { preset in
+                NavigationStack {
+                    Form {
+                        Section {
+                            TextField(
+                                String(
+                                    localized:
+                                        "setting.rename_palette_placeholder"
+                                ),
+                                text: $renameText
+                            )
+                        }
+                    }
+                    .navigationTitle(
+                        String(localized: "setting.rename_palette_title")
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(String(localized: "btn.cancel")) {
+                                renamingPreset = nil
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(String(localized: "btn.save")) {
+                                let name = renameText.trimmingCharacters(
+                                    in: .whitespacesAndNewlines
+                                )
+                                guard !name.isEmpty else { return }
+                                reading.renamePreset(preset, newName: name)
+                                renamingPreset = nil
+                            }
+                            .disabled(
+                                renameText.trimmingCharacters(
+                                    in: .whitespacesAndNewlines
+                                ).isEmpty
+                            )
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
         }
     }
 

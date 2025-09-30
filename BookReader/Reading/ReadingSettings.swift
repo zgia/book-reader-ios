@@ -7,7 +7,12 @@ final class ReadingSettings: ObservableObject {
         var backgroundHex: String
         var textHex: String
 
-        init(id: UUID = UUID(), name: String, backgroundHex: String, textHex: String) {
+        init(
+            id: UUID = UUID(),
+            name: String,
+            backgroundHex: String,
+            textHex: String
+        ) {
             self.id = id
             self.name = name
             self.backgroundHex = backgroundHex
@@ -31,14 +36,27 @@ final class ReadingSettings: ObservableObject {
     }
 
     func saveCurrentAsPreset(named name: String) {
-        let newPreset = SavedColorPreset(name: name, backgroundHex: backgroundHex, textHex: textHex)
+        let newPreset = SavedColorPreset(
+            name: name,
+            backgroundHex: backgroundHex,
+            textHex: textHex
+        )
         // 去重：相同颜色组合仅保留一个，名称以最新为准
-        savedPresets.removeAll { $0.backgroundHex == newPreset.backgroundHex && $0.textHex == newPreset.textHex }
+        savedPresets.removeAll {
+            $0.backgroundHex == newPreset.backgroundHex
+                && $0.textHex == newPreset.textHex
+        }
         savedPresets.insert(newPreset, at: 0)
     }
 
     func deletePreset(_ preset: SavedColorPreset) {
         savedPresets.removeAll { $0.id == preset.id }
+    }
+
+    func renamePreset(_ preset: SavedColorPreset, newName: String) {
+        guard let index = savedPresets.firstIndex(where: { $0.id == preset.id })
+        else { return }
+        savedPresets[index].name = newName
     }
 }
 
@@ -56,8 +74,8 @@ struct ReadingSettingsProvider<Content: View>: View {
         String = "#000000"
     @AppStorage(DefaultsKeys.readerDebugLoggingEnabled) private var storedDebug:
         Bool = false
-    @AppStorage(DefaultsKeys.readerSavedColorPresets) private var storedPresetsJSON:
-        String = "[]"
+    @AppStorage(DefaultsKeys.readerSavedColorPresets) private
+        var storedPresetsJSON: String = "[]"
 
     @StateObject private var settings = ReadingSettings()
     let content: () -> Content
@@ -120,16 +138,23 @@ struct ReadingSettingsProvider<Content: View>: View {
         settings.savedPresets = decodePresets(from: storedPresetsJSON)
     }
 
-    private func decodePresets(from json: String) -> [ReadingSettings.SavedColorPreset] {
+    private func decodePresets(from json: String) -> [ReadingSettings
+        .SavedColorPreset]
+    {
         guard let data = json.data(using: .utf8) else { return [] }
         do {
-            return try JSONDecoder().decode([ReadingSettings.SavedColorPreset].self, from: data)
+            return try JSONDecoder().decode(
+                [ReadingSettings.SavedColorPreset].self,
+                from: data
+            )
         } catch {
             return []
         }
     }
 
-    private func encodePresets(_ presets: [ReadingSettings.SavedColorPreset]) -> String {
+    private func encodePresets(_ presets: [ReadingSettings.SavedColorPreset])
+        -> String
+    {
         do {
             let data = try JSONEncoder().encode(presets)
             return String(data: data, encoding: .utf8) ?? "[]"

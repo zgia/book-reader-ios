@@ -11,6 +11,7 @@
 "btn.rename" = "Rename";
 "btn.save" = "Save";
 "btn.delete" = "Delete";
+"btn.remove" = "Remove";
 "btn.prev" = "Previous";
 "btn.next" = "Next";
 "btn.index" = "Index";
@@ -21,6 +22,7 @@
 "btn.import" = "Import";
 "btn.start_web_server" = "Start Web Server for Uploading Book";
 "btn.stop_web_server" = "Stop Web Server for Uploading Book";
+btn.apply = "Apply";
 
 // Initialization
 "db.init_failed" = "Failed to initialize database";
@@ -106,6 +108,14 @@
 "setting.debug" = "Debug";
 "setting.debug_log_enabled" = "Enable reading debug log";
 "setting.reading_setting" = "Reading Settings";
+setting.save_current_palette = "Save Current Palette";
+setting.input_palette_name = "Palette name";
+setting.custom_palette_title = "My Palettes";
+setting.custom_palette_empty = "No saved palettes yet";
+setting.delete_palette_confirm_title = "Confirm Deletion";
+setting.delete_palette_confirm_message = "Delete palette “%@”?";
+setting.rename_palette_title = "Rename Palette";
+setting.rename_palette_placeholder = "New palette name";
 
 // AppSettingsView - TextBook format help
 "format.help.title" = "Book Format Instructions";
