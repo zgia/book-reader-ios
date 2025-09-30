@@ -4,6 +4,8 @@ struct FavoritesView: View {
     let bookId: Int
     var onSelect: ((Favorite) -> Void)? = nil
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var favorites: [FavoriteRow] = []
 
     var body: some View {
@@ -68,6 +70,15 @@ struct FavoritesView: View {
                 }
             }
             .navigationTitle(String(localized: "favorite.title"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "multiply")
+                    }
+                }
+            }
             .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackgroundInteraction(.enabled)

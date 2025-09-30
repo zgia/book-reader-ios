@@ -480,7 +480,8 @@ struct ReaderView: View {
     private func bottomControlsView(geo: GeometryProxy) -> some View {
         if showControls {
             HStack(spacing: 16) {
-                circularButton(systemName: "chevron.left", title: "btn.prev") {
+                circularButton(systemName: "arrow.backward", title: "btn.prev")
+                {
                     navigateToAdjacentChapter(
                         isNext: false,
                         containerWidth: geo.size.width
@@ -495,11 +496,11 @@ struct ReaderView: View {
                     showFavorites = true
                 }
 
-                circularButton(systemName: "gearshape", title: "btn.setting") {
+                circularButton(systemName: "gear", title: "btn.setting") {
                     showSettings = true
                 }
 
-                circularButton(systemName: "chevron.right", title: "btn.next") {
+                circularButton(systemName: "arrow.forward", title: "btn.next") {
                     navigateToAdjacentChapter(
                         isNext: true,
                         containerWidth: geo.size.width

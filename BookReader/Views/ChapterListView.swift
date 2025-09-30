@@ -4,6 +4,9 @@ import SwiftUI
 struct ChapterListView: View {
     var book: Book
     var onSelect: ((Chapter) -> Void)? = nil
+
+    @Environment(\.dismiss) private var dismiss
+
     @State private var chapters: [Chapter] = []
     @State private var volumes: [Volume] = []
     @State private var chaptersByVolume: [Int: [Chapter]] = [:]  // volumeId -> chapters
@@ -126,6 +129,15 @@ struct ChapterListView: View {
             }
             .searchable(text: $searchText)
             .navigationTitle(book.title)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "multiply")
+                    }
+                }
+            }
             .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackgroundInteraction(.enabled)

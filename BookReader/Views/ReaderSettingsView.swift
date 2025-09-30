@@ -2,6 +2,8 @@ import SwiftUI
 import UIKit
 
 struct ReaderSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+
     @EnvironmentObject private var reading: ReadingSettings
     @State private var newPresetName: String = ""
     @State private var renamingPreset: ReadingSettings.SavedColorPreset?
@@ -43,297 +45,42 @@ struct ReaderSettingsView: View {
             Form {
 
                 // 预览区域
-                Section(header: Text(String(localized: "setting.preview"))) {
-                    VStack(
-                        alignment: .leading,
-                        spacing: reading.paragraphSpacing
-                    ) {
-                        Text(String(localized: "setting.preview_text_1"))
-                            .font(.system(size: reading.fontSize))
-                            .foregroundColor(reading.textColor)
-                            .lineSpacing(reading.lineSpacing)
-
-                        Text(String(localized: "setting.preview_text_2"))
-                            .font(.system(size: reading.fontSize))
-                            .foregroundColor(reading.textColor)
-                            .lineSpacing(reading.lineSpacing)
-                    }
-                    .padding()
-                    .background(reading.backgroundColor)
-                    .cornerRadius(8)
-                }
+                previewView()
 
                 // 字体大小设置
-                Section(header: Text(String(localized: "setting.font_size"))) {
-                    HStack {
-                        Text(
-                            String(
-                                format: String(
-                                    localized: "setting.current_font_size"
-                                ),
-                                Int(reading.fontSize)
-                            )
-                        )
-                        Spacer()
-                        Button("-") {
-                            reading.fontSize = max(8, reading.fontSize - 2)
-                        }
-                        .buttonStyle(.bordered)
-                        Button("+") {
-                            reading.fontSize = min(72, reading.fontSize + 2)
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
+                fontSizeView()
 
                 // 行间距设置
-                Section(header: Text(String(localized: "setting.line_spacing")))
-                {
-                    HStack {
-                        Text(
-                            String(
-                                format: String(
-                                    localized: "setting.current_line_spacing"
-                                ),
-                                Int(reading.lineSpacing)
-                            )
-                        )
-                        Spacer()
-                        Button("-") {
-                            reading.lineSpacing = max(
-                                0,
-                                reading.lineSpacing - 2
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                        Button("+") {
-                            reading.lineSpacing = min(
-                                48,
-                                reading.lineSpacing + 2
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
+                lineSpacingView()
 
                 // 段间距设置
-                Section(
-                    header: Text(String(localized: "setting.paragraph_spacing"))
-                ) {
-                    HStack {
-                        Text(
-                            String(
-                                format: String(
-                                    localized:
-                                        "setting.current_paragraph_spacing"
-                                ),
-                                Int(reading.paragraphSpacing)
-                            )
-                        )
-                        Spacer()
-                        Button("-") {
-                            reading.paragraphSpacing = max(
-                                0,
-                                reading.paragraphSpacing - 4
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                        Button("+") {
-                            reading.paragraphSpacing = min(
-                                96,
-                                reading.paragraphSpacing + 4
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
+                paragraphSpacingView()
 
                 // 预设配色
-                Section(
-                    header: Text(String(localized: "setting.color_presets"))
-                ) {
-                    let columns = [
-                        GridItem(.flexible()), GridItem(.flexible()),
-                    ]
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(presets) { preset in
-                            Button {
-                                reading.backgroundHex = preset.backgroundHex
-                                reading.textHex = preset.textHex
-                            } label: {
-                                HStack {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(
-                                                Color(hex: preset.backgroundHex)
-                                                    ?? .white
-                                            )
-                                            .frame(width: 44, height: 28)
-                                            .overlay(
-                                                Text("Aa")
-                                                    .font(.headline)
-                                                    .foregroundColor(
-                                                        Color(
-                                                            hex: preset.textHex
-                                                        ) ?? .black
-                                                    )
-                                            )
-                                    }
-                                    Text(preset.name)
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(
-                                            Color(
-                                                uiColor:
-                                                    .secondarySystemBackground
-                                            )
-                                        )
-                                )
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+                colorPresetsView()
 
                 // 自定义颜色
-                Section(
-                    header: Text(String(localized: "setting.color_customize"))
-                ) {
-                    ColorPicker(
-                        String(localized: "setting.color_font"),
-                        selection: Binding(
-                            get: { Color(hex: reading.textHex) ?? .black },
-                            set: { newColor in
-                                reading.textHex = hexString(from: newColor)
-                            }
-                        ),
-                        supportsOpacity: false
-                    )
-
-                    ColorPicker(
-                        String(localized: "setting.color_background"),
-                        selection: Binding(
-                            get: {
-                                Color(hex: reading.backgroundHex) ?? .white
-                            },
-                            set: { newColor in
-                                reading.backgroundHex = hexString(
-                                    from: newColor
-                                )
-                            }
-                        ),
-                        supportsOpacity: false
-                    )
-                }
+                colorCustomizeView()
 
                 // 保存当前配色
-                Section(
-                    header: Text(
-                        String(localized: "setting.save_current_palette")
-                    )
-                ) {
-                    HStack {
-                        TextField(
-                            String(localized: "setting.input_palette_name"),
-                            text: $newPresetName
-                        )
-                        .textFieldStyle(.roundedBorder)
-                        Button(String(localized: "btn.save")) {
-                            let name = newPresetName.trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            )
-                            guard !name.isEmpty else { return }
-                            reading.saveCurrentAsPreset(named: name)
-                            newPresetName = ""
-                        }
-                        .disabled(
-                            newPresetName.trimmingCharacters(
-                                in: .whitespacesAndNewlines
-                            ).isEmpty
-                        )
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
+                saveCurrentPaletteView()
 
                 // 我的配色
-                Section(
-                    header: Text(
-                        String(localized: "setting.custom_palette_title")
-                    )
-                ) {
-                    if reading.savedPresets.isEmpty {
-                        Text(String(localized: "setting.custom_palette_empty"))
-                            .foregroundColor(.secondary)
-                    } else {
-                        ForEach(reading.savedPresets) { preset in
-                            HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(
-                                            Color(hex: preset.backgroundHex)
-                                                ?? .white
-                                        )
-                                        .frame(width: 44, height: 28)
-                                        .overlay(
-                                            Text("Aa")
-                                                .font(.headline)
-                                                .foregroundColor(
-                                                    Color(hex: preset.textHex)
-                                                        ?? .black
-                                                )
-                                        )
-                                }
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(preset.name)
-                                        .foregroundColor(.primary)
-                                        .lineLimit(1)
-                                    Text(
-                                        "\(preset.backgroundHex) / \(preset.textHex)"
-                                    )
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                                }
-                                Spacer()
-                                Button(String(localized: "btn.apply")) {
-                                    reading.applyPreset(preset)
-                                }
-                                .buttonStyle(.bordered)
-                                Menu {
-                                    Button(String(localized: "btn.rename")) {
-                                        renamingPreset = preset
-                                        renameText = preset.name
-                                    }
-                                    Button(role: .destructive) {
-                                        deletingPreset = preset
-                                    } label: {
-                                        Text(String(localized: "btn.delete"))
-                                    }
-                                } label: {
-                                    Image(systemName: "ellipsis.circle")
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                    }
-                }
+                customPaletteTitleView()
 
                 // 调试
-                Section(header: Text(String(localized: "setting.debug"))) {
-                    Toggle(
-                        String(localized: "setting.debug_log_enabled"),
-                        isOn: $reading.debugEnabled
-                    )
-                }
+                debugView()
             }
             .navigationTitle(String(localized: "setting.reading_setting"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "multiply")
+                    }
+                }
+            }
             .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
             .presentationBackgroundInteraction(.enabled)
@@ -410,6 +157,336 @@ struct ReaderSettingsView: View {
                 }
                 .presentationDetents([.medium])
             }
+        }
+    }
+
+    // MARK: 预览区域
+    @ViewBuilder
+    private func previewView() -> some View {
+        Section(header: Text(String(localized: "setting.preview"))) {
+            VStack(
+                alignment: .leading,
+                spacing: reading.paragraphSpacing
+            ) {
+                Text(String(localized: "setting.preview_text_1"))
+                    .font(.system(size: reading.fontSize))
+                    .foregroundColor(reading.textColor)
+                    .lineSpacing(reading.lineSpacing)
+
+                Text(String(localized: "setting.preview_text_2"))
+                    .font(.system(size: reading.fontSize))
+                    .foregroundColor(reading.textColor)
+                    .lineSpacing(reading.lineSpacing)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(reading.backgroundColor)
+            .cornerRadius(8)
+        }
+    }
+
+    // MARK: 字体大小设置
+    @ViewBuilder
+    private func fontSizeView() -> some View {
+        Section(header: Text(String(localized: "setting.font_size"))) {
+            HStack {
+                Text(
+                    String(
+                        format: String(
+                            localized: "setting.current_font_size"
+                        ),
+                        Int(reading.fontSize)
+                    )
+                )
+                Spacer()
+                Button("-") {
+                    reading.fontSize = max(8, reading.fontSize - 2)
+                }
+                .buttonStyle(.bordered)
+                Button("+") {
+                    reading.fontSize = min(72, reading.fontSize + 2)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    // MARK: 行间距设置
+    @ViewBuilder
+    private func lineSpacingView() -> some View {
+        Section(header: Text(String(localized: "setting.line_spacing"))) {
+            HStack {
+                Text(
+                    String(
+                        format: String(
+                            localized: "setting.current_line_spacing"
+                        ),
+                        Int(reading.lineSpacing)
+                    )
+                )
+                Spacer()
+                Button("-") {
+                    reading.lineSpacing = max(
+                        0,
+                        reading.lineSpacing - 2
+                    )
+                }
+                .buttonStyle(.bordered)
+                Button("+") {
+                    reading.lineSpacing = min(
+                        48,
+                        reading.lineSpacing + 2
+                    )
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    // MARK: 段间距设置
+    @ViewBuilder
+    private func paragraphSpacingView() -> some View {
+        Section(
+            header: Text(String(localized: "setting.paragraph_spacing"))
+        ) {
+            HStack {
+                Text(
+                    String(
+                        format: String(
+                            localized:
+                                "setting.current_paragraph_spacing"
+                        ),
+                        Int(reading.paragraphSpacing)
+                    )
+                )
+                Spacer()
+                Button("-") {
+                    reading.paragraphSpacing = max(
+                        0,
+                        reading.paragraphSpacing - 4
+                    )
+                }
+                .buttonStyle(.bordered)
+                Button("+") {
+                    reading.paragraphSpacing = min(
+                        96,
+                        reading.paragraphSpacing + 4
+                    )
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+
+    }
+
+    // MARK: 预设配色
+    @ViewBuilder
+    private func colorPresetsView() -> some View {
+        Section(
+            header: Text(String(localized: "setting.color_presets"))
+        ) {
+            let columns = [
+                GridItem(.flexible()), GridItem(.flexible()),
+            ]
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(presets) { preset in
+                    Button {
+                        reading.backgroundHex = preset.backgroundHex
+                        reading.textHex = preset.textHex
+                    } label: {
+                        HStack {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(
+                                        Color(hex: preset.backgroundHex)
+                                            ?? .white
+                                    )
+                                    .frame(width: 44, height: 28)
+                                    .overlay(
+                                        Text("Aa")
+                                            .font(.headline)
+                                            .foregroundColor(
+                                                Color(
+                                                    hex: preset.textHex
+                                                ) ?? .black
+                                            )
+                                    )
+                            }
+                            Text(preset.name)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(
+                                    Color(
+                                        uiColor:
+                                            .secondarySystemBackground
+                                    )
+                                )
+                        )
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: 自定义颜色
+    @ViewBuilder
+    private func colorCustomizeView() -> some View {
+
+        Section(
+            header: Text(String(localized: "setting.color_customize"))
+        ) {
+            ColorPicker(
+                String(localized: "setting.color_font"),
+                selection: Binding(
+                    get: { Color(hex: reading.textHex) ?? .black },
+                    set: { newColor in
+                        reading.textHex = hexString(from: newColor)
+                    }
+                ),
+                supportsOpacity: false
+            )
+
+            ColorPicker(
+                String(localized: "setting.color_background"),
+                selection: Binding(
+                    get: {
+                        Color(hex: reading.backgroundHex) ?? .white
+                    },
+                    set: { newColor in
+                        reading.backgroundHex = hexString(
+                            from: newColor
+                        )
+                    }
+                ),
+                supportsOpacity: false
+            )
+        }
+    }
+
+    // MARK: 保存当前配色
+    @ViewBuilder
+    private func saveCurrentPaletteView() -> some View {
+        Section(
+            header: Text(
+                String(localized: "setting.save_current_palette")
+            )
+        ) {
+            HStack {
+                TextField(
+                    String(localized: "setting.input_palette_name"),
+                    text: $newPresetName
+                )
+                .textFieldStyle(.roundedBorder)
+                Button(String(localized: "btn.save")) {
+                    let name = newPresetName.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    guard !name.isEmpty else { return }
+                    reading.saveCurrentAsPreset(named: name)
+                    newPresetName = ""
+                }
+                .disabled(
+                    newPresetName.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    ).isEmpty
+                )
+                .buttonStyle(.borderedProminent)
+            }
+        }
+
+    }
+
+    // MARK: 我的配色
+    @ViewBuilder
+    private func customPaletteTitleView() -> some View {
+        Section(
+            header: Text(
+                String(localized: "setting.custom_palette_title")
+            )
+        ) {
+            if reading.savedPresets.isEmpty {
+                Text(String(localized: "setting.custom_palette_empty"))
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(reading.savedPresets) { preset in
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(
+                                    Color(hex: preset.backgroundHex)
+                                        ?? .white
+                                )
+                                .frame(width: 44, height: 28)
+                                .overlay(
+                                    Text("Aa")
+                                        .font(.headline)
+                                        .foregroundColor(
+                                            Color(hex: preset.textHex)
+                                                ?? .black
+                                        )
+                                )
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(preset.name)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                            Text(
+                                "\(preset.backgroundHex) / \(preset.textHex)"
+                            )
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                        }
+                        Spacer()
+                        Button(String(localized: "btn.apply")) {
+                            reading.applyPreset(preset)
+                        }
+                        .buttonStyle(.bordered)
+                        Menu {
+                            Button {
+                                renamingPreset = preset
+                                renameText = preset.name
+                            } label: {
+                                Label(
+                                    String(localized: "btn.rename"),
+                                    systemImage: "pencil"
+                                )
+                            }
+                            Divider()
+                            Button(role: .destructive) {
+                                deletingPreset = preset
+                            } label: {
+                                Label(
+                                    String(localized: "btn.delete"),
+                                    systemImage: "trash"
+                                )
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+            }
+        }
+    }
+
+    // MARK: 调试
+    @ViewBuilder
+    private func debugView() -> some View {
+        Section(header: Text(String(localized: "setting.debug"))) {
+            Toggle(
+                String(localized: "setting.debug_log_enabled"),
+                isOn: $reading.debugEnabled
+            )
         }
     }
 
