@@ -43,6 +43,9 @@ struct AppSettingsView: View {
 
                 // 分类显示
                 categoryDisplaySettingsView()
+
+                // 调试
+                debugView()
             }
             .navigationTitle(String(localized: "setting.title"))
             .onAppear { refreshStatsAsync() }
@@ -67,6 +70,20 @@ struct AppSettingsView: View {
             AlertToast(
                 type: .complete(.green),
                 title: alertMessage ?? String(localized: "unknown_msg")
+            )
+        }
+    }
+
+    // MARK: 调试
+    @ViewBuilder
+    private func debugView() -> some View {
+        Section(header: Text(String(localized: "setting.debug"))) {
+            Toggle(
+                String(localized: "setting.debug_log_enabled"),
+                isOn: Binding(
+                    get: { appSettings.isDebugEnabled() },
+                    set: { appSettings.setDebugEnabled($0) }
+                )
             )
         }
     }
@@ -792,7 +809,9 @@ struct AppSettingsView: View {
                 String(localized: "category.display.hide_hidden"),
                 isOn: Binding(
                     get: { appSettings.isHidingHiddenCategoriesInManagement() },
-                    set: { appSettings.setHidingHiddenCategoriesInManagement($0) }
+                    set: {
+                        appSettings.setHidingHiddenCategoriesInManagement($0)
+                    }
                 )
             )
         }

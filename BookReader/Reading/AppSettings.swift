@@ -17,11 +17,16 @@ enum AppAppearanceOption: String, CaseIterable, Identifiable {
 }
 
 final class AppSettings: ObservableObject {
-    @AppStorage(DefaultsKeys.AppAppearanceOption) private
+    static let shared = AppSettings()
+
+    @AppStorage(DefaultsKeys.appAppearanceOption) private
         var storedOption: String = AppAppearanceOption.system.rawValue
 
     @AppStorage(DefaultsKeys.hideHiddenCategoriesInManagement) private
         var storedHideHiddenCategoriesInManagement: Bool = false
+
+    @AppStorage(DefaultsKeys.debugEnabled) private
+        var storedDebugEnabled: Bool = false
 
     var option: AppAppearanceOption {
         AppAppearanceOption(rawValue: storedOption) ?? .system
@@ -40,6 +45,17 @@ final class AppSettings: ObservableObject {
     /// 设置分类管理中是否隐藏“隐藏的分类”
     func setHidingHiddenCategoriesInManagement(_ newValue: Bool) {
         storedHideHiddenCategoriesInManagement = newValue
+        objectWillChange.send()
+    }
+
+    /// 获取调试是否开启
+    func isDebugEnabled() -> Bool {
+        storedDebugEnabled
+    }
+
+    /// 设置调试是否开启
+    func setDebugEnabled(_ newValue: Bool) {
+        storedDebugEnabled = newValue
         objectWillChange.send()
     }
 

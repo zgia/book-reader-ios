@@ -22,7 +22,7 @@
 "btn.import" = "导入";
 "btn.start_web_server" = "开启网页上传图书服务";
 "btn.stop_web_server" = "停止网页上传图书服务";
-btn.apply = "应用";
+"btn.apply" = "应用";
 
 // 初始化
 "db.init_failed" = "初始化数据库失败";
@@ -105,17 +105,19 @@ btn.apply = "应用";
 "setting.preview" = "预览";
 "setting.preview_text_1" = "这是预览文本";
 "setting.preview_text_2" = "您可以在这里看到字体大小、行间距和段间距的效果。";
-"setting.debug" = "调试";
-"setting.debug_log_enabled" = "启用阅读调试日志";
 "setting.reading_setting" = "阅读设置";
-setting.save_current_palette = "保存当前配色";
-setting.input_palette_name = "输入配色名称";
-setting.custom_palette_title = "我的配色";
-setting.custom_palette_empty = "暂无已保存的配色";
-setting.delete_palette_confirm_title = "删除确认";
-setting.delete_palette_confirm_message = "确认删除配色“%@”吗？";
-setting.rename_palette_title = "重命名配色";
-setting.rename_palette_placeholder = "新的配色名称";
+"setting.save_current_palette" = "保存当前配色";
+"setting.input_palette_name" = "输入配色名称";
+"setting.custom_palette_title" = "我的配色";
+"setting.custom_palette_empty" = "暂无已保存的配色";
+"setting.delete_palette_confirm_title" = "删除确认";
+"setting.delete_palette_confirm_message" = "确认删除配色“%@”吗？";
+"setting.rename_palette_title" = "重命名配色";
+"setting.rename_palette_placeholder" = "新的配色名称";
+
+// AppSettingsView - Debug
+"setting.debug" = "调试";
+"setting.debug_log_enabled" = "启用调试日志";
 
 // AppSettingsView - TextBook format help
 "format.help.title" = "图书格式说明";

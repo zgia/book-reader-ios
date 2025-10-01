@@ -24,7 +24,6 @@ final class ReadingSettings: ObservableObject {
     @Published var paragraphSpacing: Double = 16
     @Published var backgroundHex: String = "#FFFFFF"
     @Published var textHex: String = "#000000"
-    @Published var debugEnabled: Bool = false
     @Published var savedPresets: [SavedColorPreset] = []
 
     var backgroundColor: Color { Color(hex: backgroundHex) ?? .white }
@@ -99,9 +98,6 @@ struct ReadingSettingsProvider<Content: View>: View {
             .onChange(of: storedTextHex) { _, _ in
                 settings.textHex = storedTextHex
             }
-            .onChange(of: storedDebug) { _, _ in
-                settings.debugEnabled = storedDebug
-            }
             .onChange(of: storedPresetsJSON) { _, _ in
                 settings.savedPresets = decodePresets(from: storedPresetsJSON)
             }
@@ -120,9 +116,6 @@ struct ReadingSettingsProvider<Content: View>: View {
             .onChange(of: settings.textHex) { _, newValue in
                 storedTextHex = newValue
             }
-            .onChange(of: settings.debugEnabled) { _, newValue in
-                storedDebug = newValue
-            }
             .onChange(of: settings.savedPresets) { _, newValue in
                 storedPresetsJSON = encodePresets(newValue)
             }
@@ -134,7 +127,6 @@ struct ReadingSettingsProvider<Content: View>: View {
         settings.paragraphSpacing = storedParagraphSpacing
         settings.backgroundHex = storedBgHex
         settings.textHex = storedTextHex
-        settings.debugEnabled = storedDebug
         settings.savedPresets = decodePresets(from: storedPresetsJSON)
     }
 

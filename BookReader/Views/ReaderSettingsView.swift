@@ -67,9 +67,6 @@ struct ReaderSettingsView: View {
 
                 // 我的配色
                 customPaletteTitleView()
-
-                // 调试
-                debugView()
             }
             .navigationTitle(String(localized: "setting.reading_setting"))
             .toolbar {
@@ -157,17 +154,6 @@ struct ReaderSettingsView: View {
                 }
                 .presentationDetents([.medium])
             }
-        }
-    }
-    
-    // MARK: 调试
-    @ViewBuilder
-    private func debugView() -> some View {
-        Section(header: Text(String(localized: "setting.debug"))) {
-            Toggle(
-                String(localized: "setting.debug_log_enabled"),
-                isOn: $reading.debugEnabled
-            )
         }
     }
 
