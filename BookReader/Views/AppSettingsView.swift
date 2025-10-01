@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct AppSettingsView: View {
-    @EnvironmentObject private var appAppearance: AppAppearanceSettings
+    @EnvironmentObject private var appSettings: AppSettings
     @EnvironmentObject private var dbManager: DatabaseManager
 
     @ObservedObject private var webServer = WebUploadServer.shared
@@ -767,8 +767,8 @@ struct AppSettingsView: View {
             Picker(
                 String(localized: "appearance.set_appearance"),
                 selection: Binding(
-                    get: { appAppearance.option },
-                    set: { appAppearance.setOption($0) }
+                    get: { appSettings.option },
+                    set: { appSettings.setOption($0) }
                 )
             ) {
                 ForEach(AppAppearanceOption.allCases) { option in
@@ -790,7 +790,10 @@ struct AppSettingsView: View {
         ) {
             Toggle(
                 String(localized: "category.display.hide_hidden"),
-                isOn: $appAppearance.hideHiddenCategoriesInManagement
+                isOn: Binding(
+                    get: { appSettings.isHidingHiddenCategoriesInManagement() },
+                    set: { appSettings.setHidingHiddenCategoriesInManagement($0) }
+                )
             )
         }
     }
@@ -918,6 +921,6 @@ struct AppSettingsView: View {
 
 #Preview("AppSettingsView") {
     AppSettingsView()
-        .environmentObject(AppAppearanceSettings())
+        .environmentObject(AppSettings())
         .environmentObject(DatabaseManager.shared)
 }

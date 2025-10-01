@@ -2,7 +2,7 @@ import SwiftUI
 
 struct CategoryView: View {
     @EnvironmentObject private var db: DatabaseManager
-    @EnvironmentObject private var appAppearance: AppAppearanceSettings
+    @EnvironmentObject private var appSettings: AppSettings
 
     @State private var categories: [Category] = []
     @State private var newTitle: String = ""
@@ -103,7 +103,7 @@ struct CategoryView: View {
         }
         .navigationTitle(String(localized: "category.title"))
         .onAppear { load() }
-        .onChange(of: appAppearance.hideHiddenCategoriesInManagement) { _, _ in
+        .onChange(of: appSettings.isHidingHiddenCategoriesInManagement()) { _, _ in
             load()
         }
         .overlay(renamingOverlay())
@@ -139,7 +139,7 @@ struct CategoryView: View {
     }
 
     private func load() {
-        let includeHidden = !appAppearance.hideHiddenCategoriesInManagement
+        let includeHidden = !appSettings.isHidingHiddenCategoriesInManagement()
         categories = db.fetchCategories(includeHidden: includeHidden)
         bookCounts = db.fetchBookCountsByCategory()
     }

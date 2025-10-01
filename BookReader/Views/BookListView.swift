@@ -4,7 +4,7 @@ import SwiftUI
 struct BookListView: View {
     @EnvironmentObject private var db: DatabaseManager
     @EnvironmentObject var progressStore: ProgressStore
-    @EnvironmentObject private var appAppearance: AppAppearanceSettings
+
     @State private var books: [BookRow] = []
     @State private var searchText = ""
     @State private var searchDebounceTask: Task<Void, Never>? = nil

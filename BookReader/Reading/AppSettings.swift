@@ -16,11 +16,12 @@ enum AppAppearanceOption: String, CaseIterable, Identifiable {
     }
 }
 
-final class AppAppearanceSettings: ObservableObject {
-    @AppStorage("AppAppearanceOption") private var storedOption: String =
-        AppAppearanceOption.system.rawValue
-    @AppStorage(DefaultsKeys.hideHiddenCategoriesInManagement)
-    var hideHiddenCategoriesInManagement: Bool = false
+final class AppSettings: ObservableObject {
+    @AppStorage(DefaultsKeys.AppAppearanceOption) private
+        var storedOption: String = AppAppearanceOption.system.rawValue
+
+    @AppStorage(DefaultsKeys.hideHiddenCategoriesInManagement) private
+        var storedHideHiddenCategoriesInManagement: Bool = false
 
     var option: AppAppearanceOption {
         AppAppearanceOption(rawValue: storedOption) ?? .system
@@ -28,6 +29,17 @@ final class AppAppearanceSettings: ObservableObject {
 
     func setOption(_ newValue: AppAppearanceOption) {
         storedOption = newValue.rawValue
+        objectWillChange.send()
+    }
+
+    /// 获取分类管理中是否隐藏“隐藏的分类”的设置
+    func isHidingHiddenCategoriesInManagement() -> Bool {
+        storedHideHiddenCategoriesInManagement
+    }
+
+    /// 设置分类管理中是否隐藏“隐藏的分类”
+    func setHidingHiddenCategoriesInManagement(_ newValue: Bool) {
+        storedHideHiddenCategoriesInManagement = newValue
         objectWillChange.send()
     }
 

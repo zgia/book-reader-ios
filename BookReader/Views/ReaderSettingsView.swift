@@ -159,6 +159,17 @@ struct ReaderSettingsView: View {
             }
         }
     }
+    
+    // MARK: 调试
+    @ViewBuilder
+    private func debugView() -> some View {
+        Section(header: Text(String(localized: "setting.debug"))) {
+            Toggle(
+                String(localized: "setting.debug_log_enabled"),
+                isOn: $reading.debugEnabled
+            )
+        }
+    }
 
     // MARK: 预览区域
     @ViewBuilder
@@ -476,17 +487,6 @@ struct ReaderSettingsView: View {
                     .contentShape(Rectangle())
                 }
             }
-        }
-    }
-
-    // MARK: 调试
-    @ViewBuilder
-    private func debugView() -> some View {
-        Section(header: Text(String(localized: "setting.debug"))) {
-            Toggle(
-                String(localized: "setting.debug_log_enabled"),
-                isOn: $reading.debugEnabled
-            )
         }
     }
 

@@ -12,7 +12,7 @@ extension Notification.Name {
 struct NovelReaderApp: App {
     @StateObject private var db = DatabaseManager.shared
     @StateObject private var progressStore = ProgressStore()
-    @StateObject private var appAppearance = AppAppearanceSettings()
+    @StateObject private var appSettings = AppSettings()
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isUnlocked: Bool = false
@@ -33,7 +33,7 @@ struct NovelReaderApp: App {
                     BookListView()
                         .environmentObject(db)
                         .environmentObject(progressStore)
-                        .environmentObject(appAppearance)
+                        .environmentObject(appSettings)
                         .alert(
                             isPresented: Binding(
                                 get: { db.initError != nil },
@@ -66,7 +66,7 @@ struct NovelReaderApp: App {
                     }
                 }
             }
-            .preferredColorScheme(appAppearance.preferredColorScheme)
+            .preferredColorScheme(appSettings.preferredColorScheme)
             .onAppear {
                 // 仅首次进入时触发一次验证，避免视图重建导致反复调用
                 if !hasRequestedInitialAuth {

@@ -1,6 +1,19 @@
 import Foundation
+import SwiftUI
 
 struct DebugUtils {
+    private static var isEnabled: Bool {
+        UserDefaults.standard.bool(
+            forKey: DefaultsKeys.readerDebugLoggingEnabled
+        )
+    }
+
+    static func dlog(_ message: String) {
+        if isEnabled {
+            print(message)
+        }
+    }
+
     static func printSandboxPaths() {
         let fm = FileManager.default
 

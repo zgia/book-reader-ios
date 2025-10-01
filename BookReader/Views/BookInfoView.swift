@@ -6,7 +6,7 @@ struct BookInfoView: View {
     let progressText: String
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var db: DatabaseManager
-    @EnvironmentObject private var appAppearance: AppAppearanceSettings
+    @EnvironmentObject private var appSettings: AppSettings
 
     @State private var categoryTitle: String = ""
     @State private var currentCategoryId: Int? = nil
@@ -80,8 +80,7 @@ struct BookInfoView: View {
                 categoryTitle = book.category
                 currentCategoryId = db.getBookCategoryId(bookId: book.id)
                 categories = db.fetchCategories(
-                    includeHidden: !appAppearance
-                        .hideHiddenCategoriesInManagement
+                    includeHidden: !appSettings.isHidingHiddenCategoriesInManagement()
                 )
             }
             .sheet(isPresented: $showingCategorySheet) {
@@ -170,7 +169,7 @@ struct BookInfoView: View {
     private func categoryEditableRow() -> some View {
         Button {
             categories = db.fetchCategories(
-                includeHidden: !appAppearance.hideHiddenCategoriesInManagement
+                includeHidden: !appSettings.isHidingHiddenCategoriesInManagement()
             )
             showingCategorySheet = true
         } label: {
