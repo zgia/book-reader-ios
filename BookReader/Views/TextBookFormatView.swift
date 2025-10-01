@@ -2,6 +2,8 @@ import SwiftUI
 import UIKit
 
 struct TextBookFormatView: View {
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         NavigationStack {
             List {
@@ -40,6 +42,15 @@ struct TextBookFormatView: View {
                 }
             }
             .navigationTitle(String(localized: "format.help.title"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "multiply")
+                    }
+                }
+            }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)
@@ -47,4 +58,9 @@ struct TextBookFormatView: View {
             .interactiveDismissDisabled(false)
         }
     }
+}
+
+#Preview("TextBookFormatView") {
+    TextBookFormatView()
+        .environmentObject(AppSettings())
 }

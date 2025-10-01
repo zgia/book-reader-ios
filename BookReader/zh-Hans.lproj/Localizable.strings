@@ -50,7 +50,7 @@
 "category.confirm_deleting_message" = "确认删除分类 %@ 吗？注：删除分类不会删除图书。";
 "category.book_count" = "共%d本";
 "category.display.title" = "分类显示";
-"category.display.tip" = "开启后，分类管理与选择中将隐藏已被标记为隐藏的分类。";
+"category.display.tip" = "开启后，将不显示隐藏的分类。";
 "category.display.hide_hidden" = "隐藏分类";
 
 // BookListView
@@ -123,8 +123,8 @@
 "format.help.format" = "格式：仅支持文本格式：*.txt。";
 "format.help.book_name" = "书名：支持“书名：xxx”或仅“《xxx》”；若未识别则使用文件名（去扩展名）。";
 "format.help.author" = "作者：“作者：xxx”独立一行。";
-"format.help.volume" = "卷名：行首以“第X卷 卷名”开头（支持中文或阿拉伯数字），行首请勿留空格。";
-"format.help.chapter" = "章节：行首以“第X章 章节名”开头（支持中文或阿拉伯数字），行首请勿留空格。";
+"format.help.volume" = "卷名：行首以“第X卷 卷名”（支持中文或阿拉伯数字），或者“番外卷、番外卷篇”开头，行首请勿留空格。";
+"format.help.chapter" = "章节：行首以“第X章|回|节|折|话 章节名”（X支持中文或阿拉伯数字），或者“序|楔子|引子|序言|前言|序章|正文|人物设定|内容简介|作品相关|后记|后序|尾声|附录|总结|完本感言|完结感言|彩蛋|彩蛋篇|特别篇|番外|番外篇”等开头，行首请勿留空格。";
 "format.help.default" = "默认：章节前的内容会被忽略；未出现卷时会自动创建“正文”卷。";
 
 // AppSettingsView - Database maintenance
@@ -154,8 +154,8 @@
 "import.failed" = "导入失败：%@";
 "import.preview_failed" = "预览失败：%@";
 "import.file_select_failed" = "选择文件失败：%@";
-"import.web_url" = "在同一局域网内用电脑浏览器访问：%@";
-"import.web_tip" = "在同一局域网内用电脑浏览器访问上传页面，支持 .txt 文件";
+"import.web_url" = "同一局域网内用电脑浏览器访问：%@";
+"import.web_tip" = "同一局域网内用电脑浏览器访问上传页面，仅支持文本文件";
 "import.uploaded_books" = "上传的图书";
 "import.no_uploaded_files" = "暂无上传文件";
 "import.delete_failed" = "删除失败：%@";
@@ -163,7 +163,7 @@
 "import.web.srv_save_failed" = "保存失败：%@";
 "import.web.srv_url" = "http://<设备IP>:%d/";
 "import.html.title" = "BookReader 网页上传";
-"import.html.hint" = "请选择 .txt 文件上传。已上传文件可在 App 设置 - 网页上传 中导入或删除。";
+"import.html.hint" = "请选择文本文件上传。已上传文件可在 App 设置 - 网页上传 中导入或删除。";
 "import.html.btn.upload" = "上传";
 "import.html.msg_uploading" = "上传中...";
 "import.html.msg_success" = "上传成功";

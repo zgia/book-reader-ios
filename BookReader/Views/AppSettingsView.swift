@@ -126,7 +126,9 @@ struct AppSettingsView: View {
             header: Text(String(localized: "import.book.title")),
             footer: VStack(alignment: .leading, spacing: 6) {
                 if let reason = webServer.unavailableReason {
-                    Text(reason).font(.footnote).foregroundColor(.secondary)
+                    Text(reason)
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 } else if let url = webServer.serverURL {
                     Text(
                         String(
@@ -141,16 +143,13 @@ struct AppSettingsView: View {
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
-            }
-        ) {
-            HStack {
-                Image(systemName: "questionmark.circle")
-                    .foregroundColor(.secondary)
+
                 Button(action: { showingFormatHelp = true }) {
                     Text(String(localized: "format.help.button"))
                 }
+                .font(.footnote)
             }
-
+        ) {
             if showPreviewButton {
                 HStack {
                     Image(systemName: "square.and.arrow.down.badge.clock")
@@ -862,7 +861,7 @@ struct AppSettingsView: View {
             } message: {
                 Text(String(localized: "db.compact.confirm_message"))
             }
-            
+
             if !statsText.isEmpty {
                 Text(statsText)
                     .font(.footnote)

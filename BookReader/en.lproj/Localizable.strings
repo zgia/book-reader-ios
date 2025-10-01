@@ -50,7 +50,7 @@
 "category.confirm_deleting_message" = "This operation will delete category \"%@\" and cannot be undone. Note: book with categroy cannot be deleted. Continue?";
 "category.book_count" = "%d books";
 "category.display.title" = "Category Display";
-"category.display.tip" = "When enabled, hidden categories will be omitted in management and selection.";
+"category.display.tip" = "When enabled, hidden categories will be omitted.";
 "category.display.hide_hidden" = "Hide categories";
 
 // BookListView
@@ -155,7 +155,7 @@
 "import.preview_failed" = "Preview failed: %@";
 "import.file_select_failed" = "File selection failed: %@";
 "import.web_url" = "Access in the same LAN browser: %@";
-"import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting .txt files";
+"import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting text files";
 "import.uploaded_books" = "Uploaded Books";
 "import.no_uploaded_files" = "No uploaded files";
 "import.delete_failed" = "Delete failed: %@";
@@ -163,7 +163,7 @@
 "import.web.srv_save_failed" = "Save failed: %@";
 "import.web.srv_url" = "http://<Device IP>:%d/";
 "import.html.title" = "BookReader Web Upload";
-"import.html.hint" = "Please select .txt files to upload. Uploaded files can be imported or deleted in App Settings - Web Upload.";
+"import.html.hint" = "Please select text files to upload. Uploaded files can be imported or deleted in App Settings - Web Upload.";
 "import.html.btn.upload" = "Upload";
 "import.html.msg_uploading" = "Uploading...";
 "import.html.msg_success" = "Upload success";
