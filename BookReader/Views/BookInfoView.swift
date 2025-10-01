@@ -66,11 +66,15 @@ struct BookInfoView: View {
                 }
             }
             .navigationTitle(String(localized: "book_info.title"))
-            //.toolbar {
-            //    ToolbarItem(placement: .topBarTrailing) {
-            //        Button(String(localized: "btn.done")) { dismiss() }
-            //    }
-            //}
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "multiply")
+                    }
+                }
+            }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
             .navigationBarTitleDisplayMode(.inline)

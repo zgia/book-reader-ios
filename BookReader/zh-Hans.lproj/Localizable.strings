@@ -88,10 +88,10 @@
 
 // ReaderSettingsView
 "setting.title" = "设置";
-"setting.line_spacing" = "行间距";
-"setting.current_line_spacing" = "当前间距: %d";
-"setting.paragraph_spacing" = "段间距";
-"setting.current_paragraph_spacing" = "当前间距: %d";
+"setting.page_format" = "格式";
+"setting.font_size" = "字体大小: %d";
+"setting.line_spacing" = "行间距: %d";
+"setting.paragraph_spacing" = "段间距: %d";
 "setting.color_presets" = "预设配色";
 "setting.color_customize" = "自定义颜色";
 "setting.color_font" = "文字颜色";
@@ -100,8 +100,6 @@
 "setting.color_deep_grey" = "深灰";
 "setting.color_soft_yellow" = "柔和米黄";
 "setting.color_green" = "护眼绿";
-"setting.font_size" = "字体大小";
-"setting.current_font_size" = "当前大小: %d";
 "setting.preview" = "预览";
 "setting.preview_text_1" = "这是预览文本";
 "setting.preview_text_2" = "您可以在这里看到字体大小、行间距和段间距的效果。";

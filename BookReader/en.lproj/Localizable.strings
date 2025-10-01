@@ -88,10 +88,10 @@
 
 // ReaderSettingsView
 "setting.title" = "Settings";
-"setting.line_spacing" = "Line Spacing";
-"setting.current_line_spacing" = "Current spacing: %d";
-"setting.paragraph_spacing" = "Paragraph Spacing";
-"setting.current_paragraph_spacing" = "Current spacing: %d";
+"setting.page_format" = "Format";
+"setting.font_size" = "Font Size: %d";
+"setting.line_spacing" = "Line Spacing: %d";
+"setting.paragraph_spacing" = "Paragraph Spacing: %d";
 "setting.color_presets" = "Color Presets";
 "setting.color_customize" = "Custom Color";
 "setting.color_font" = "Font Color";
@@ -100,8 +100,6 @@
 "setting.color_deep_grey" = "Deep Grey";
 "setting.color_soft_yellow" = "Soft Yellow";
 "setting.color_green" = "Green";
-"setting.font_size" = "Font Size";
-"setting.current_font_size" = "Current Size: %d";
 "setting.preview" = "Preview";
 "setting.preview_text_1" = "This is preview text";
 "setting.preview_text_2" = "You can see the effect of font size, line spacing, and paragraph spacing here.";

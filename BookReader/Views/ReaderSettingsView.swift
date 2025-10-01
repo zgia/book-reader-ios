@@ -48,13 +48,7 @@ struct ReaderSettingsView: View {
                 previewView()
 
                 // 字体大小设置
-                fontSizeView()
-
-                // 行间距设置
-                lineSpacingView()
-
-                // 段间距设置
-                paragraphSpacingView()
+                pageFormatView()
 
                 // 预设配色
                 colorPresetsView()
@@ -182,15 +176,15 @@ struct ReaderSettingsView: View {
         }
     }
 
-    // MARK: 字体大小设置
+    // MARK: 字体大小设置，行间距，段间距
     @ViewBuilder
-    private func fontSizeView() -> some View {
-        Section(header: Text(String(localized: "setting.font_size"))) {
+    private func pageFormatView() -> some View {
+        Section(header: Text(String(localized: "setting.page_format"))) {
             HStack {
                 Text(
                     String(
                         format: String(
-                            localized: "setting.current_font_size"
+                            localized: "setting.font_size"
                         ),
                         Int(reading.fontSize)
                     )
@@ -205,18 +199,12 @@ struct ReaderSettingsView: View {
                 }
                 .buttonStyle(.bordered)
             }
-        }
-    }
 
-    // MARK: 行间距设置
-    @ViewBuilder
-    private func lineSpacingView() -> some View {
-        Section(header: Text(String(localized: "setting.line_spacing"))) {
             HStack {
                 Text(
                     String(
                         format: String(
-                            localized: "setting.current_line_spacing"
+                            localized: "setting.line_spacing"
                         ),
                         Int(reading.lineSpacing)
                     )
@@ -237,21 +225,13 @@ struct ReaderSettingsView: View {
                 }
                 .buttonStyle(.bordered)
             }
-        }
-    }
 
-    // MARK: 段间距设置
-    @ViewBuilder
-    private func paragraphSpacingView() -> some View {
-        Section(
-            header: Text(String(localized: "setting.paragraph_spacing"))
-        ) {
             HStack {
                 Text(
                     String(
                         format: String(
                             localized:
-                                "setting.current_paragraph_spacing"
+                                "setting.paragraph_spacing"
                         ),
                         Int(reading.paragraphSpacing)
                     )
