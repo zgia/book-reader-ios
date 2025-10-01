@@ -15,7 +15,7 @@ enum DefaultsKeys {
     static let hideHiddenCategoriesInManagement =
         "HideHiddenCategoriesInManagement"
     static let appAppearanceOption = "AppAppearanceOption"
-    static let debugEnabled = "DebugEnabled"
+    static let loggerEnabled = "LoggerEnabled"
 
     // ProgressStore
     static let readingProgress = "ReadingProgressV1"

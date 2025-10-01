@@ -21,28 +21,28 @@ enum Log {
 
     /// Debug 日志（受 AppSettings 控制）
     static func debug(_ message: String, category: LogCategory = .debug) {
-        if AppSettings.shared.isDebugEnabled() {
+        if AppSettings.shared.isLoggerEnabled() {
             logger(for: category).debug("\(message, privacy: .public)")
         }
     }
 
     /// Info 日志
     static func info(_ message: String, category: LogCategory = .general) {
-        if AppSettings.shared.isDebugEnabled() {
+        if AppSettings.shared.isLoggerEnabled() {
             logger(for: category).info("\(message, privacy: .public)")
         }
     }
 
     /// Warning 日志
     static func warning(_ message: String, category: LogCategory = .general) {
-        if AppSettings.shared.isDebugEnabled() {
+        if AppSettings.shared.isLoggerEnabled() {
             logger(for: category).warning("\(message, privacy: .public)")
         }
     }
 
     /// Error 日志
     static func error(_ message: String, category: LogCategory = .general) {
-        if AppSettings.shared.isDebugEnabled() {
+        if AppSettings.shared.isLoggerEnabled() {
             logger(for: category).error("\(message, privacy: .public)")
         }
     }

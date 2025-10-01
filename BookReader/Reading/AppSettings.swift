@@ -25,8 +25,8 @@ final class AppSettings: ObservableObject {
     @AppStorage(DefaultsKeys.hideHiddenCategoriesInManagement) private
         var storedHideHiddenCategoriesInManagement: Bool = false
 
-    @AppStorage(DefaultsKeys.debugEnabled) private
-        var storedDebugEnabled: Bool = false
+    @AppStorage(DefaultsKeys.loggerEnabled) private
+        var storedLoggerEnabled: Bool = false
 
     var option: AppAppearanceOption {
         AppAppearanceOption(rawValue: storedOption) ?? .system
@@ -48,14 +48,14 @@ final class AppSettings: ObservableObject {
         objectWillChange.send()
     }
 
-    /// 获取调试是否开启
-    func isDebugEnabled() -> Bool {
-        storedDebugEnabled
+    /// 获取调试日志是否开启
+    func isLoggerEnabled() -> Bool {
+        storedLoggerEnabled
     }
 
-    /// 设置调试是否开启
-    func setDebugEnabled(_ newValue: Bool) {
-        storedDebugEnabled = newValue
+    /// 设置调试日志是否开启
+    func setLoggerEnabled(_ newValue: Bool) {
+        storedLoggerEnabled = newValue
         objectWillChange.send()
     }
 

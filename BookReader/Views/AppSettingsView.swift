@@ -81,8 +81,8 @@ struct AppSettingsView: View {
             Toggle(
                 String(localized: "setting.debug_log_enabled"),
                 isOn: Binding(
-                    get: { appSettings.isDebugEnabled() },
-                    set: { appSettings.setDebugEnabled($0) }
+                    get: { appSettings.isLoggerEnabled() },
+                    set: { appSettings.setLoggerEnabled($0) }
                 )
             )
         }
@@ -831,30 +831,26 @@ struct AppSettingsView: View {
             HStack {
                 Text(String(localized: "db.stats.title"))
                 Spacer()
-                Button(String(localized: "btn.refresh")) { refreshStats() }
-                    .font(.footnote)
-            }
-            if !statsText.isEmpty {
-                Text(statsText)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
-
-            Button(action: { showingCompactConfirm = true }) {
-                HStack {
-                    if dbManager.isCompacting {
-                        ProgressView().scaleEffect(0.8)
+                if dbManager.isCompacting {
+                    ProgressView().scaleEffect(0.8)
+                }
+                Menu {
+                    Button(String(localized: "btn.refresh")) {
+                        refreshStats()
                     }
-                    Text(
+                    Button(
                         dbManager.isCompacting
                             ? String(localized: "db.compacting")
-                            : String(localized: "db.compact")
-                    )
+                            : String(localized: "db.compact"),
+                        role: .destructive
+                    ) {
+                        showingCompactConfirm = true
+                    }
+                    .disabled(dbManager.isCompacting)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
-            .disabled(dbManager.isCompacting)
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
             .alert(
                 String(localized: "db.compact.confirm_title"),
                 isPresented: $showingCompactConfirm
@@ -865,6 +861,12 @@ struct AppSettingsView: View {
                 }
             } message: {
                 Text(String(localized: "db.compact.confirm_message"))
+            }
+            
+            if !statsText.isEmpty {
+                Text(statsText)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
             }
         }
     }
