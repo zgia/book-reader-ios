@@ -10,13 +10,14 @@ struct AppSettingsView: View {
 
     @State private var alertMessage: String?
 
-    @State private var showPreviewButton: Bool = false
-    @State private var showingPreviewImporter: Bool = false
+    // 导入图书
+    @State private var importPreviewMode: Bool = false
     @State private var showingWriteImporter: Bool = false
     @State private var importInProgress: Bool = false
     @State private var showingCompactConfirm: Bool = false
     @State private var statsText: String = ""
     @State private var showingFormatHelp: Bool = false
+    // 安全与隐私
     @State private var securityDialog: SecurityDialog?
     @State private var securitySheet: SecuritySheet?
     @State private var passcodeInput: String = ""
@@ -89,10 +90,6 @@ struct AppSettingsView: View {
     }
 
     // MARK: - 导入图书
-    private func onPreviewButtonTapped() {
-        showingPreviewImporter = true
-    }
-
     private func onImportButtonTapped() {
         showingWriteImporter = true
     }
@@ -103,7 +100,11 @@ struct AppSettingsView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let importer = TxtBookImporter(dbManager: dbManager)
-                try importer.importTxt(at: url)
+                if importPreviewMode {
+                    try importer.importTxtPreview(at: url)
+                } else {
+                    try importer.importTxt(at: url)
+                }
                 DispatchQueue.main.async {
                     importInProgress = false
                     alertMessage = String(localized: "import.done")
@@ -150,21 +151,6 @@ struct AppSettingsView: View {
                 .font(.footnote)
             }
         ) {
-            if showPreviewButton {
-                HStack {
-                    Image(systemName: "square.and.arrow.down.badge.clock")
-                        .foregroundColor(.secondary)
-                    Button(action: onPreviewButtonTapped) {
-                        Text(String(localized: "import.preview"))
-                    }
-                    .fileImporter(
-                        isPresented: $showingPreviewImporter,
-                        allowedContentTypes: [.plainText],
-                        allowsMultipleSelection: false
-                    ) { handlePreviewFileImport($0) }
-                }
-            }
-
             HStack {
                 Image(systemName: "square.and.arrow.down").foregroundColor(
                     .secondary
@@ -278,39 +264,6 @@ struct AppSettingsView: View {
         return try block(url)
     }
 
-    private func handlePreviewFileImport(_ result: Result<[URL], Error>) {
-        print("handlePreviewFileImport", result)
-        switch result {
-        case .success(let urls):
-            guard let url = urls.first else { return }
-            DispatchQueue.global(qos: .userInitiated).async {
-
-                do {
-                    try withSecurityScopedAccess(to: url) { securedURL in
-                        let importer = TxtBookImporter(dbManager: dbManager)
-                        try importer.importTxtPreview(at: securedURL)
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        alertMessage = String(
-                            format: String(
-                                localized: "import.preview_failed"
-                            ),
-                            error.localizedDescription
-                        )
-                    }
-                }
-            }
-        case .failure(let error):
-            alertMessage = String(
-                format: String(
-                    localized: "import.file_select_failed"
-                ),
-                error.localizedDescription
-            )
-        }
-    }
-
     private func handleWriteFileImport(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -322,7 +275,11 @@ struct AppSettingsView: View {
                 do {
                     try withSecurityScopedAccess(to: url) { securedURL in
                         let importer = TxtBookImporter(dbManager: dbManager)
-                        try importer.importTxt(at: securedURL)
+                        if importPreviewMode {
+                            try importer.importTxtPreview(at: securedURL)
+                        } else {
+                            try importer.importTxt(at: securedURL)
+                        }
                     }
 
                     DispatchQueue.main.async {

@@ -16,9 +16,9 @@ final class TxtBookImporter {
     private let dbManager: DatabaseManager
 
     private static let volumeRegexPattern =
-        "^(?:第[ \t]*([一二三四五六七八九十百零〇两\\d]+)[ \t]*卷|番外(?:卷|篇)?)(?:[ \t]*[-—:：.,，、·]?[ \t]*(\\S.*))?$"
+        "^(?:第\\s*([一二三四五六七八九十百零〇两\\p{Nd}]+)\\s*卷|番外(?:卷|篇)?)(?:\\s*[-—:：.,，、·]?\\s*(\\S.*))?$"
     private static let chapterRegexPattern =
-        "^(?:第[ \t]*([一二三四五六七八九十百零〇两\\d]+)[ \t]*(?:章|回|节|折|话)|(?:序|楔子|引子|序言|前言|序章|正文|人物设定|内容简介|作品相关|后记|后序|尾声|附录|总结|完本感言|完结感言|彩蛋|彩蛋篇|特别篇|番外|番外篇))(?:[ \t]*[-—:：.,，、·]?[ \t]*(\\S.*))?$"
+        "^(?:第\\s*([一二三四五六七八九十百零〇两\\p{Nd}]+)\\s*(?:章|回|节|折|话)|(?:序|楔子|引子|序言|前言|序章|正文|人物设定|内容简介|作品相关|后记|后序|尾声|附录|总结|完本感言|完结感言|彩蛋|彩蛋篇|特别篇|番外|番外篇))(?:\\s*[-—:：.,，、·]?\\s*(\\S.*))?$"
     private static let titleRegexPattern = "^书名[:：]\\s*《?(.+?)》?\\s*$"
     private static let bracketTitleRegexPattern = "^[《〈]\\s*(.+?)\\s*[》〉]\\s*$"
     private static let authorRegexPattern = "^作者[:：]\\s*(.+?)\\s*$"
