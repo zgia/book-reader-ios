@@ -93,7 +93,7 @@
 "setting.line_spacing" = "行间距: %d";
 "setting.paragraph_spacing" = "段间距: %d";
 "setting.color_presets" = "预设配色";
-"setting.color_customize" = "自定义颜色";
+"setting.color_customize" = "自定义配色";
 "setting.color_font" = "文字颜色";
 "setting.color_background" = "背景颜色";
 "setting.color_light" = "浅色";
