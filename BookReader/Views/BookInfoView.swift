@@ -22,30 +22,36 @@ struct BookInfoView: View {
                         label: String(localized: "bookinfo.name"),
                         value: book.title
                     )
+
                     infoRow(
                         systemName: "person",
                         label: String(localized: "bookinfo.author"),
                         value: book.author
                     )
+
                     categoryEditableRow()
+
                     infoRow(
                         systemName: "textformat.123",
                         label: String(localized: "bookinfo.wordcount"),
                         value: WordCountFormatter.string(from: book.wordcount)
                     )
+
                     infoRow(
                         systemName: book.isfinished == 1
-                            ? "checkmark.seal" : "clock",
+                            ? "checkmark.seal" : "keyboard",
                         label: String(localized: "bookinfo.status"),
                         value: book.isfinished == 1
                             ? String(localized: "bookinfo.finished")
                             : String(localized: "bookinfo.status_ongoing")
                     )
+
                     infoRow(
                         systemName: "calendar.badge.clock",
                         label: String(localized: "bookinfo.last_updated_at"),
                         value: formatDate(book.updatedat)
                     )
+
                     if !book.latest.isEmpty {
                         infoRow(
                             systemName: "list.bullet",
@@ -84,7 +90,8 @@ struct BookInfoView: View {
                 categoryTitle = book.category
                 currentCategoryId = db.getBookCategoryId(bookId: book.id)
                 categories = db.fetchCategories(
-                    includeHidden: !appSettings.isHidingHiddenCategoriesInManagement()
+                    includeHidden:
+                        !appSettings.isHidingHiddenCategoriesInManagement()
                 )
             }
             .sheet(isPresented: $showingCategorySheet) {
@@ -173,7 +180,8 @@ struct BookInfoView: View {
     private func categoryEditableRow() -> some View {
         Button {
             categories = db.fetchCategories(
-                includeHidden: !appSettings.isHidingHiddenCategoriesInManagement()
+                includeHidden:
+                    !appSettings.isHidingHiddenCategoriesInManagement()
             )
             showingCategorySheet = true
         } label: {
@@ -181,7 +189,7 @@ struct BookInfoView: View {
                 Label {
                     Text(String(localized: "bookinfo.category"))
                 } icon: {
-                    Image(systemName: "tag").foregroundColor(.secondary)
+                    Image(systemName: "folder").foregroundColor(.secondary)
                 }
                 Spacer(minLength: 16)
                 Text(displayedCategoryTitle())

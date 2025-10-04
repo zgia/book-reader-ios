@@ -11,7 +11,7 @@ struct WordCountFormatter {
         return "\(bytes) B"
     }
     static func string(from count: Int, locale: Locale = .current) -> String {
-        print("总字数：\(count)")
+        Log.debug("总字数：\(count)")
         if #available(iOS 16, *) {
             let formatted = count.formatted(
                 .number

@@ -37,7 +37,10 @@ struct ReaderView: View {
     @State private var showControls: Bool = false
     @State private var prevChapterRef: Chapter?
     @State private var nextChapterRef: Chapter?
-    private let prefetchRadius: Int = 3
+    @State private var prefetchRadius: Int = 1
+    private static let prefetchSemaphore: DispatchSemaphore = DispatchSemaphore(
+        value: 2
+    )
     // 首次进入时用于恢复进度
     @State private var needsInitialRestore: Bool = true
     @State private var pendingRestorePercent: Double? = nil
@@ -149,8 +152,13 @@ struct ReaderView: View {
                 withAnimation { showControls.toggle() }
             }
             .onAppear {
+                let perf = PerfTimer(
+                    "ReaderView.onAppear",
+                    category: .performance
+                )
                 Log.debug(
-                    "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))"
+                    "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))",
+                    category: .reader
                 )
 
                 screenSize = geo.size
@@ -158,12 +166,17 @@ struct ReaderView: View {
                 loadContent(for: currentChapter)
                 loadCurrentBook()
                 updateAdjacentRefs()
-                prefetchAroundCurrent()
                 if needsInitialRestore {
                     restoreLastProgressIfNeeded()
                 }
                 // 进入阅读页即触达一次（节流保护）
                 touchCurrentBookUpdatedAt(throttleSeconds: 30)
+
+                // 首帧后小延时扩大预取半径并进行二次预取（避免首屏压力）
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    prefetchRadius = 3
+                    prefetchAroundCurrent()
+                }
 
                 // 监听取消模态视图的通知
                 NotificationCenter.default.addObserver(
@@ -178,6 +191,7 @@ struct ReaderView: View {
                     showBookInfo = false
                     showControls = false
                 }
+                perf.end()
             }
             .onChange(of: geo.size) { _, newSize in
                 screenSize = newSize
@@ -239,6 +253,7 @@ struct ReaderView: View {
                     loadingView
                 }
             }
+            .background(reading.backgroundColor)
             .scrollIndicators(isHorizontalSwiping ? .hidden : .visible)
             .id(currentChapter.id)
             .offset(x: dragOffset)
@@ -551,22 +566,39 @@ struct ReaderView: View {
         if let cachedContent = contentCache[chapter.id],
             let cachedParas = paragraphsCache[chapter.id]
         {
-            Log.debug("📚 loadContent cache hit chapterId=\(chapter.id)")
+            Log.debug(
+                "📚 loadContent cache hit chapterId=\(chapter.id)",
+                category: .reader
+            )
             content = cachedContent
             paragraphs = cachedParas
             if let cachedPages = pagesCache[chapter.id] {
-                Log.debug("📚 use cached pages count=\(cachedPages.count)")
+                Log.debug(
+                    "📚 use cached pages count=\(cachedPages.count)",
+                    category: .reader
+                )
                 pages = cachedPages
             } else {
                 let txt = cachedContent.txt ?? ""
-                Log.debug("📚 paginate cached content length=\(txt.count)")
-                pages = paginate(
+                Log.debug(
+                    "📚 paginate cached content length=\(txt.count)",
+                    category: .pagination
+                )
+                let perfPg = PerfTimer(
+                    "paginate.cached",
+                    category: .performance
+                )
+                let newPages = paginate(
                     text: txt,
                     screen: geoSize(),
                     fontSize: CGFloat(reading.fontSize),
                     lineSpacing: CGFloat(reading.lineSpacing)
                 )
-                pagesCache[chapter.id] = pages
+                pages = newPages
+                pagesCache[chapter.id] = newPages
+                perfPg.end(
+                    extra: "chapterId=\(chapter.id) pages=\(newPages.count)"
+                )
             }
             return
         }
@@ -574,27 +606,46 @@ struct ReaderView: View {
         guard let dbQueue = DatabaseManager.shared.dbQueue else { return }
         let chapterId = chapter.id
 
+        let perfAll = PerfTimer("loadContent", category: .performance)
         DispatchQueue.global(qos: .userInitiated).async {
+            let tDB = PerfTimer("loadContent.dbRead", category: .performance)
             let fetched: Content? = try? dbQueue.read { db in
                 try Content
                     .filter(Column("chapterid") == chapter.id)
                     .fetchOne(db)
             }
             let txt = fetched?.txt ?? ""
+            tDB.end(extra: "chapterId=\(chapter.id) textLen=\(txt.count)")
             Log.debug(
-                "📚 loadContent from DB chapterId=\(chapter.id) textLen=\(txt.count)"
+                "📚 loadContent from DB chapterId=\(chapter.id) textLen=\(txt.count)",
+                category: .database
+            )
+            let tPara = PerfTimer(
+                "loadContent.processParagraphs",
+                category: .performance
             )
             let computedParas = processParagraphs(txt)
+            tPara.end(extra: "paras=\(computedParas.count)")
+            let tPaginate = PerfTimer(
+                "loadContent.paginate",
+                category: .performance
+            )
             let computedPages = paginate(
                 text: txt,
                 screen: geoSize(),
                 fontSize: CGFloat(reading.fontSize),
                 lineSpacing: CGFloat(reading.lineSpacing)
             )
+            tPaginate.end(extra: "pages=\(computedPages.count)")
 
             DispatchQueue.main.async {
                 Log.debug(
-                    "📚 loadContent finish on main chapterId=\(chapterId) pages=\(computedPages.count)"
+                    "📚 loadContent finish on main chapterId=\(chapterId) pages=\(computedPages.count)",
+                    category: .reader
+                )
+                let tApply = PerfTimer(
+                    "loadContent.applyMain",
+                    category: .performance
                 )
                 content = fetched
                 paragraphs = computedParas
@@ -604,6 +655,8 @@ struct ReaderView: View {
                 pagesCache[chapterId] = computedPages
                 updateAdjacentRefs()
                 prefetchAroundCurrent()
+                tApply.end()
+                perfAll.end(extra: "chapterId=\(chapterId)")
             }
         }
     }
@@ -636,8 +689,8 @@ struct ReaderView: View {
             }
             .filter { !$0.isEmpty }
 
-        // print("分割出 \(paragraphs.count) 个段落")
-        // print("文本长度: \(text.count), 包含换行符: \(text.contains("\n"))")
+        // Log.debug("分割出 \(paragraphs.count) 个段落")
+        // Log.debug("文本长度: \(text.count), 包含换行符: \(text.contains("\n"))")
         return paragraphs
     }
 
@@ -685,7 +738,7 @@ struct ReaderView: View {
         }
 
         // 并行准备目标章节内容（优先命中缓存；未命中则后台加载）
-        ensurePrepared(for: target) {
+        ensurePrepared(for: target, isCritical: true) {
             // 在移出动画结束后切换章节，并无动画归零偏移，避免“再次滑入”的闪烁
             let deadline = DispatchTime.now() + animDuration
             DispatchQueue.main.asyncAfter(deadline: deadline) {
@@ -704,6 +757,7 @@ struct ReaderView: View {
     // 确保某章内容已准备（命中缓存或后台填充缓存），完成后回调主线程
     private func ensurePrepared(
         for chapter: Chapter,
+        isCritical: Bool = false,
         completion: @escaping () -> Void
     ) {
         let cid = chapter.id
@@ -712,6 +766,10 @@ struct ReaderView: View {
             && (paragraphsCache[cid] != nil)
             && (pagesCache[cid] != nil)
         if hasCaches {
+            Log.debug(
+                "✅ ensurePrepared cache hit chapterId=\(cid)",
+                category: .prefetch
+            )
             DispatchQueue.main.async { completion() }
             return
         }
@@ -719,31 +777,56 @@ struct ReaderView: View {
             DispatchQueue.main.async { completion() }
             return
         }
+        let perf = PerfTimer("ensurePrepared", category: .performance)
         DispatchQueue.global(qos: .userInitiated).async {
+            if !isCritical {
+                Self.prefetchSemaphore.wait()
+            }
+            defer {
+                if !isCritical { Self.prefetchSemaphore.signal() }
+            }
+            let tDB = PerfTimer("ensurePrepared.dbRead", category: .performance)
             let fetched: Content? = try? dbQueue.read { db in
                 try Content
                     .filter(Column("chapterid") == chapter.id)
                     .fetchOne(db)
             }
             let txt = fetched?.txt ?? ""
+            tDB.end(extra: "chapterId=\(chapter.id) textLen=\(txt.count)")
+            let tPara = PerfTimer(
+                "ensurePrepared.processParagraphs",
+                category: .performance
+            )
             let computedParas = processParagraphs(txt)
+            tPara.end(extra: "paras=\(computedParas.count)")
+            let tPaginate = PerfTimer(
+                "ensurePrepared.paginate",
+                category: .performance
+            )
             let computedPages = paginate(
                 text: txt,
                 screen: geoSize(),
                 fontSize: CGFloat(reading.fontSize),
                 lineSpacing: CGFloat(reading.lineSpacing)
             )
+            tPaginate.end(extra: "pages=\(computedPages.count)")
             DispatchQueue.main.async {
                 contentCache[cid] = fetched
                 paragraphsCache[cid] = computedParas
                 pagesCache[cid] = computedPages
+                Log.debug(
+                    "✅ ensurePrepared ready chapterId=\(cid) pages=\(computedPages.count)",
+                    category: .prefetch
+                )
                 completion()
+                perf.end(extra: "chapterId=\(cid)")
             }
         }
     }
 
     // 预取前后多章，提升左右滑动时的秒开体验
     private func prefetchAroundCurrent() {
+        let perf = PerfTimer("prefetchAroundCurrent", category: .performance)
         let prevs = fetchChapters(
             isNext: false,
             from: currentChapter,
@@ -754,13 +837,18 @@ struct ReaderView: View {
             from: currentChapter,
             limit: prefetchRadius
         )
+        Log.debug(
+            "🚚 prefetch candidates prev=\(prevs.count) next=\(nexts.count) radius=\(prefetchRadius)",
+            category: .prefetch
+        )
         for ch in prevs + nexts {
             if paragraphsCache[ch.id] == nil || pagesCache[ch.id] == nil
                 || contentCache[ch.id] == nil
             {
-                ensurePrepared(for: ch) {}
+                ensurePrepared(for: ch, isCritical: false) {}
             }
         }
+        perf.end()
     }
 
     private func fetchChapters(isNext: Bool, from chapter: Chapter, limit: Int)
@@ -812,50 +900,57 @@ struct ReaderView: View {
     private func loadCurrentBook() {
         guard currentBook == nil else { return }
         guard let dbQueue = DatabaseManager.shared.dbQueue else { return }
-        currentBook = try? dbQueue.read { db in
-            let sql = """
-                    SELECT b.id, b.title, a.name AS author, c.title AS category,
-                           b.latest, b.wordcount, b.isfinished, b.updatedat
-                    FROM book b
-                    LEFT JOIN category c ON c.id = b.categoryid
-                    LEFT JOIN author a ON a.id = b.authorid
-                    WHERE b.id = ?
-                """
-            if let row = try Row.fetchOne(
-                db,
-                sql: sql,
-                arguments: [currentChapter.bookid]
-            ) {
-                let id: Int = row["id"]
-                let title: String = (row["title"] as String?) ?? ""
-                let author: String = (row["author"] as String?) ?? ""
-                let category: String = (row["category"] as String?) ?? ""
-                let latest: String = (row["latest"] as String?) ?? ""
-                let wordcount: Int = (row["wordcount"] as Int?) ?? 0
-                let isfinished: Int = (row["isfinished"] as Int?) ?? 0
-                let updatedat: Int = (row["updatedat"] as Int?) ?? 0
+        DispatchQueue.global(qos: .userInitiated).async {
+            let t = PerfTimer("loadCurrentBook.dbRead", category: .performance)
+            let loaded: Book? = try? dbQueue.read { db in
+                let sql = """
+                        SELECT b.id, b.title, a.name AS author, c.title AS category,
+                               b.latest, b.wordcount, b.isfinished, b.updatedat
+                        FROM book b
+                        LEFT JOIN category c ON c.id = b.categoryid
+                        LEFT JOIN author a ON a.id = b.authorid
+                        WHERE b.id = ?
+                    """
+                if let row = try Row.fetchOne(
+                    db,
+                    sql: sql,
+                    arguments: [currentChapter.bookid]
+                ) {
+                    let id: Int = row["id"]
+                    let title: String = (row["title"] as String?) ?? ""
+                    let author: String = (row["author"] as String?) ?? ""
+                    let category: String = (row["category"] as String?) ?? ""
+                    let latest: String = (row["latest"] as String?) ?? ""
+                    let wordcount: Int = (row["wordcount"] as Int?) ?? 0
+                    let isfinished: Int = (row["isfinished"] as Int?) ?? 0
+                    let updatedat: Int = (row["updatedat"] as Int?) ?? 0
 
-                return Book(
-                    id: id,
-                    category: category,
-                    title: title,
-                    author: author,
-                    latest: latest,
-                    wordcount: wordcount,
-                    isfinished: isfinished,
-                    updatedat: updatedat
-                )
-            } else {
-                return Book(
-                    id: currentChapter.bookid,
-                    category: "",
-                    title: "",
-                    author: "",
-                    latest: "",
-                    wordcount: 0,
-                    isfinished: 0,
-                    updatedat: 0
-                )
+                    return Book(
+                        id: id,
+                        category: category,
+                        title: title,
+                        author: author,
+                        latest: latest,
+                        wordcount: wordcount,
+                        isfinished: isfinished,
+                        updatedat: updatedat
+                    )
+                } else {
+                    return Book(
+                        id: currentChapter.bookid,
+                        category: "",
+                        title: "",
+                        author: "",
+                        latest: "",
+                        wordcount: 0,
+                        isfinished: 0,
+                        updatedat: 0
+                    )
+                }
+            }
+            t.end()
+            DispatchQueue.main.async {
+                currentBook = loaded
             }
         }
     }
@@ -1047,7 +1142,7 @@ struct ReaderView: View {
                         withAnimation(.easeInOut(duration: animDuration)) {
                             dragOffset = -size.width
                         }
-                        ensurePrepared(for: next) {
+                        ensurePrepared(for: next, isCritical: true) {
                             let deadline = DispatchTime.now() + animDuration
                             DispatchQueue.main.asyncAfter(deadline: deadline) {
                                 currentChapter = next
@@ -1072,7 +1167,7 @@ struct ReaderView: View {
                         withAnimation(.easeInOut(duration: animDuration)) {
                             dragOffset = size.width
                         }
-                        ensurePrepared(for: prev) {
+                        ensurePrepared(for: prev, isCritical: true) {
                             let deadline = DispatchTime.now() + animDuration
                             DispatchQueue.main.asyncAfter(deadline: deadline) {
                                 currentChapter = prev
@@ -1255,6 +1350,7 @@ struct ReaderView: View {
                 }
             }
         }
+        .background(reading.backgroundColor)
         .scrollIndicators(.hidden)
     }
 }

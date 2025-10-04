@@ -10,6 +10,11 @@ enum LogCategory: String {
     case database
     case auth
     case debug
+    case importer
+    case reader
+    case pagination
+    case prefetch
+    case performance
 }
 
 /// 日志工具
@@ -45,6 +50,42 @@ enum Log {
         if AppSettings.shared.isLoggerEnabled() {
             logger(for: category).error("\(message, privacy: .public)")
         }
+    }
+}
+
+/// 简易性能计时器
+struct PerfTimer {
+    let name: String
+    let category: LogCategory
+    private let start: DispatchTime
+    private let startDate: Date
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "HH:mm:ss.SSS"
+        return f
+    }()
+
+    init(_ name: String, category: LogCategory) {
+        self.name = name
+        self.category = category
+        self.start = .now()
+        self.startDate = Date()
+    }
+
+    func end(extra: String? = nil) {
+        let endDispatch = DispatchTime.now()
+        let endDate = Date()
+        let elapsedNs = endDispatch.uptimeNanoseconds &- start.uptimeNanoseconds
+        let elapsedMs = Double(elapsedNs) / 1_000_000.0
+        let suffix = extra.map { " " + $0 } ?? ""
+        let startStr = PerfTimer.timeFormatter.string(from: startDate)
+        let endStr = PerfTimer.timeFormatter.string(from: endDate)
+        Log.debug(
+            "⏱️ \(name) \(String(format: "%.2f", elapsedMs))ms [\(startStr) → \(endStr)]\(suffix)",
+            category: category
+        )
     }
 }
 

@@ -168,7 +168,7 @@ struct NovelReaderApp: App {
             }
         } catch {
             // 简单记录
-            print("openURL copy failed: \(error.localizedDescription)")
+            Log.debug("openURL copy failed: \(error.localizedDescription)")
         }
     }
 

@@ -214,9 +214,9 @@ final class TxtBookImporter {
         )
 
         // 优先打印预检测到的书名/作者（若后续遇到相同内容则跳过）
-        print("书名: \(presetTitle)")
+        Log.debug("书名: \(presetTitle)", category: .importer)
         if let a = detected.author, !a.isEmpty {
-            print("作者: \(a)")
+            Log.debug("作者: \(a)", category: .importer)
         }
 
         for rawLine in lines {
@@ -224,12 +224,12 @@ final class TxtBookImporter {
 
             if Self.matches(regex: volumeRegex, in: line) {
                 let title = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                print("卷: \(title)")
+                Log.debug("卷: \(title)", category: .importer)
                 continue
             }
             if Self.matches(regex: chapterRegex, in: line) {
                 let title = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                print("章: \(title)")
+                Log.debug("章: \(title)", category: .importer)
                 continue
             }
         }

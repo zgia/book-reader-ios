@@ -1,4 +1,5 @@
 import SwiftUI
+import os
 
 struct Paginator {
     static func paginate(
@@ -7,6 +8,12 @@ struct Paginator {
         screen: CGSize,
         lineSpacing: Double
     ) -> [String] {
+        let perf = PerfTimer("paginate", category: .pagination)
+        let totalChars = text.count
+        Log.debug(
+            "📄 paginate start chars=\(totalChars) font=\(fontSize) screen=\(Int(screen.width))x\(Int(screen.height)) lineSpacing=\(lineSpacing)",
+            category: .pagination
+        )
         // 经验性容量估计：
         // 每行字符 ~ screen.width / (fontSize * 0.55)
         // 每屏行数 ~ screen.height / (fontSize * 1.6)
@@ -33,6 +40,8 @@ struct Paginator {
             pages.append(String(text[start..<cut]))
             start = cut == end ? end : text.index(after: cut)
         }
-        return pages.isEmpty ? [text] : pages
+        let result = pages.isEmpty ? [text] : pages
+        perf.end(extra: "pages=\(result.count) charsPerPage≈\(charsPerPage)")
+        return result
     }
 }
