@@ -16,11 +16,17 @@ struct NovelReaderApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var isUnlocked: Bool = false
-    @State private var authErrorMessage: String? = nil
     @State private var isAuthenticating: Bool = false
     @State private var hasRequestedInitialAuth: Bool = false
     @State private var activeModals: Set<String> = []
     @State private var externalOpenMessage: String? = nil
+    @State private var failedAttempts: Int = 0
+    @State private var attemptsToLock: Int = 3
+    @State private var firstLockedMinute: Double = 1
+    @State private var secondLockedMinutes: Double = 10
+    @State private var lockUntil: Date? = nil
+    @State private var failureNonce: Int = 0
+    @State private var lockWorkItem: DispatchWorkItem? = nil
 
     init() {
         // 调试用，打印沙盒路径
@@ -58,8 +64,10 @@ struct NovelReaderApp: App {
                         SecurityOverlayView(
                             showBlur: true,
                             isUnlocked: isUnlocked,
-                            message: authErrorMessage,
-                            onVerify: { code in onVerifyPasscode(code) }
+                            onVerify: { code in onVerifyPasscode(code) },
+                            failedAttempts: failedAttempts,
+                            lockedUntil: lockUntil,
+                            failureNonce: failureNonce
                         )
                         .ignoresSafeArea()
                         .transition(.opacity)
@@ -127,10 +135,8 @@ struct NovelReaderApp: App {
                 // 若设置了密码，不立刻上锁；若移除了密码，直接解锁
                 if PasscodeManager.shared.isPasscodeSet {
                     isUnlocked = true
-                    authErrorMessage = nil
                 } else {
                     isUnlocked = true
-                    authErrorMessage = nil
                 }
             }
         }
@@ -189,18 +195,14 @@ struct NovelReaderApp: App {
     private func authenticate() {
         if isAuthenticating { return }
         isAuthenticating = true
-        authErrorMessage = nil
         // 若未设置密码，直接解锁；否则显示提示，等待用户输入
         if PasscodeManager.shared.isPasscodeSet {
             isUnlocked = false
             isAuthenticating = false
-            authErrorMessage = String(
-                localized: "security.input_6_digital_passcode"
-            )
+            // 固定文案通过界面展示，无需单独状态
         } else {
             isUnlocked = true
             isAuthenticating = false
-            authErrorMessage = nil
             self.ensureSecurityOverlayDismissed()
         }
     }
@@ -240,31 +242,51 @@ struct NovelReaderApp: App {
     private func onVerifyPasscode(_ code: String) {
         if PasscodeManager.shared.verifyPasscode(code) {
             isUnlocked = true
-            authErrorMessage = nil
+            failedAttempts = 0
+            lockUntil = nil
+            lockWorkItem?.cancel()
             ensureSecurityOverlayDismissed()
         } else {
             isUnlocked = false
-            authErrorMessage = String(
-                localized: "security.passcode_error_and_try_again"
-            )
+            // 失败计数与锁定策略
+            failedAttempts += 1
+            failureNonce &+= 1
+
+            if failedAttempts == attemptsToLock {
+                startLock(for: firstLockedMinute * 10)  // 1 分钟
+            } else if failedAttempts > attemptsToLock {
+                startLock(for: secondLockedMinutes * 10)  // 10 分钟
+            }
         }
+    }
+
+    // 启动锁定计时并在到期后自动解除
+    private func startLock(for seconds: TimeInterval) {
+        lockWorkItem?.cancel()
+        let until = Date().addingTimeInterval(seconds)
+        lockUntil = until
+        let work = DispatchWorkItem {
+            self.lockUntil = nil
+        }
+        lockWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
     }
 }
 
 private struct SecurityOverlayView: View {
     var showBlur: Bool
     var isUnlocked: Bool
-    var message: String?
     var onVerify: (String) -> Void
+    var failedAttempts: Int = 0
+    var lockedUntil: Date? = nil
+    var failureNonce: Int = 0
 
     @State private var input: String = ""
     @FocusState private var isFieldFocused: Bool
 
-    private var displayMessage: String {
-        if let message, !message.isEmpty {
-            return message
-        }
-        return String(localized: "security.input_6_digital_passcode")
+    private var isLockedNow: Bool {
+        if let lockedUntil, lockedUntil > Date() { return true }
+        return false
     }
 
     var body: some View {
@@ -276,52 +298,21 @@ private struct SecurityOverlayView: View {
 
             if !isUnlocked {
                 VStack(spacing: 16) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 44, weight: .semibold))
+                    Image(systemName: "lock")
+                        .font(.system(size: 50, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .padding(.bottom, 8)
                     Text(String(localized: "security.auth_to_unlock"))
                         .font(.headline)
-                    Text(displayMessage)
+                    Text(String(localized: "security.input_passcode_to_unlock"))
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    VStack(spacing: 10) {
-                        SecureField(
-                            String(
-                                localized: "security.input_6_digital_passcode"
-                            ),
-                            text: $input
-                        )
-                        .keyboardType(.numberPad)
-                        .textContentType(.oneTimeCode)
-                        .multilineTextAlignment(.center)
-                        .focused($isFieldFocused)
-                        .onChange(of: input) { newValue, _ in
-                            let filtered = newValue.filter { $0.isNumber }
-                            input = String(filtered.prefix(6))
 
-                            if input.count == 6 {
-                                onVerify(input)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 10)
-                        .cornerRadius(10)
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: 10,
-                                style: .continuous
-                            )
-                            .fill(.thinMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(
-                                cornerRadius: 10,
-                                style: .continuous
-                            )
-                            .stroke(Color(UIColor.separator), lineWidth: 1)
-                        )
-                    }
-                    .padding(.top, 8)
+                    passcodeInputView()
+
+                    unthFailedAttemptsView()
+
                 }
                 .padding(24)
                 .offset(y: -160)
@@ -330,16 +321,122 @@ private struct SecurityOverlayView: View {
         .onAppear {
             input = ""
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                isFieldFocused = true
+                if !isLockedNow { isFieldFocused = true }
             }
         }
         .onChange(of: isUnlocked) { newValue, _ in
             if !newValue {
                 input = ""
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    if !isLockedNow { isFieldFocused = true }
+                }
+            }
+        }
+        .onChange(of: lockedUntil) { _, _ in
+            if !isLockedNow {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     isFieldFocused = true
                 }
             }
         }
+        .onChange(of: failureNonce) { _, _ in
+            input = ""
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+            if isLockedNow {
+                isFieldFocused = false
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFieldFocused = true
+                }
+            }
+        }
+        .onChange(of: failedAttempts) { oldValue, newValue in
+            guard newValue > oldValue else { return }
+            input = ""
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+            if !isLockedNow {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFieldFocused = true
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func passcodeInputView() -> some View {
+        VStack(spacing: 10) {
+            SecureField(
+                String(
+                    localized: "security.passcode_placeholder"
+                ),
+                text: $input
+            )
+            .keyboardType(.numberPad)
+            .textContentType(.oneTimeCode)
+            .multilineTextAlignment(.center)
+            .focused($isFieldFocused)
+            .onChange(of: input) { newValue, _ in
+                let digitsOnly = newValue.filter { $0.isNumber }
+                let normalized = String(digitsOnly.prefix(6))
+                if input != normalized { input = normalized }
+
+                // 在非锁定情况下，输入满 6 位即提交
+                if !isLockedNow && normalized.count == 6 {
+                    let code = normalized
+                    onVerify(code)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .cornerRadius(10)
+            .background(
+                RoundedRectangle(
+                    cornerRadius: 10,
+                    style: .continuous
+                )
+                .fill(.thinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: 10,
+                    style: .continuous
+                )
+                .stroke(Color(UIColor.separator), lineWidth: 1)
+            )
+            .disabled(isLockedNow)
+            .allowsHitTesting(!isLockedNow)
+        }
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private func unthFailedAttemptsView() -> some View {
+        ZStack {
+            if isLockedNow {
+                errorBanner(String(localized: "security.locked_for_a_while"))
+            } else if failedAttempts > 0 {
+                errorBanner(
+                    String(
+                        format: String(localized: "security.failed_attempts"),
+                        failedAttempts
+                    )
+                )
+            }
+        }
+        .frame(height: 44)
+    }
+
+    private func errorBanner(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 36)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(Color.red)
+            )
+            .padding(.top, 8)
     }
 }
