@@ -162,14 +162,23 @@ struct BookListView: View {
             }
         } label: {
             let isFiltering = (selectedCategoryId != nil)
-            let fgColor: Color = isFiltering ? .white : .primary
-            let bgColor: Color = isFiltering ? .accentColor : .clear
-            Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(fgColor)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(bgColor))
+            let glyphColor: Color = isFiltering ? .white : .primary
+            let circleFill: Color = isFiltering ? .accentColor : .clear
+            ZStack {
+                Circle()
+                    .fill(circleFill)
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(glyphColor)
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+            .contentShape(Circle())
         }
+        .menuIndicator(.hidden)
+        .frame(width: 36, height: 36)
+        .clipShape(Circle())
+        .contentShape(Circle())
         .onChange(of: selectedCategoryId) { _, _ in
             loadBooks(search: searchText)
         }
