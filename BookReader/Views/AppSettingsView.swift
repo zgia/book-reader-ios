@@ -179,7 +179,7 @@ struct AppSettingsView: View {
                 Image(
                     systemName: webServer.isRunning
                         ? "wifi" : "wifi.slash"
-                ).foregroundColor(.secondary)
+                ).foregroundColor(webServer.isRunning ? .green : .secondary)
                 Button(
                     webServer.isRunning
                         ? String(localized: "btn.stop_web_server")
@@ -192,7 +192,7 @@ struct AppSettingsView: View {
                     }
                 }
                 //.buttonStyle(.borderedProminent)
-                .tint(webServer.isRunning ? .red : .accentColor)
+                .tint(webServer.isRunning ? .green : .accentColor)
             }
 
             HStack {

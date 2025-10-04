@@ -155,7 +155,7 @@
 "import.preview_failed" = "Preview failed: %@";
 "import.file_select_failed" = "File selection failed: %@";
 "import.web_url" = "Access in the same LAN browser: %@";
-"import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting text files";
+"import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting text files.";
 "import.uploaded_books" = "Uploaded Books";
 "import.no_uploaded_files" = "No uploaded files";
 "import.delete_failed" = "Delete failed: %@";

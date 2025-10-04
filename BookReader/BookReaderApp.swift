@@ -260,6 +260,7 @@ private struct SecurityOverlayView: View {
                     .padding(.top, 8)
                 }
                 .padding(24)
+                .offset(y: -160)
             }
         }
         .onAppear {

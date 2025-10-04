@@ -155,8 +155,8 @@
 "import.preview_failed" = "预览失败：%@";
 "import.file_select_failed" = "选择文件失败：%@";
 "import.web_url" = "同一局域网内用电脑浏览器访问：%@";
-"import.web_tip" = "同一局域网内用电脑浏览器访问上传页面，仅支持文本文件";
-"import.uploaded_books" = "上传的图书";
+"import.web_tip" = "同一局域网内用电脑浏览器访问上传页面，仅支持文本文件。";
+"import.uploaded_books" = "从其他App打开和网页上传的图书";
 "import.no_uploaded_files" = "暂无上传文件";
 "import.delete_failed" = "删除失败：%@";
 "import.web.srv_run_failed" = "服务运行失败：%@";
