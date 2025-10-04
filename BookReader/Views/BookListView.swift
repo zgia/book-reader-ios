@@ -142,22 +142,23 @@ struct BookListView: View {
                 )
             }
             Divider()
-            Button {
-                selectedCategoryId = nil
-                loadBooks(search: searchText)
-            } label: {
+            // 使用 Picker 展示分类项，系统会在选中项目前显示 checkmark
+            let cats: [Category] = db.fetchCategories(includeHidden: false)
+            Picker(selection: $selectedCategoryId) {
                 Label(
                     String(localized: "category.all"),
-                    systemImage: "square.grid.2x2"
+                    systemImage: "square.grid.3x3"
                 )
-            }
-            // 动态分类项（隐藏分类不显示）
-            let cats: [Category] = db.fetchCategories(includeHidden: false)
-            if !cats.isEmpty {
-                Divider()
-                ForEach(cats) { cat in
-                    categoryMenuItemButton(cat)
+                .tag(Int?.none)
+
+                if !cats.isEmpty {
+                    ForEach(cats) { cat in
+                        Label(cat.title, systemImage: "folder")
+                            .tag(Int?.some(cat.id))
+                    }
                 }
+            } label: {
+                EmptyView()
             }
         } label: {
             let isFiltering = (selectedCategoryId != nil)
@@ -169,19 +170,10 @@ struct BookListView: View {
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(bgColor))
         }
-        .id(categoriesVersion)
-    }
-
-    @ViewBuilder
-    private func categoryMenuItemButton(_ cat: Category) -> some View {
-        let iconName: String =
-            (selectedCategoryId == cat.id) ? "checkmark" : "folder"
-        Button {
-            selectedCategoryId = cat.id
+        .onChange(of: selectedCategoryId) { _, _ in
             loadBooks(search: searchText)
-        } label: {
-            Label(cat.title, systemImage: iconName)
         }
+        .id(categoriesVersion)
     }
 
     @ViewBuilder
