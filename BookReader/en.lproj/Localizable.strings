@@ -170,6 +170,9 @@
 "import.html.msg_failed" = "Upload failed: ";
 "import.html.msg_exception" = "Upload exception: ";
 "import.html.msg_choose_file" = "Please choose a file";
+"import.missing_title" = "Book title not parsed. Please check the TXT file format (e.g., first line contains: Title: xxx)";
+"import.article_title" = "Main Text";
+"import.external_saved" = "Saved “%@” to Uploads. Go to Settings - Web Upload, tap Refresh then Import.";
 
 // AppSettingsView - Security
 "security.title" = "Privacy & Security";
@@ -202,7 +205,3 @@
 "appearance.system" = "Follow System";
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
-
-// TxtBookImporter
-"txt_book_importer.missing_title" = "Book title not parsed. Please check the TXT file format (e.g., first line contains: Title: xxx)";
-"txt_book_importer.article_title" = "Main Text";

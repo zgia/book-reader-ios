@@ -2,7 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>CFBundleDocumentTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeName</key>
+				<string>Plain Text</string>
+				<key>LSItemContentTypes</key>
+				<array>
+					<string>public.plain-text</string>
+					<string>public.text</string>
+				</array>
+				<key>LSHandlerRank</key>
+				<string>Alternate</string>
+			</dict>
+		</array>
 		<key>UIFileSharingEnabled</key>
+		<true/>
+		<key>LSSupportsOpeningDocumentsInPlace</key>
 		<true/>
 		<key>NSLocalNetworkUsageDescription</key>
 		<string>允许在局域网内与电脑浏览器传输文本文件以导入书籍。</string>

@@ -20,6 +20,7 @@ struct NovelReaderApp: App {
     @State private var isAuthenticating: Bool = false
     @State private var hasRequestedInitialAuth: Bool = false
     @State private var activeModals: Set<String> = []
+    @State private var externalOpenMessage: String? = nil
 
     init() {
         // 调试用，打印沙盒路径
@@ -67,6 +68,19 @@ struct NovelReaderApp: App {
                 }
             }
             .preferredColorScheme(appSettings.preferredColorScheme)
+            .onOpenURL(perform: handleOpenURL)
+            .alert(
+                isPresented: Binding(
+                    get: { externalOpenMessage != nil },
+                    set: { if !$0 { externalOpenMessage = nil } }
+                )
+            ) {
+                Alert(
+                    title: Text(String(localized: "import.done")),
+                    message: Text(externalOpenMessage ?? ""),
+                    dismissButton: .default(Text(String(localized: "btn.ok")))
+                )
+            }
             .onAppear {
                 // 仅首次进入时触发一次验证，避免视图重建导致反复调用
                 if !hasRequestedInitialAuth {
@@ -120,6 +134,56 @@ struct NovelReaderApp: App {
                 }
             }
         }
+    }
+
+    private func handleOpenURL(_ url: URL) {
+        // 仅处理文本类型
+        let allowedExts: Set<String> = ["txt", "text"]
+        let ext = url.pathExtension.lowercased()
+        guard allowedExts.contains(ext) else { return }
+
+        let uploadsDir = WebUploadServer.shared.uploadsDirectory()
+        do {
+            try FileManager.default.createDirectory(
+                at: uploadsDir,
+                withIntermediateDirectories: true
+            )
+
+            // 安全作用域访问（跨 App 打开场景）
+            let didAccess = url.startAccessingSecurityScopedResource()
+            defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+
+            // 目标命名去重
+            let destURL = uniqueDestination(in: uploadsDir, for: url)
+            try FileManager.default.copyItem(at: url, to: destURL)
+
+            // 刷新上传列表并提示
+            WebUploadServer.shared.refreshUploadedFiles()
+            DispatchQueue.main.async {
+                let fileName = destURL.lastPathComponent
+                externalOpenMessage = String(
+                    format: String(localized: "import.external_saved"),
+                    fileName
+                )
+            }
+        } catch {
+            // 简单记录
+            print("openURL copy failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func uniqueDestination(in dir: URL, for sourceURL: URL) -> URL {
+        let fileName = sourceURL.lastPathComponent
+        var candidate = dir.appendingPathComponent(fileName)
+        let name = (fileName as NSString).deletingPathExtension
+        let ext = (fileName as NSString).pathExtension
+        var index = 1
+        while FileManager.default.fileExists(atPath: candidate.path) {
+            let newName = "\(name)-\(index).\(ext.isEmpty ? "txt" : ext)"
+            candidate = dir.appendingPathComponent(newName)
+            index += 1
+        }
+        return candidate
     }
 
     private func authenticate() {

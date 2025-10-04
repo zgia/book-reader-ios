@@ -7,7 +7,7 @@ enum TxtImportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingTitle:
-            return String(localized: "txt_book_importer.missing_title")
+            return String(localized: "import.missing_title")
         }
     }
 }
@@ -136,7 +136,7 @@ final class TxtBookImporter {
                         currentVolumeId = try dbManager.insertVolume(
                             bookId: bid,
                             title: String(
-                                localized: "txt_book_importer.article_title"
+                                localized: "import.article_title"
                             ),
                             in: db
                         )

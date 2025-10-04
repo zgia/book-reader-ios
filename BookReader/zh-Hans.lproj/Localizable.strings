@@ -170,6 +170,9 @@
 "import.html.msg_failed" = "上传失败: ";
 "import.html.msg_exception" = "上传异常: ";
 "import.html.msg_choose_file" = "请选择文件";
+"import.missing_title" = "未解析到书名，请检查TXT文件格式（例如首行包含：书名：xxx）";
+"import.article_title" = "正文";
+"import.external_saved" = "已保存“%@”。请前往 设置 - 网页上传，点击“刷新”后再导入。";
 
 // AppSettingsView - Security
 "security.title" = "隐私与安全";
@@ -202,7 +205,3 @@
 "appearance.system" = "跟随系统";
 "appearance.light" = "浅色";
 "appearance.dark" = "深色";
-
-// TxtBookImporter
-"txt_book_importer.missing_title" = "未解析到书名，请检查TXT文件格式（例如首行包含：书名：xxx）";
-"txt_book_importer.article_title" = "正文";
