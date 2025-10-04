@@ -155,24 +155,6 @@ final class DatabaseManager: ObservableObject {
                         ON favorite(chapterid);
                     """
             )
-
-            // 迁移：确保 category 表存在 ishidden 字段
-            let hasIsHidden: Int =
-                try Int.fetchOne(
-                    db,
-                    sql:
-                        "SELECT COUNT(*) FROM pragma_table_info('category') WHERE name = 'ishidden'"
-                ) ?? 0
-            if hasIsHidden == 0 {
-                try db.execute(
-                    sql:
-                        "ALTER TABLE category ADD COLUMN ishidden BIGINT DEFAULT 0;"
-                )
-                try db.execute(
-                    sql:
-                        "UPDATE category SET ishidden = 0 WHERE ishidden IS NULL;"
-                )
-            }
         }
     }
 
