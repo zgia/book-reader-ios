@@ -19,7 +19,7 @@ final class DatabaseManager: ObservableObject {
             // 初始化失败，记录错误并由 UI 提示用户手动放置数据库
             DispatchQueue.main.async { [weak self] in
                 self?.initError =
-                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 novel.sqlite"
+                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 book.sqlite"
             }
         }
     }
@@ -34,7 +34,7 @@ final class DatabaseManager: ObservableObject {
                 in: .userDomainMask
             )
             .first!
-            let dbURL = documents.appendingPathComponent("novel.sqlite")
+            let dbURL = documents.appendingPathComponent("book.sqlite")
             if !fm.fileExists(atPath: dbURL.path) {
                 // 创建空文件（GRDB 会初始化）
                 fm.createFile(atPath: dbURL.path, contents: nil)
@@ -317,7 +317,7 @@ final class DatabaseManager: ObservableObject {
             )
             .first
         else { return nil }
-        let dbURL = documents.appendingPathComponent("novel.sqlite")
+        let dbURL = documents.appendingPathComponent("book.sqlite")
         let walURL = URL(fileURLWithPath: dbURL.path + "-wal")
         let shmURL = URL(fileURLWithPath: dbURL.path + "-shm")
 

@@ -99,9 +99,9 @@ struct DebugUtils {
             Log.info("📂 Documents: \(documents.path)", category: .database)
 
             // 直接告诉数据库应该放置的位置
-            let dbURL = documents.appendingPathComponent("novel.sqlite")
+            let dbURL = documents.appendingPathComponent("book.sqlite")
             Log.info(
-                "📌 你的 novel.sqlite 数据库应该放在这里: \(dbURL.path)",
+                "📌 你的 book.sqlite 数据库应该放在这里: \(dbURL.path)",
                 category: .database
             )
         }

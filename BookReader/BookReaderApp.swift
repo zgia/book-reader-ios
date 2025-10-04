@@ -9,7 +9,7 @@ extension Notification.Name {
 }
 
 @main
-struct NovelReaderApp: App {
+struct BookReaderApp: App {
     @StateObject private var db = DatabaseManager.shared
     @StateObject private var progressStore = ProgressStore()
     @StateObject private var appSettings = AppSettings()
