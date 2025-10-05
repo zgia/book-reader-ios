@@ -24,7 +24,12 @@
 		<string>允许在局域网内与电脑浏览器传输文本文件以导入书籍。</string>
 		<key>NSBonjourServices</key>
 		<array>
-			<string>_http._tcp</string>
+			<string>_http._tcp.</string>
 		</array>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>

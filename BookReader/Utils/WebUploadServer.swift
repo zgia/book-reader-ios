@@ -1,6 +1,7 @@
 import FlyingFox
 import Foundation
 import SwiftUI
+import Network
 
 /// 上传的文本文件模型
 struct UploadedTextFile: Identifiable, Hashable {
@@ -25,6 +26,7 @@ final class WebUploadServer: ObservableObject {
     private var server: HTTPServer?
     private var serverTask: Task<Void, Never>?
     private var bonjourService: NetService?
+    private var permissionBrowser: NWBrowser?
 
     private init() {
         let docs = FileManager.default.urls(
@@ -45,6 +47,9 @@ final class WebUploadServer: ObservableObject {
     func start() async {
         guard !isRunning else { return }
         unavailableReason = nil
+
+        // 触发“本地网络”权限弹窗（iOS 14+）。仅浏览几秒后自动停止。
+        triggerLocalNetworkPermission()
 
         let httpServer = HTTPServer(port: UInt16(WebUploadServer.webPort))
 
@@ -227,6 +232,37 @@ final class WebUploadServer: ObservableObject {
         bonjourService = nil
     }
 
+    /// 通过 NWBrowser 浏览 Bonjour 服务以触发本地网络权限弹窗
+    private func triggerLocalNetworkPermission() {
+        // 若已触发过或正在进行，避免重复
+        if permissionBrowser != nil { return }
+        let params = NWParameters.tcp
+        params.includePeerToPeer = true
+        let browser = NWBrowser(
+            for: .bonjour(type: "_http._tcp", domain: nil),
+            using: params
+        )
+        permissionBrowser = browser
+        browser.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .ready, .failed(_), .cancelled:
+                // 就绪或失败/取消后，稍等片刻再关闭，避免频繁重建
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    self?.permissionBrowser?.cancel()
+                    self?.permissionBrowser = nil
+                }
+            default:
+                break
+            }
+        }
+        browser.start(queue: .main)
+        // 兜底：最多浏览 6 秒
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in
+            self?.permissionBrowser?.cancel()
+            self?.permissionBrowser = nil
+        }
+    }
+
     private func uniqueDestinationURL(fileName: String) -> URL {
         var candidate = uploadsDirectoryURL.appendingPathComponent(fileName)
         let name = (fileName as NSString).deletingPathExtension
@@ -297,35 +333,52 @@ final class WebUploadServer: ObservableObject {
 
     // 获取 Wi-Fi IPv4 地址
     private static func currentWiFiIPv4Address() -> String? {
-        var address: String?
         var ifaddrPtr: UnsafeMutablePointer<ifaddrs>? = nil
         guard getifaddrs(&ifaddrPtr) == 0, let firstAddr = ifaddrPtr else {
             return nil
         }
         defer { freeifaddrs(ifaddrPtr) }
+
+        struct Candidate {
+            let name: String
+            let ip: String
+        }
+
+        var preferred: [Candidate] = []
+        var backup: [Candidate] = []
+
         for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
             let ifa = ptr.pointee
+            guard let addr = ifa.ifa_addr, addr.pointee.sa_family == sa_family_t(AF_INET) else { continue }
+
+            let flags = Int32(ifa.ifa_flags)
+            guard (flags & IFF_UP) != 0 && (flags & IFF_RUNNING) != 0 else { continue }
+
             let name = String(cString: ifa.ifa_name)
-            // Wi-Fi: en0，模拟器也可能是 en1
-            if name.hasPrefix("en")
-                && ifa.ifa_addr.pointee.sa_family == sa_family_t(AF_INET)
-            {
-                var addr = ifa.ifa_addr.pointee
-                var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                if getnameinfo(
-                    &addr,
-                    socklen_t(ifa.ifa_addr.pointee.sa_len),
-                    &hostname,
-                    socklen_t(hostname.count),
-                    nil,
-                    0,
-                    NI_NUMERICHOST
-                ) == 0 {
-                    address = String(cString: hostname)
-                    break
-                }
-            }
+            guard name.hasPrefix("en") else { continue }
+
+            var a = addr.pointee
+            var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            guard getnameinfo(
+                &a,
+                socklen_t(addr.pointee.sa_len),
+                &hostname,
+                socklen_t(hostname.count),
+                nil,
+                0,
+                NI_NUMERICHOST
+            ) == 0 else { continue }
+
+            let ip = String(cString: hostname)
+            // 排除链路本地 169.254.x.x
+            guard !ip.hasPrefix("169.254.") else { continue }
+
+            let candidate = Candidate(name: name, ip: ip)
+            if name == "en0" { preferred.append(candidate) } else { backup.append(candidate) }
         }
-        return address
+
+        if let first = preferred.first { return first.ip }
+        if let first = backup.first { return first.ip }
+        return nil
     }
 }

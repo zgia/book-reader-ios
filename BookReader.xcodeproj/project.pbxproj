@@ -132,7 +132,7 @@
 			mainGroup = F9EF875B2E5AD30100BD3264;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */,
+				F97035052E5B1E7D00059310 /* XCRemoteSwiftPackageReference "GRDB" */,
 				F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				F9CD1DAE2E7FE99500633720 /* XCRemoteSwiftPackageReference "AlertToast" */,
 			);
@@ -383,14 +383,15 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../projects/GRDB.swift;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
+		F97035052E5B1E7D00059310 /* XCRemoteSwiftPackageReference "GRDB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.8.0;
+			};
+		};
 		F98A0CF12E7EAC0D00B0DF32 /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/swhitty/FlyingFox";
@@ -422,7 +423,7 @@
 		};
 		F9952EDE2E6156E900E4F0ED /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F97035052E5B1E7D00059310 /* XCLocalSwiftPackageReference "../../projects/GRDB.swift" */;
+			package = F97035052E5B1E7D00059310 /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
 		};
 		F9CD1DAF2E7FE99500633720 /* AlertToast */ = {
