@@ -18,8 +18,7 @@ final class DatabaseManager: ObservableObject {
         } catch {
             // 初始化失败，记录错误并由 UI 提示用户手动放置数据库
             DispatchQueue.main.async { [weak self] in
-                self?.initError =
-                    "请连接手机到电脑，在 文件 → BookReader 文件夹 内放入 book.sqlite"
+                self?.initError = String(localized: "db.init_failed_message")
             }
         }
     }

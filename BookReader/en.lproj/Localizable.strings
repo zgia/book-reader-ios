@@ -27,11 +27,12 @@
 // Initialization
 "db.init_failed" = "Failed to initialize database";
 "db.initializing" = "Initializing database…";
+"db.init_failed_message" = "Please connect your phone to your computer, and put book.sqlite in the BookReader folder under Files.";
 
 // Favorites
 "favorite.title" = "Favorites";
 "favorite.add_to_favorites" = "Add to Favorites";
-"favorite.page_n" = "Page %d";
+"favorite.page_x" = "Page %d";
 "favorite.add_to_favorites_placeholder" = "Add a note for this favorite (optional)";
 "favorite.empty" = "No favorites yet";
 
@@ -47,8 +48,8 @@
 "category.renaming_title" = "Category Rename";
 "category.renaming_placeholder" = "New category title";
 "category.confirm_deleting" = "Confirm Deletion";
-"category.confirm_deleting_message" = "This operation will delete category \"%@\" and cannot be undone. Note: book with categroy cannot be deleted. Continue?";
-"category.book_count" = "%d books";
+"category.confirm_deleting_x_message" = "This operation will delete category \"%@\" and cannot be undone. Note: book with categroy cannot be deleted. Continue?";
+"category.book_count_x" = "%d books";
 "category.display.title" = "Category Display";
 "category.display.tip" = "When enabled, hidden categories will be omitted.";
 "category.display.hide_hidden" = "Hide categories";
@@ -57,7 +58,7 @@
 "book.renaming_title" = "Rename";
 "book.renaming_placeholder" = "Please enter a new book name";
 "book.confirm_deleting" = "Confirm Deletion";
-"book.confirm_deleting_message" = "This operation will delete all content and reading progress of \"%@\" and cannot be undone. Continue?";
+"book.confirm_deleting_x_message" = "This operation will delete all content and reading progress of \"%@\" and cannot be undone. Continue?";
 
 // ReaderView - Book Info
 "book_info.title" = "Book Info";
@@ -67,10 +68,14 @@
 "bookinfo.category" = "Category";
 "bookinfo.set_category" = "Set Category";
 "bookinfo.wordcount" = "Total Words";
-"bookinfo.wordcount_format" = "%@ words";
-"bookinfo.wordcount_plain_zh" = "%d words";
-"bookinfo.wordcount_format_wan" = "%@ ten thousand words";
-"bookinfo.wordcount_format_yi" = "%@ hundred million words";
+"bookinfo.wordcount.format_x" = "%@ words";
+"bookinfo.wordcount.plain_zh_x" = "%d words";
+"bookinfo.wordcount.plain_en_x" = "%d words";
+"bookinfo.wordcount.format_wan_x" = "%@ ten thousand words";
+"bookinfo.wordcount.format_yi_x" = "%@ hundred million words";
+"bookinfo.wordcount.format_thousand_x" = "%@ thousand words";
+"bookinfo.wordcount.format_million_x" = "%@ million words";
+"bookinfo.wordcount.format_billion_x" = "%@ billion words";
 "bookinfo.status" = "Status";
 "bookinfo.status_ongoing" = "Ongoing";
 "bookinfo.finished" = "Completed";
@@ -78,6 +83,10 @@
 "bookinfo.latest_chapter" = "Latest Chapter";
 "bookinfo.reading" = "Reading";
 "bookinfo.reading_percent" = "Progress";
+"bookinfo.zero_percent_unread" = "0%・Unread";
+"bookinfo.unread" = "Unread";
+"bookinfo.unread_chapters_x" = "%d chapters unread";
+"bookinfo.read_finished" = "Read Finished";
 
 // ReaderView
 "reading.book_index_loading" = "Loading table of contents...";
@@ -89,9 +98,9 @@
 // ReaderSettingsView
 "setting.title" = "Settings";
 "setting.page_format" = "Format";
-"setting.font_size" = "Font Size: %d";
-"setting.line_spacing" = "Line Spacing: %d";
-"setting.paragraph_spacing" = "Paragraph Spacing: %d";
+"setting.font_size_x" = "Font Size: %d";
+"setting.line_spacing_x" = "Line Spacing: %d";
+"setting.paragraph_spacing_x" = "Paragraph Spacing: %d";
 "setting.color_presets" = "Color Presets";
 "setting.color_customize" = "Custom Color";
 "setting.color_font" = "Font Color";
@@ -108,8 +117,8 @@
 "setting.input_palette_name" = "Palette name";
 "setting.custom_palette_title" = "My Palettes";
 "setting.custom_palette_empty" = "No saved palettes yet";
-"setting.delete_palette_confirm_title" = "Confirm Deletion";
-"setting.delete_palette_confirm_message" = "Delete palette “%@”?";
+"setting.confirm_deleting_palette" = "Confirm Deletion";
+"setting.confirm_deleting_palette_x_message" = "Delete palette “%@”?";
 "setting.rename_palette_title" = "Rename Palette";
 "setting.rename_palette_placeholder" = "New palette name";
 
@@ -137,13 +146,13 @@
 "db.compact.confirm_message" = "This operation will perform VACUUM, which may take a long time. Please proceed when idle.";
 "db.compact.started" = "Full vacuum (VACUUM) started and will run in the background.";
 "db.compact.done" = "Full vacuum completed.";
-"db.stats.book_count" = "Total books: %d";
-"db.stats.db_size" = "Database: %@";
-"db.stats.wal_size" = "WAL: %@";
-"db.stats.shm_size" = "SHM: %@";
-"db.stats.page_size" = "Page size: %d B";
-"db.stats.freelist_count" = "Free pages: %d";
-"db.stats.estimated_reclaimable" = "Estimated reclaimable: %@";
+"db.stats.book_count_x" = "Total books: %d";
+"db.stats.db_size_x" = "Database: %@";
+"db.stats.wal_size_x" = "WAL: %@";
+"db.stats.shm_size_x" = "SHM: %@";
+"db.stats.page_size_x" = "Page size: %d B";
+"db.stats.freelist_count_x" = "Free pages: %d";
+"db.stats.estimated_reclaimable_x" = "Estimated reclaimable: %@";
 
 // AppSettingsView - import
 "import.book.title" = "Import from WIFI & File App";
@@ -151,17 +160,16 @@
 "import.start" = "Import Book from File App";
 "import.in_progress" = "Importing…";
 "import.done" = "Import Completed";
-"import.failed" = "Import failed: %@";
-"import.preview_failed" = "Preview failed: %@";
-"import.file_select_failed" = "File selection failed: %@";
-"import.web_url" = "Access in the same LAN browser: %@";
+"import.failed_x" = "Import failed: %@";
+"import.file_select_failed_x" = "File selection failed: %@";
+"import.web_url_x" = "Access in the same LAN browser: %@";
 "import.web_tip" = "Access the upload page in the same LAN with a computer browser, supporting text files.";
 "import.uploaded_books" = "Uploaded Books";
 "import.no_uploaded_files" = "No uploaded files";
-"import.delete_failed" = "Delete failed: %@";
-"import.web.srv_run_failed" = "Service failed: %@";
-"import.web.srv_save_failed" = "Save failed: %@";
-"import.web.srv_url" = "http://<Device IP>:%d/";
+"import.delete_failed_x" = "Delete failed: %@";
+"import.web.srv_run_failed_x" = "Service failed: %@";
+"import.web.srv_save_failed_x" = "Save failed: %@";
+"import.web.srv_url_x" = "http://<Device IP>:%d/";
 "import.html.title" = "BookReader Web Upload";
 "import.html.hint" = "Please select text files to upload. Uploaded files can be imported or deleted in App Settings - Web Upload.";
 "import.html.btn.upload" = "Upload";
@@ -172,7 +180,7 @@
 "import.html.msg_choose_file" = "Please choose a file";
 "import.missing_title" = "Book title not parsed. Please check the TXT file format (e.g., first line contains: Title: xxx)";
 "import.article_title" = "Main Text";
-"import.external_saved" = "Saved “%@” to Uploads. Go to Settings - Web Upload, tap Refresh then Import.";
+"import.external_saved_x" = "Saved “%@” to Uploads. Go to Settings - Web Upload, tap Refresh then Import.";
 
 // AppSettingsView - Security
 "security.title" = "Privacy & Security";
@@ -190,16 +198,16 @@
 "security.current_passcode" = "Current passcode";
 "security.passcode_mismatch_or_invalid" = "Entries do not match or are not 6 digits";
 "security.passcode_set_done" = "Passcode set";
-"security.save_failed" = "Save failed: %@";
+"security.save_failed_x" = "Save failed: %@";
 "security.passcode_removed" = "Passcode removed";
-"security.remove_failed" = "Remove failed: %@";
+"security.remove_failed_x" = "Remove failed: %@";
 "security.passcode_error" = "Incorrect passcode";
 "security.passcode_placeholder" = "Please enter a 6-digit passcode";
 "security.auth_to_unlock" = "Authentication required to unlock";
 "security.input_passcode_to_unlock" = "Enter the password to unlock the app.";
-"security.keychain_error" = "Keychain error: %d";
+"security.keychain_error_x" = "Keychain error: %d";
 "security.locked_for_a_while" = "Locked, please try again later";
-"security.failed_attempts" = "%d times incorrect passcode";
+"security.failed_attempts_x" = "%d times incorrect passcode";
 
 // Appearance
 "appearance.title" = "Appearance";

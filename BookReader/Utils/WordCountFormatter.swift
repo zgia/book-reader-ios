@@ -20,7 +20,7 @@ struct WordCountFormatter {
                     .precision(.fractionLength(0...1))  // 保留 0~1 位小数
             )
             return String(
-                format: String(localized: "bookinfo.wordcount_format"),
+                format: String(localized: "bookinfo.wordcount.format_x"),
                 formatted
             )
         } else {
@@ -51,18 +51,18 @@ struct WordCountFormatter {
             if count >= 100_000_000 {
                 let v = Double(count) / 100_000_000.0
                 return String(
-                    format: String(localized: "wordcount.format_yi"),
+                    format: String(localized: "wordcount.format_yi_x"),
                     fmt(v)
                 )
             } else if count >= 10_000 {
                 let v = Double(count) / 10_000.0
                 return String(
-                    format: String(localized: "wordcount.format_wan"),
+                    format: String(localized: "wordcount.format_wan_x"),
                     fmt(v)
                 )
             } else {
                 return String(
-                    format: String(localized: "wordcount.plain_zh"),
+                    format: String(localized: "wordcount.plain_zh_x"),
                     count
                 )
             }
@@ -72,24 +72,24 @@ struct WordCountFormatter {
         if count >= 1_000_000_000 {
             let v = Double(count) / 1_000_000_000.0
             return String(
-                format: String(localized: "wordcount.format_billion"),
+                format: String(localized: "wordcount.format_billion_x"),
                 fmt(v)
             )
         } else if count >= 1_000_000 {
             let v = Double(count) / 1_000_000.0
             return String(
-                format: String(localized: "wordcount.format_million"),
+                format: String(localized: "wordcount.format_million_x"),
                 fmt(v)
             )
         } else if count >= 1_000 {
             let v = Double(count) / 1_000.0
             return String(
-                format: String(localized: "wordcount.format_thousand"),
+                format: String(localized: "wordcount.format_thousand_x"),
                 fmt(v)
             )
         } else {
             return String(
-                format: String(localized: "wordcount.plain_en"),
+                format: String(localized: "wordcount.plain_en_x"),
                 count
             )
         }

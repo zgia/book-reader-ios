@@ -113,7 +113,7 @@ struct AppSettingsView: View {
                 DispatchQueue.main.async {
                     importInProgress = false
                     alertMessage = String(
-                        format: String(localized: "import.failed"),
+                        format: String(localized: "import.failed_x"),
                         error.localizedDescription
                     )
                 }
@@ -133,7 +133,7 @@ struct AppSettingsView: View {
                 } else if let url = webServer.serverURL {
                     Text(
                         String(
-                            format: String(localized: "import.web_url"),
+                            format: String(localized: "import.web_url_x"),
                             url.absoluteString
                         )
                     )
@@ -230,7 +230,7 @@ struct AppSettingsView: View {
                                         String(
                                             format: String(
                                                 localized:
-                                                    "import.delete_failed"
+                                                    "import.delete_failed_x"
                                             ),
                                             error.localizedDescription
                                         )
@@ -291,7 +291,7 @@ struct AppSettingsView: View {
                         importInProgress = false
                         alertMessage = String(
                             format: String(
-                                localized: "import.failed"
+                                localized: "import.failed_x"
                             ),
                             error.localizedDescription
                         )
@@ -301,7 +301,7 @@ struct AppSettingsView: View {
         case .failure(let error):
             alertMessage = String(
                 format: String(
-                    localized: "import.file_select_failed"
+                    localized: "import.file_select_failed_x"
                 ),
                 error.localizedDescription
             )
@@ -421,7 +421,7 @@ struct AppSettingsView: View {
                         } catch {
                             passcodeTip = String(
                                 format: String(
-                                    localized: "security.save_failed"
+                                    localized: "security.save_failed_x"
                                 ),
                                 error.localizedDescription
                             )
@@ -690,7 +690,7 @@ struct AppSettingsView: View {
                 )
             } catch {
                 passcodeTip = String(
-                    format: String(localized: "security.save_failed"),
+                    format: String(localized: "security.save_failed_x"),
                     error.localizedDescription
                 )
             }
@@ -706,7 +706,7 @@ struct AppSettingsView: View {
                     )
                 } catch {
                     passcodeTip = String(
-                        format: String(localized: "security.remove_failed"),
+                        format: String(localized: "security.remove_failed_x"),
                         error.localizedDescription
                     )
                 }
@@ -846,31 +846,31 @@ struct AppSettingsView: View {
             }
             let lines = [
                 String(
-                    format: String(localized: "db.stats.book_count"),
+                    format: String(localized: "db.stats.book_count_x"),
                     s.bookCount
                 ),
                 String(
-                    format: String(localized: "db.stats.db_size"),
+                    format: String(localized: "db.stats.db_size_x"),
                     fmt(s.dbSize)
                 ),
                 String(
-                    format: String(localized: "db.stats.wal_size"),
+                    format: String(localized: "db.stats.wal_size_x"),
                     fmt(s.walSize)
                 ),
                 String(
-                    format: String(localized: "db.stats.shm_size"),
+                    format: String(localized: "db.stats.shm_size_x"),
                     fmt(s.shmSize)
                 ),
                 String(
-                    format: String(localized: "db.stats.page_size"),
+                    format: String(localized: "db.stats.page_size_x"),
                     s.pageSize
                 ),
                 String(
-                    format: String(localized: "db.stats.freelist_count"),
+                    format: String(localized: "db.stats.freelist_count_x"),
                     s.freelistCount
                 ),
                 String(
-                    format: String(localized: "db.stats.estimated_reclaimable"),
+                    format: String(localized: "db.stats.estimated_reclaimable_x"),
                     fmt(s.estimatedReclaimableBytes)
                 ),
             ]

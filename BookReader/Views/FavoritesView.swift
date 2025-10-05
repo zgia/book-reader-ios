@@ -41,7 +41,7 @@ struct FavoritesView: View {
                                         Text(
                                             String(
                                                 format: String(
-                                                    localized: "favorite.page_n"
+                                                    localized: "favorite.page_x"
                                                 ),
                                                 idx + 1
                                             )

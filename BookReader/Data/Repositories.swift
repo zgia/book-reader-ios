@@ -21,7 +21,7 @@ extension DatabaseManager {
         includePercent: Bool = false
     ) -> String {
         guard let last = progressStore.lastProgress(forBook: bookId) else {
-            return includePercent ? "0%・未读" : "未读"
+            return includePercent ? String(localized: "bookinfo.zero_percent_unread") : String(localized: "bookinfo.unread")
         }
 
         let unread = unreadChapterCount(
@@ -39,7 +39,7 @@ extension DatabaseManager {
         }
         let percentText = "\(Int(round(percentValue * 100)))%"
 
-        let base = unread == 0 ? "读完" : "\(unread)章未读"
+        let base = unread == 0 ? String(localized: "bookinfo.read_finished") : String(format: String(localized: "bookinfo.unread_chapters_x"), unread)
         return includePercent ? "\(percentText)・\(base)" : base
     }
 

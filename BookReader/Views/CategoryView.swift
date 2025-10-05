@@ -45,7 +45,7 @@ struct CategoryView: View {
                                 let count = bookCounts[cat.id] ?? 0
                                 let countText = String(
                                     format: String(
-                                        localized: "category.book_count"
+                                        localized: "category.book_count_x"
                                     ),
                                     count
                                 )
@@ -127,7 +127,7 @@ struct CategoryView: View {
                 Text(
                     String(
                         format: String(
-                            localized: "category.confirm_deleting_message"
+                            localized: "category.confirm_deleting_x_message"
                         ),
                         target.title
                     )

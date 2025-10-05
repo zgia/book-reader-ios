@@ -124,7 +124,7 @@ struct BookListView: View {
             Text(
                 String(
                     format: String(
-                        localized: "book.confirm_deleting_message"
+                        localized: "book.confirm_deleting_x_message"
                     ),
                     target.book.title
                 )

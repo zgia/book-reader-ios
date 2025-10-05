@@ -168,7 +168,7 @@ struct BookReaderApp: App {
             DispatchQueue.main.async {
                 let fileName = destURL.lastPathComponent
                 externalOpenMessage = String(
-                    format: String(localized: "import.external_saved"),
+                    format: String(localized: "import.external_saved_x"),
                     fileName
                 )
             }
@@ -419,7 +419,7 @@ private struct SecurityOverlayView: View {
             } else if failedAttempts > 0 {
                 errorBanner(
                     String(
-                        format: String(localized: "security.failed_attempts"),
+                        format: String(localized: "security.failed_attempts_x"),
                         failedAttempts
                     )
                 )

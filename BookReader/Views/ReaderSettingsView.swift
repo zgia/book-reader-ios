@@ -77,7 +77,7 @@ struct ReaderSettingsView: View {
             .presentationBackgroundInteraction(.enabled)
             .interactiveDismissDisabled(false)
             .alert(
-                String(localized: "setting.delete_palette_confirm_title"),
+                String(localized: "setting.confirm_deleting_palette"),
                 isPresented: Binding(
                     get: { deletingPreset != nil },
                     set: { if !$0 { deletingPreset = nil } }
@@ -98,7 +98,7 @@ struct ReaderSettingsView: View {
                         String(
                             format: String(
                                 localized:
-                                    "setting.delete_palette_confirm_message"
+                                    "setting.confirm_deleting_palette_x_message"
                             ),
                             preset.name
                         )
@@ -184,7 +184,7 @@ struct ReaderSettingsView: View {
                 Text(
                     String(
                         format: String(
-                            localized: "setting.font_size"
+                            localized: "setting.font_size_x"
                         ),
                         Int(reading.fontSize)
                     )
@@ -204,7 +204,7 @@ struct ReaderSettingsView: View {
                 Text(
                     String(
                         format: String(
-                            localized: "setting.line_spacing"
+                            localized: "setting.line_spacing_x"
                         ),
                         Int(reading.lineSpacing)
                     )
@@ -231,7 +231,7 @@ struct ReaderSettingsView: View {
                     String(
                         format: String(
                             localized:
-                                "setting.paragraph_spacing"
+                                "setting.paragraph_spacing_x"
                         ),
                         Int(reading.paragraphSpacing)
                     )

@@ -90,7 +90,7 @@ final class WebUploadServer: ObservableObject {
                     body: Data(
                         String(
                             format: String(
-                                localized: "import.web.srv_save_failed"
+                                localized: "import.web.srv_save_failed_x"
                             ),
                             error.localizedDescription
                         ).utf8
@@ -140,7 +140,7 @@ final class WebUploadServer: ObservableObject {
                     DispatchQueue.main.async {
                         self?.unavailableReason = String(
                             format: String(
-                                localized: "import.web.srv_run_failed"
+                                localized: "import.web.srv_run_failed_x"
                             ),
                             error.localizedDescription
                         )
@@ -157,7 +157,7 @@ final class WebUploadServer: ObservableObject {
         } else {
             serverURL = URL(
                 string: String(
-                    format: String(localized: "import.web.srv_url"),
+                    format: String(localized: "import.web.srv_url_x"),
                     WebUploadServer.webPort
                 )
             )
