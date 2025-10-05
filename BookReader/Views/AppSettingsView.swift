@@ -218,11 +218,16 @@ struct AppSettingsView: View {
                             ProgressView().scaleEffect(0.8)
                         }
                         Menu {
-                            Button(String(localized: "btn.import")) {
+                            Button {
                                 onWebImportButtonTapped(url: file.id)
+                            } label: {
+                                Label(
+                                    String(localized: "btn.import"),
+                                    systemImage: "square.and.arrow.down"
+                                )
                             }
+                            Divider()
                             Button(
-                                String(localized: "btn.delete"),
                                 role: .destructive
                             ) {
                                 do { try webServer.delete(file: file) } catch {
@@ -235,6 +240,11 @@ struct AppSettingsView: View {
                                             error.localizedDescription
                                         )
                                 }
+                            } label: {
+                                Label(
+                                    String(localized: "btn.delete"),
+                                    systemImage: "trash"
+                                )
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -791,16 +801,27 @@ struct AppSettingsView: View {
                     ProgressView().scaleEffect(0.8)
                 }
                 Menu {
-                    Button(String(localized: "btn.refresh")) {
+                    Button {
                         refreshStats()
+                    } label: {
+                        Label(
+                            String(localized: "btn.refresh"),
+                            systemImage: "arrow.clockwise"
+                        )
                     }
+                    Divider()
                     Button(
-                        dbManager.isCompacting
-                            ? String(localized: "db.compacting")
-                            : String(localized: "db.compact"),
                         role: .destructive
                     ) {
                         showingCompactConfirm = true
+                    } label: {
+                        Label(
+                            dbManager.isCompacting
+                                ? String(localized: "db.compacting")
+                                : String(localized: "db.compact"),
+                            systemImage:
+                                "chevron.compact.up.chevron.compact.right.chevron.compact.down.chevron.compact.left"
+                        )
                     }
                     .disabled(dbManager.isCompacting)
                 } label: {
@@ -870,7 +891,9 @@ struct AppSettingsView: View {
                     s.freelistCount
                 ),
                 String(
-                    format: String(localized: "db.stats.estimated_reclaimable_x"),
+                    format: String(
+                        localized: "db.stats.estimated_reclaimable_x"
+                    ),
                     fmt(s.estimatedReclaimableBytes)
                 ),
             ]
