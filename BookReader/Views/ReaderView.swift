@@ -1049,7 +1049,7 @@ struct ReaderView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(reading.textColor.opacity(0.15))
-                                .frame(width: geoSize().width * 0.5)
+                                .frame(width: max(0, geoSize().width * 0.5))
                         )
                         .padding(.top, chapterTitleTopPadding)
                         .padding(.bottom, chapterTitleBottomPadding)
@@ -1061,7 +1061,7 @@ struct ReaderView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(reading.textColor.opacity(0.12))
                             .frame(
-                                width: geoSize().width * widthFactor,
+                                width: max(0, geoSize().width * widthFactor),
                                 height: max(12, reading.fontSize * 0.9)
                             )
                     }
@@ -1076,7 +1076,7 @@ struct ReaderView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(reading.textColor.opacity(0.12))
                             .frame(
-                                width: geoSize().width * widthFactor,
+                                width: max(0, geoSize().width * widthFactor),
                                 height: max(12, reading.fontSize * 0.9)
                             )
                     }
