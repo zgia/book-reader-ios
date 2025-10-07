@@ -189,7 +189,7 @@ struct BookListView: View {
     private func linkingBookView(bookRow: BookRow) -> some View {
         NavigationLink {
             if let startChapter = startingChapter(for: bookRow) {
-                ReaderView(chapter: startChapter)
+                ReaderView(chapter: startChapter, isInitialFromBookList: true)
             } else {
                 VStack(spacing: 12) {
                     Text(

@@ -60,8 +60,12 @@ struct ReaderView: View {
     @State private var showEdgeAlert: Bool = false
     @State private var edgeAlertMessage: String = ""
 
-    init(chapter: Chapter) {
+    // 仅用于从书籍列表首次进入时显示骨架占位，章节切换不使用
+    @State private var showInitialSkeleton: Bool = false
+
+    init(chapter: Chapter, isInitialFromBookList: Bool = false) {
         _currentChapter = State(initialValue: chapter)
+        _showInitialSkeleton = State(initialValue: isInitialFromBookList)
     }
 
     var body: some View {
@@ -250,7 +254,11 @@ struct ReaderView: View {
                         }
                     }
                 } else {
-                    loadingView
+                    if showInitialSkeleton {
+                        initialSkeletonView
+                    } else {
+                        loadingView
+                    }
                 }
             }
             .background(reading.backgroundColor)
@@ -265,6 +273,7 @@ struct ReaderView: View {
                     Log.debug("📖 onChange pages: pages empty, skip")
                     return
                 }
+                if showInitialSkeleton { showInitialSkeleton = false }
                 // 仅当目标章节就是当前章节时才应用恢复
                 let shouldApplyRestore =
                     (pendingRestoreChapterId == nil)
@@ -575,6 +584,7 @@ struct ReaderView: View {
                     category: .reader
                 )
                 pages = cachedPages
+                if showInitialSkeleton { showInitialSkeleton = false }
             } else {
                 let txt = cachedContent.txt ?? ""
                 Log.debug(
@@ -593,6 +603,9 @@ struct ReaderView: View {
                 )
                 pages = newPages
                 pagesCache[chapter.id] = newPages
+                if showInitialSkeleton && !newPages.isEmpty {
+                    showInitialSkeleton = false
+                }
                 perfPg.end(
                     extra: "chapterId=\(chapter.id) pages=\(newPages.count)"
                 )
@@ -650,6 +663,9 @@ struct ReaderView: View {
                 paragraphsCache[chapterId] = computedParas
                 pages = computedPages
                 pagesCache[chapterId] = computedPages
+                if showInitialSkeleton && !computedPages.isEmpty {
+                    showInitialSkeleton = false
+                }
                 updateAdjacentRefs()
                 prefetchAroundCurrent()
                 tApply.end()
@@ -1017,6 +1033,60 @@ struct ReaderView: View {
             .font(.system(size: reading.fontSize))
             .foregroundColor(reading.textColor)
             .padding()
+    }
+
+    // 首次从书籍列表进入时的骨架占位视图（避免右侧白屏）
+    private var initialSkeletonView: some View {
+        // 参考真实排版的内边距与行距，确保进入时版式稳定
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                // 第一页骨架
+                VStack(alignment: .leading, spacing: reading.paragraphSpacing) {
+                    // 章节标题骨架
+                    HStack { Spacer() }
+                        .frame(height: max(20, reading.fontSize * 1.2))
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(reading.textColor.opacity(0.15))
+                                .frame(width: geoSize().width * 0.5)
+                        )
+                        .padding(.top, chapterTitleTopPadding)
+                        .padding(.bottom, chapterTitleBottomPadding)
+
+                    // 若干段落骨架
+                    ForEach(0..<6, id: \.self) { idx in
+                        let widthFactor: CGFloat =
+                            idx % 3 == 0 ? 0.95 : (idx % 3 == 1 ? 0.85 : 0.75)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(reading.textColor.opacity(0.12))
+                            .frame(
+                                width: geoSize().width * widthFactor,
+                                height: max(12, reading.fontSize * 0.9)
+                            )
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                // 第二页骨架（少量行，避免过度渲染）
+                VStack(alignment: .leading, spacing: reading.paragraphSpacing) {
+                    ForEach(0..<4, id: \.self) { idx in
+                        let widthFactor: CGFloat = idx % 2 == 0 ? 0.9 : 0.7
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(reading.textColor.opacity(0.12))
+                            .frame(
+                                width: geoSize().width * widthFactor,
+                                height: max(12, reading.fontSize * 0.9)
+                            )
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+            }
+        }
+        .background(reading.backgroundColor)
+        .scrollIndicators(.hidden)
     }
 
     @ViewBuilder
