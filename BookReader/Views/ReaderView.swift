@@ -519,10 +519,10 @@ struct ReaderView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
             .background(reading.backgroundColor)
-            .cornerRadius(12)
             .padding(.horizontal)
-            .padding(.bottom, 12)
+            .padding(.bottom, -34)
             .transition(.move(edge: .bottom).combined(with: .opacity))
 
         }
@@ -531,31 +531,28 @@ struct ReaderView: View {
     @ViewBuilder
     private func topControlsView() -> some View {
         if showControls {
-            ZStack {
+            HStack {
+                circularButton(
+                    systemName: "chevron.left",
+                    title: "btn.back"
+                ) {
+                    dismiss()
+                }
+
                 Text(currentChapter.title)
                     .font(.headline)
                     .foregroundColor(reading.textColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .overlay {
-                HStack {
-                    circularButton(
-                        systemName: "chevron.left",
-                        title: "btn.back"
-                    ) {
-                        dismiss()
-                    }
-                    Spacer()
-                    circularButton(systemName: "book", title: "book_info.title")
-                    {
-                        showBookInfo = true
-                    }
+                    .padding(.horizontal, 8)
+
+                circularButton(systemName: "book", title: "book_info.title") {
+                    showBookInfo = true
                 }
-                .padding(.horizontal)
             }
-            .frame(height: 44)
+            .padding(.horizontal)
+            .padding(.vertical, 10)
             .background(reading.backgroundColor)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
