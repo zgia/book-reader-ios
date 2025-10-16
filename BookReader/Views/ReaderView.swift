@@ -527,11 +527,12 @@ struct ReaderView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 10)
+            .padding(.top, 12)
+            .padding(.bottom, 14)
             .frame(maxWidth: .infinity)
             .background(reading.backgroundColor)
             .padding(.horizontal)
-            .padding(.bottom, -34)
+            .padding(.bottom, 0)
             .transition(.move(edge: .bottom).combined(with: .opacity))
 
         }

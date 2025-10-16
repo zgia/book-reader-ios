@@ -107,46 +107,8 @@ struct ReaderSettingsView: View {
                     Text("")
                 }
             }
-            .sheet(item: $renamingPreset) { preset in
-                NavigationStack {
-                    Form {
-                        Section {
-                            TextField(
-                                String(
-                                    localized:
-                                        "setting.rename_palette_placeholder"
-                                ),
-                                text: $renameText
-                            )
-                        }
-                    }
-                    .navigationTitle(
-                        String(localized: "setting.rename_palette_title")
-                    )
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(String(localized: "btn.cancel")) {
-                                renamingPreset = nil
-                            }
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button(String(localized: "btn.save")) {
-                                let name = renameText.trimmingCharacters(
-                                    in: .whitespacesAndNewlines
-                                )
-                                guard !name.isEmpty else { return }
-                                reading.renamePreset(preset, newName: name)
-                                renamingPreset = nil
-                            }
-                            .disabled(
-                                renameText.trimmingCharacters(
-                                    in: .whitespacesAndNewlines
-                                ).isEmpty
-                            )
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
+            .overlay {
+                renamingView()
             }
         }
     }
@@ -453,6 +415,33 @@ struct ReaderSettingsView: View {
                     .contentShape(Rectangle())
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func renamingView() -> some View {
+        if let preset = renamingPreset {
+            TextFieldDialog(
+                title: String(localized: "setting.rename_palette_title"),
+                placeholder: String(
+                    localized: "setting.rename_palette_placeholder"
+                ),
+                text: $renameText,
+                onCancel: { renamingPreset = nil },
+                onSave: {
+                    let name = renameText.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+                    guard !name.isEmpty else {
+                        renamingPreset = nil
+                        return
+                    }
+                    reading.renamePreset(preset, newName: name)
+                    renamingPreset = nil
+                }
+            )
+            .transition(.opacity)
+            .zIndex(1)
         }
     }
 
