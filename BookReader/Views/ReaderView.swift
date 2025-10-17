@@ -63,6 +63,8 @@ struct ReaderView: View {
     // 仅用于从书籍列表首次进入时显示骨架占位，章节切换不使用
     @State private var showInitialSkeleton: Bool = false
 
+    @Namespace private var controlsNamespace
+
     init(chapter: Chapter, isInitialFromBookList: Bool = false) {
         _currentChapter = State(initialValue: chapter)
         _showInitialSkeleton = State(initialValue: isInitialFromBookList)
@@ -479,17 +481,22 @@ struct ReaderView: View {
     func circularButton(
         systemName: String,
         title: String,
+        applyGlass: Bool = false,
+        namespace: Namespace.ID,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(reading.textColor)
-                .frame(width: 44, height: 44)
-                .background(Circle().fill(reading.backgroundColor))
-                .overlay(Circle().stroke(reading.textColor, lineWidth: 0.5))
+                .actionIcon()
         }
-        .buttonStyle(.plain)
+        .glassCircleButton(
+            foreground: reading.textColor,
+            background: .clear,
+            applyGlass: applyGlass
+        )
+        .glassEffectID(title, in: namespace)
         .accessibilityLabel(
             NSLocalizedString(title, comment: "")
         )
@@ -499,27 +506,46 @@ struct ReaderView: View {
     private func bottomControlsView(geo: GeometryProxy) -> some View {
         if showControls {
             HStack(spacing: 16) {
-                circularButton(systemName: "arrow.backward", title: "btn.prev")
-                {
+                circularButton(
+                    systemName: "arrow.backward",
+                    title: "btn.prev",
+                    namespace: controlsNamespace
+                ) {
                     navigateToAdjacentChapter(
                         isNext: false,
                         containerWidth: geo.size.width
                     )
                 }
 
-                circularButton(systemName: "list.bullet", title: "btn.index") {
+                circularButton(
+                    systemName: "list.bullet",
+                    title: "btn.index",
+                    namespace: controlsNamespace
+                ) {
                     showCatalog = true
                 }
 
-                circularButton(systemName: "bookmark", title: "btn.favorite") {
+                circularButton(
+                    systemName: "bookmark",
+                    title: "btn.favorite",
+                    namespace: controlsNamespace
+                ) {
                     showFavorites = true
                 }
 
-                circularButton(systemName: "gear", title: "btn.setting") {
+                circularButton(
+                    systemName: "gear",
+                    title: "btn.setting",
+                    namespace: controlsNamespace
+                ) {
                     showSettings = true
                 }
 
-                circularButton(systemName: "arrow.forward", title: "btn.next") {
+                circularButton(
+                    systemName: "arrow.forward",
+                    title: "btn.next",
+                    namespace: controlsNamespace
+                ) {
                     navigateToAdjacentChapter(
                         isNext: true,
                         containerWidth: geo.size.width
@@ -527,24 +553,27 @@ struct ReaderView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 14)
+            .padding(.top, 10)
+            .padding(.bottom, 10)
+            .background(.clear)
             .frame(maxWidth: .infinity)
-            .background(reading.backgroundColor)
+            .glassEffect(.clear.interactive())
             .padding(.horizontal)
-            .padding(.bottom, 0)
+            .padding(.bottom, 5)
             .transition(.move(edge: .bottom).combined(with: .opacity))
-
         }
     }
 
     @ViewBuilder
     private func topControlsView() -> some View {
+
         if showControls {
             HStack {
                 circularButton(
                     systemName: "chevron.left",
-                    title: "btn.back"
+                    title: "btn.back",
+                    applyGlass: true,
+                    namespace: controlsNamespace
                 ) {
                     dismiss()
                 }
@@ -557,7 +586,12 @@ struct ReaderView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 8)
 
-                circularButton(systemName: "book", title: "book_info.title") {
+                circularButton(
+                    systemName: "book",
+                    title: "book_info.title",
+                    applyGlass: true,
+                    namespace: controlsNamespace
+                ) {
                     showBookInfo = true
                 }
             }
