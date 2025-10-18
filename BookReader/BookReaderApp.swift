@@ -22,8 +22,8 @@ struct BookReaderApp: App {
     @State private var externalOpenMessage: String? = nil
     @State private var failedAttempts: Int = 0
     @State private var attemptsToLock: Int = 3
-    @State private var firstLockedMinute: Double = 1
-    @State private var secondLockedMinutes: Double = 10
+    @State private var firstLockedSeconds: Double = 60
+    @State private var secondLockedSeconds: Double = 600
     @State private var lockUntil: Date? = nil
     @State private var failureNonce: Int = 0
     @State private var lockWorkItem: DispatchWorkItem? = nil
@@ -253,9 +253,9 @@ struct BookReaderApp: App {
             failureNonce &+= 1
 
             if failedAttempts == attemptsToLock {
-                startLock(for: firstLockedMinute * 10)  // 1 分钟
+                startLock(for: firstLockedSeconds)  // 1 分钟
             } else if failedAttempts > attemptsToLock {
-                startLock(for: secondLockedMinutes * 10)  // 10 分钟
+                startLock(for: secondLockedSeconds)  // 10 分钟
             }
         }
     }
@@ -420,8 +420,8 @@ private struct SecurityOverlayView: View {
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($isFieldFocused)
-                    .onChange(of: input) { oldValue, _ in
-                        let digitsOnly = oldValue.filter { $0.isNumber }
+                    .onChange(of: input) { _, newValue in
+                        let digitsOnly = newValue.filter { $0.isNumber }
                         let normalized = String(digitsOnly.prefix(6))
                         if input != normalized { input = normalized }
 
