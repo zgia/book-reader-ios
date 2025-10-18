@@ -100,8 +100,8 @@ struct BookReaderApp: App {
                     }
                 }
             }
-            .onChange(of: scenePhase) { newPhase, oldPhase in
-                switch newPhase {
+            .onChange(of: scenePhase) { previousPhase, _ in
+                switch previousPhase {
                 case .active:
                     // 回到前台时如果未解锁则再次验证（防抖）
                     if PasscodeManager.shared.isPasscodeSet && !isUnlocked
@@ -273,6 +273,18 @@ struct BookReaderApp: App {
     }
 }
 
+// 输入错误时的轻微左右抖动动画
+private struct ShakeEffect: GeometryEffect {
+    var travelDistance: CGFloat = 8
+    var numberOfShakes: CGFloat = 2
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let x = travelDistance * sin(animatableData * .pi * numberOfShakes)
+        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
+    }
+}
+
 private struct SecurityOverlayView: View {
     var showBlur: Bool
     var isUnlocked: Bool
@@ -283,6 +295,8 @@ private struct SecurityOverlayView: View {
 
     @State private var input: String = ""
     @FocusState private var isFieldFocused: Bool
+
+    private let shakeDuration: Double = 0.28
 
     private var isLockedNow: Bool {
         if let lockedUntil, lockedUntil > Date() { return true }
@@ -325,8 +339,8 @@ private struct SecurityOverlayView: View {
                 if !isLockedNow { isFieldFocused = true }
             }
         }
-        .onChange(of: isUnlocked) { newValue, _ in
-            if !newValue {
+        .onChange(of: isUnlocked) { oldValue, _ in
+            if !oldValue {
                 input = ""
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     if !isLockedNow { isFieldFocused = true }
@@ -341,22 +355,22 @@ private struct SecurityOverlayView: View {
             }
         }
         .onChange(of: failureNonce) { _, _ in
-            input = ""
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)
             if isLockedNow {
                 isFieldFocused = false
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            }
+            // 保留 6 个黑点完成抖动后再清空并恢复焦点
+            DispatchQueue.main.asyncAfter(deadline: .now() + shakeDuration) {
+                input = ""
+                if !isLockedNow {
                     isFieldFocused = true
                 }
             }
         }
         .onChange(of: failedAttempts) { oldValue, newValue in
             guard newValue > oldValue else { return }
-            input = ""
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.error)
+            // 触感与清空由 failureNonce 处理，这里仅恢复焦点
             if !isLockedNow {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     isFieldFocused = true
@@ -389,21 +403,36 @@ private struct SecurityOverlayView: View {
                 .onTapGesture {
                     if !isLockedNow { isFieldFocused = true }
                 }
+                .modifier(
+                    ShakeEffect(
+                        travelDistance: 8,  // 幅度
+                        numberOfShakes: 4,  // 次数
+                        animatableData: CGFloat(failureNonce)
+                    )
+                )
+                .animation(
+                    .easeInOut(duration: shakeDuration),
+                    value: failureNonce
+                )
 
                 // 隐藏文本输入，用于接收数字与删除事件
                 TextField("", text: $input)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($isFieldFocused)
-                    .onChange(of: input) { newValue, _ in
-                        let digitsOnly = newValue.filter { $0.isNumber }
+                    .onChange(of: input) { oldValue, _ in
+                        let digitsOnly = oldValue.filter { $0.isNumber }
                         let normalized = String(digitsOnly.prefix(6))
                         if input != normalized { input = normalized }
 
-                        // 在非锁定情况下，输入满 6 位即提交
+                        // 在非锁定情况下，输入满 6 位先显示最后一个点，再触发校验
                         if !isLockedNow && normalized.count == 6 {
                             let code = normalized
-                            onVerify(code)
+                            DispatchQueue.main.asyncAfter(
+                                deadline: .now() + 0.05
+                            ) {
+                                onVerify(code)
+                            }
                         }
                     }
                     .frame(width: 0, height: 0)

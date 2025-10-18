@@ -379,9 +379,9 @@ struct AppSettingsView: View {
                         text: $passcodeInput
                     )
                     .keyboardType(.numberPad)
-                    .onChange(of: passcodeInput) { newValue, _ in
+                    .onChange(of: passcodeInput) { oldValue, _ in
                         passcodeInput = String(
-                            newValue.filter { $0.isNumber }.prefix(6)
+                            oldValue.filter { $0.isNumber }.prefix(6)
                         )
                     }
                     .focused($setPasscodeFieldFocused)
@@ -390,9 +390,9 @@ struct AppSettingsView: View {
                         text: $passcodeConfirmInput
                     )
                     .keyboardType(.numberPad)
-                    .onChange(of: passcodeConfirmInput) { newValue, _ in
+                    .onChange(of: passcodeConfirmInput) { oldValue, _ in
                         passcodeConfirmInput = String(
-                            newValue.filter { $0.isNumber }.prefix(6)
+                            oldValue.filter { $0.isNumber }.prefix(6)
                         )
                     }
                     .focused($confirmPasscodeFieldFocused)
@@ -481,9 +481,9 @@ struct AppSettingsView: View {
                         text: $passcodeInput
                     )
                     .keyboardType(.numberPad)
-                    .onChange(of: passcodeInput) { newValue, _ in
+                    .onChange(of: passcodeInput) { oldValue, _ in
                         passcodeInput = String(
-                            newValue.filter { $0.isNumber }.prefix(6)
+                            oldValue.filter { $0.isNumber }.prefix(6)
                         )
                     }
                     .focused($removePasscodeFieldFocused)
@@ -577,13 +577,13 @@ struct AppSettingsView: View {
                             )
                             .keyboardType(.numberPad)
                             .focused($setPasscodeFieldFocused)
-                            .onChange(of: passcodeInput) { newValue, _ in
+                            .onChange(of: passcodeInput) { oldValue, _ in
                                 let filtered = String(
-                                    newValue.filter { $0.isNumber }.prefix(
+                                    oldValue.filter { $0.isNumber }.prefix(
                                         6
                                     )
                                 )
-                                if filtered != newValue {
+                                if filtered != oldValue {
                                     passcodeInput = filtered
                                 }
                             }
@@ -598,14 +598,14 @@ struct AppSettingsView: View {
                             .keyboardType(.numberPad)
                             .focused($confirmPasscodeFieldFocused)
                             .onChange(of: passcodeConfirmInput) {
-                                newValue,
+                                oldValue,
                                 _ in
                                 let filtered = String(
-                                    newValue.filter { $0.isNumber }.prefix(
+                                    oldValue.filter { $0.isNumber }.prefix(
                                         6
                                     )
                                 )
-                                if filtered != newValue {
+                                if filtered != oldValue {
                                     passcodeConfirmInput = filtered
                                 }
                             }
@@ -621,11 +621,11 @@ struct AppSettingsView: View {
                         )
                         .keyboardType(.numberPad)
                         .focused($removePasscodeFieldFocused)
-                        .onChange(of: passcodeInput) { newValue, _ in
+                        .onChange(of: passcodeInput) { oldValue, _ in
                             let filtered = String(
-                                newValue.filter { $0.isNumber }.prefix(6)
+                                oldValue.filter { $0.isNumber }.prefix(6)
                             )
-                            if filtered != newValue {
+                            if filtered != oldValue {
                                 passcodeInput = filtered
                             }
                         }
