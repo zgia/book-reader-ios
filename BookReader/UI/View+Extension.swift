@@ -14,19 +14,12 @@ extension View {
         self
             .foregroundStyle(foreground)
             .frame(width: diameter, height: diameter)
-            .background(
-                Circle().fill(background)
-            )
             .if(applyGlass) { v in
-                v.glassEffect(.clear.interactive())
+                v.background(background.opacity(0.5))
+                    .glassEffect(.clear.interactive())
             }
             .if(!applyGlass) { v in
-                v.overlay(
-                    Circle().stroke(
-                        (borderColor ?? foreground.opacity(0.8)),
-                        lineWidth: borderWidth
-                    )
-                )
+                v.background(Circle().fill(.clear))
             }
             .contentShape(Circle())
             .clipShape(Circle())

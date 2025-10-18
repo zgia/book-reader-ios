@@ -481,7 +481,7 @@ struct ReaderView: View {
     func circularButton(
         systemName: String,
         title: String,
-        applyGlass: Bool = false,
+        applyGlass: Bool = true,
         namespace: Namespace.ID,
         action: @escaping () -> Void
     ) -> some View {
@@ -493,7 +493,7 @@ struct ReaderView: View {
         }
         .glassCircleButton(
             foreground: reading.textColor,
-            background: .clear,
+            background: reading.backgroundColor,
             applyGlass: applyGlass
         )
         .glassEffectID(title, in: namespace)
@@ -505,7 +505,8 @@ struct ReaderView: View {
     @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
         if showControls {
-            HStack(spacing: 16) {
+            HStack(spacing: 0) {
+                // Left: Previous chapter
                 circularButton(
                     systemName: "arrow.backward",
                     title: "btn.prev",
@@ -517,30 +518,45 @@ struct ReaderView: View {
                     )
                 }
 
-                circularButton(
-                    systemName: "list.bullet",
-                    title: "btn.index",
-                    namespace: controlsNamespace
-                ) {
-                    showCatalog = true
-                }
+                Spacer(minLength: 16)
 
-                circularButton(
-                    systemName: "bookmark",
-                    title: "btn.favorite",
-                    namespace: controlsNamespace
-                ) {
-                    showFavorites = true
-                }
+                // Center: Toolbar with three actions
+                HStack(spacing: 16) {
+                    circularButton(
+                        systemName: "list.bullet",
+                        title: "btn.index",
+                        applyGlass: false,
+                        namespace: controlsNamespace
+                    ) {
+                        showCatalog = true
+                    }
 
-                circularButton(
-                    systemName: "gear",
-                    title: "btn.setting",
-                    namespace: controlsNamespace
-                ) {
-                    showSettings = true
-                }
+                    circularButton(
+                        systemName: "bookmark",
+                        title: "btn.favorite",
+                        applyGlass: false,
+                        namespace: controlsNamespace
+                    ) {
+                        showFavorites = true
+                    }
 
+                    circularButton(
+                        systemName: "gear",
+                        title: "btn.setting",
+                        applyGlass: false,
+                        namespace: controlsNamespace
+                    ) {
+                        showSettings = true
+                    }
+                }
+                .padding(.horizontal)
+                .glassEffect(.clear.interactive())
+                .background(reading.backgroundColor.opacity(0.5))
+                .cornerRadius(22)
+
+                Spacer(minLength: 16)
+
+                // Right: Next chapter
                 circularButton(
                     systemName: "arrow.forward",
                     title: "btn.next",
@@ -557,7 +573,6 @@ struct ReaderView: View {
             .padding(.bottom, 10)
             .background(.clear)
             .frame(maxWidth: .infinity)
-            .glassEffect(.clear.interactive())
             .padding(.horizontal)
             .padding(.bottom, 5)
             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -572,7 +587,6 @@ struct ReaderView: View {
                 circularButton(
                     systemName: "chevron.left",
                     title: "btn.back",
-                    applyGlass: true,
                     namespace: controlsNamespace
                 ) {
                     dismiss()
@@ -585,11 +599,13 @@ struct ReaderView: View {
                     .truncationMode(.tail)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 8)
+                    .padding(.vertical, 11)
+                    .background(reading.backgroundColor.opacity(0.8))
+                    .cornerRadius(22)
 
                 circularButton(
                     systemName: "book",
                     title: "book_info.title",
-                    applyGlass: true,
                     namespace: controlsNamespace
                 ) {
                     showBookInfo = true
@@ -597,7 +613,6 @@ struct ReaderView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
-            .background(reading.backgroundColor)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
@@ -1165,6 +1180,7 @@ struct ReaderView: View {
                     systemImage: "bookmark"
                 )
             }
+            .glassEffect(.clear.interactive())
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
