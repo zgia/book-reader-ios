@@ -306,6 +306,7 @@ private struct SecurityOverlayView: View {
                         .font(.headline)
                     Text(String(localized: "security.input_passcode_to_unlock"))
                         .font(.subheadline)
+                        .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
 
@@ -366,48 +367,54 @@ private struct SecurityOverlayView: View {
 
     @ViewBuilder
     private func passcodeInputView() -> some View {
-        VStack(spacing: 10) {
-            SecureField(
-                String(
-                    localized: "security.passcode_placeholder"
-                ),
-                text: $input
-            )
-            .keyboardType(.numberPad)
-            .textContentType(.oneTimeCode)
-            .multilineTextAlignment(.center)
-            .focused($isFieldFocused)
-            .onChange(of: input) { newValue, _ in
-                let digitsOnly = newValue.filter { $0.isNumber }
-                let normalized = String(digitsOnly.prefix(6))
-                if input != normalized { input = normalized }
-
-                // 在非锁定情况下，输入满 6 位即提交
-                if !isLockedNow && normalized.count == 6 {
-                    let code = normalized
-                    onVerify(code)
+        VStack(spacing: 12) {
+            ZStack {
+                // 6 位占位圆圈 + 填充黑点
+                HStack(spacing: 16) {
+                    ForEach(0..<6, id: \.self) { index in
+                        ZStack {
+                            Circle()
+                                .stroke(.secondary, lineWidth: 1)
+                                .frame(width: 18, height: 18)
+                            if index < input.count {
+                                Circle()
+                                    .fill(Color.primary)
+                                    .frame(width: 18, height: 18)
+                                    .transition(.scale)
+                            }
+                        }
+                    }
                 }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if !isLockedNow { isFieldFocused = true }
+                }
+
+                // 隐藏文本输入，用于接收数字与删除事件
+                TextField("", text: $input)
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($isFieldFocused)
+                    .onChange(of: input) { newValue, _ in
+                        let digitsOnly = newValue.filter { $0.isNumber }
+                        let normalized = String(digitsOnly.prefix(6))
+                        if input != normalized { input = normalized }
+
+                        // 在非锁定情况下，输入满 6 位即提交
+                        if !isLockedNow && normalized.count == 6 {
+                            let code = normalized
+                            onVerify(code)
+                        }
+                    }
+                    .frame(width: 0, height: 0)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
             .padding(.vertical, 10)
-            .cornerRadius(10)
-            .background(
-                RoundedRectangle(
-                    cornerRadius: 10,
-                    style: .continuous
-                )
-                .fill(.thinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(
-                    cornerRadius: 10,
-                    style: .continuous
-                )
-                .stroke(Color(UIColor.separator), lineWidth: 1)
-            )
-            .disabled(isLockedNow)
-            .allowsHitTesting(!isLockedNow)
         }
+        .disabled(isLockedNow)
+        .allowsHitTesting(!isLockedNow)
         .padding(.top, 8)
     }
 

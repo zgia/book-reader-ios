@@ -202,7 +202,6 @@
 "security.passcode_removed" = "Passcode removed";
 "security.remove_failed_x" = "Remove failed: %@";
 "security.passcode_error" = "Incorrect passcode";
-"security.passcode_placeholder" = "Please enter a 6-digit passcode";
 "security.auth_to_unlock" = "Authentication required to unlock";
 "security.input_passcode_to_unlock" = "Enter the password to unlock the app.";
 "security.keychain_error_x" = "Keychain error: %d";

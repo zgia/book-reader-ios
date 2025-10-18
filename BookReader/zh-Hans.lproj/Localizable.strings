@@ -203,7 +203,6 @@
 "security.passcode_removed" = "已移除密码";
 "security.remove_failed_x" = "移除失败：%@";
 "security.passcode_error" = "密码错误";
-"security.passcode_placeholder" = "请输入6位数字密码";
 "security.auth_to_unlock" = "输入密码";
 "security.input_passcode_to_unlock" = "输入用于解锁此应用的密码。";
 "security.keychain_error_x" = "Keychain错误: %d";
