@@ -550,8 +550,8 @@ struct ReaderView: View {
                     }
                 }
                 .padding(.horizontal)
-                .glassEffect(.clear.interactive())
                 .background(reading.backgroundColor.opacity(0.5))
+                .glassEffect(.clear.interactive())
                 .cornerRadius(22)
 
                 Spacer(minLength: 16)
