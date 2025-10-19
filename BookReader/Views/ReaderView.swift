@@ -10,6 +10,7 @@ struct ReaderView: View {
     @EnvironmentObject private var reading: ReadingSettings
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     // 目录
     @State private var showCatalog: Bool = false
@@ -62,6 +63,8 @@ struct ReaderView: View {
 
     // 仅用于从书籍列表首次进入时显示骨架占位，章节切换不使用
     @State private var showInitialSkeleton: Bool = false
+
+    @State private var allowContextMenu = true
 
     @Namespace private var controlsNamespace
 
@@ -206,6 +209,15 @@ struct ReaderView: View {
                 showAddFavoriteDialog = false
                 showBookInfo = false
                 showControls = false
+                allowContextMenu = false
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    // 重新激活时，延迟恢复上下文菜单，确保 UI 已稳定
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        allowContextMenu = true
+                    }
+                }
             }
         }
     }
@@ -1143,8 +1155,10 @@ struct ReaderView: View {
     @ViewBuilder
     private func pageView(pageIndex: Int) -> some View {
         let parts = paragraphsInPage(pageIndex)
-        VStack(alignment: .leading, spacing: reading.paragraphSpacing) {
-
+        let pageContent = VStack(
+            alignment: .leading,
+            spacing: reading.paragraphSpacing
+        ) {
             // 显示章节标题
             if pageIndex == 0 {
                 Text(currentChapter.title)
@@ -1172,20 +1186,28 @@ struct ReaderView: View {
                     .textSelection(.disabled)
             }
         }
-        .contextMenu {
-            Button {
-                prepareAddFavorite(from: pageIndex)
-            } label: {
-                Label(
-                    String(localized: "favorite.add_to_favorites"),
-                    systemImage: "bookmark"
-                )
+
+        let finalView =
+            pageContent
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .onAppear { onPageAppear(pageIndex) }
+
+        if allowContextMenu {
+            finalView.contextMenu {
+                Button {
+                    prepareAddFavorite(from: pageIndex)
+                } label: {
+                    Label(
+                        String(localized: "favorite.add_to_favorites"),
+                        systemImage: "bookmark"
+                    )
+                }
+                .glassEffect(.clear.interactive())
             }
-            .glassEffect(.clear.interactive())
+        } else {
+            finalView
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .onAppear { onPageAppear(pageIndex) }
     }
 
     private func paragraphsInPage(_ index: Int) -> [String] {
