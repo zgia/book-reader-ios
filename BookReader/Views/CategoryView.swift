@@ -9,6 +9,7 @@ struct CategoryView: View {
     @State private var renaming: Category? = nil
     @State private var renameText: String = ""
     @State private var bookCounts: [Int: Int] = [:]
+    @State private var menuVersion: Int = 0
 
     var body: some View {
         List {
@@ -96,6 +97,7 @@ struct CategoryView: View {
                             } label: {
                                 Image(systemName: "ellipsis.circle")
                             }
+                            .id(menuVersion)
                         }
                     }
                 }
@@ -103,8 +105,16 @@ struct CategoryView: View {
         }
         .navigationTitle(String(localized: "category.title"))
         .onAppear { load() }
-        .onChange(of: appSettings.isHidingHiddenCategoriesInManagement()) { _, _ in
+        .onChange(of: appSettings.isHidingHiddenCategoriesInManagement()) {
+            _,
+            _ in
             load()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .dismissAllModals)
+        ) { _ in
+            // 关闭所有模态视图
+            menuVersion += 1
         }
         .overlay(renamingOverlay())
         .alert(

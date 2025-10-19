@@ -59,14 +59,14 @@ struct BookListView: View {
             }
             .navigationTitle(String(localized: "book"))
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     NavigationLink(destination: AppSettingsView()) {
                         Image(systemName: "gear")
                             .frame(width: 28, height: 28)
                     }
                     .buttonStyle(.plain)
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     categoryMenuView()
                 }
             }
@@ -80,6 +80,7 @@ struct BookListView: View {
                 showDeleteConfirm = false
                 renamingBook = nil
                 showCategoryMenu = false
+                categoriesVersion += 1
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .categoriesDidChange)

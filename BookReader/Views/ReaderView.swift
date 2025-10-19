@@ -485,11 +485,12 @@ struct ReaderView: View {
                 .actionIcon()
         }
         .glassCircleButton(
+            id: title,
+            namespace: namespace,
             foreground: reading.textColor,
             background: reading.backgroundColor,
             applyGlass: applyGlass
         )
-        .glassEffectID(title, in: namespace)
         .accessibilityLabel(
             NSLocalizedString(title, comment: "")
         )

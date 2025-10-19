@@ -2,12 +2,12 @@ import SwiftUI
 
 extension View {
     func glassCircleButton(
+        id: String = "",
+        namespace: Namespace.ID,
         diameter: CGFloat = 44,
         foreground: Color = .primary,
         background: some ShapeStyle = .tint,
-        applyGlass: Bool = true,
-        borderWidth: CGFloat = 1,
-        borderColor: Color? = nil
+        applyGlass: Bool = true
     )
         -> some View
     {
@@ -23,6 +23,7 @@ extension View {
             }
             .contentShape(Circle())
             .clipShape(Circle())
+            .glassEffectID(id, in: namespace)
     }
 
     func actionIcon(font: Font = .title2) -> some View {

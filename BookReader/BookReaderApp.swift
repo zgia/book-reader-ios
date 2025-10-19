@@ -314,9 +314,9 @@ private struct SecurityOverlayView: View {
             if !isUnlocked {
                 VStack(spacing: 16) {
                     Image(systemName: "lock")
-                        .font(.system(size: 50, weight: .semibold))
+                        .font(.system(size: 70))
                         .foregroundStyle(.blue)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 10)
                     Text(String(localized: "security.auth_to_unlock"))
                         .font(.headline)
                     Text(String(localized: "security.input_passcode_to_unlock"))
