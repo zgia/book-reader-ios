@@ -79,8 +79,16 @@ struct ReaderView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .background(reading.backgroundColor)
-            .overlay(alignment: .bottom) { bottomControlsView(geo: geo) }
-            .overlay(alignment: .top) { topControlsView() }
+            .overlay(alignment: .top) {
+                if showControls {
+                    topControlsView()
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if showControls {
+                    bottomControlsView(geo: geo)
+                }
+            }
             .overlay {
                 if showAddFavoriteDialog {
                     TextFieldDialog(
@@ -474,13 +482,12 @@ struct ReaderView: View {
     func circularButton(
         systemName: String,
         title: String,
-        applyGlass: Bool = true,
         namespace: Namespace.ID,
+        applyGlass: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
                 .foregroundColor(reading.textColor)
                 .actionIcon()
         }
@@ -498,7 +505,7 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
-        if showControls {
+        GlassEffectContainer {
             HStack(spacing: 0) {
                 // Left: Previous chapter
                 circularButton(
@@ -519,8 +526,8 @@ struct ReaderView: View {
                     circularButton(
                         systemName: "list.bullet",
                         title: "btn.index",
-                        applyGlass: false,
-                        namespace: controlsNamespace
+                        namespace: controlsNamespace,
+                        applyGlass: false
                     ) {
                         showCatalog = true
                     }
@@ -528,8 +535,8 @@ struct ReaderView: View {
                     circularButton(
                         systemName: "bookmark",
                         title: "btn.favorite",
-                        applyGlass: false,
-                        namespace: controlsNamespace
+                        namespace: controlsNamespace,
+                        applyGlass: false
                     ) {
                         showFavorites = true
                     }
@@ -537,8 +544,8 @@ struct ReaderView: View {
                     circularButton(
                         systemName: "gear",
                         title: "btn.setting",
-                        applyGlass: false,
-                        namespace: controlsNamespace
+                        namespace: controlsNamespace,
+                        applyGlass: false
                     ) {
                         showSettings = true
                     }
@@ -575,8 +582,7 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func topControlsView() -> some View {
-
-        if showControls {
+        GlassEffectContainer {
             HStack {
                 circularButton(
                     systemName: "chevron.left",
@@ -596,6 +602,7 @@ struct ReaderView: View {
                     .padding(.vertical, 11)
                     .background(reading.backgroundColor.opacity(0.8))
                     .cornerRadius(22)
+                    .glassEffect(.clear.interactive())
 
                 circularButton(
                     systemName: "book",
