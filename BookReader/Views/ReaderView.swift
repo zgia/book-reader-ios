@@ -183,28 +183,21 @@ struct ReaderView: View {
                     prefetchRadius = 3
                     prefetchAroundCurrent()
                 }
-
-                // 监听取消模态视图的通知
-                NotificationCenter.default.addObserver(
-                    forName: .dismissAllModals,
-                    object: nil,
-                    queue: .main
-                ) { _ in
-                    showCatalog = false
-                    showSettings = false
-                    showFavorites = false
-                    showAddFavoriteDialog = false
-                    showBookInfo = false
-                    showControls = false
-                }
                 perf.end()
             }
             .onChange(of: geo.size) { _, newSize in
                 screenSize = newSize
             }
-            .onDisappear {
-                // 移除通知监听器
-                NotificationCenter.default.removeObserver(self)
+            .onReceive(
+                NotificationCenter.default.publisher(for: .dismissAllModals)
+            ) { _ in
+                // 关闭所有模态视图和控制条
+                showCatalog = false
+                showSettings = false
+                showFavorites = false
+                showAddFavoriteDialog = false
+                showBookInfo = false
+                showControls = false
             }
         }
     }

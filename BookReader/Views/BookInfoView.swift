@@ -94,6 +94,12 @@ struct BookInfoView: View {
                         !appSettings.isHidingHiddenCategoriesInManagement()
                 )
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .dismissAllModals)
+            ) { _ in
+                // 关闭所有模态视图
+                showingCategorySheet = false
+            }
             .sheet(isPresented: $showingCategorySheet) {
                 NavigationStack {
                     List {

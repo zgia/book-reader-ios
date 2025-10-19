@@ -50,6 +50,15 @@ struct AppSettingsView: View {
             }
             .navigationTitle(String(localized: "setting.title"))
             .onAppear { refreshStatsAsync() }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .dismissAllModals)
+            ) { _ in
+                // 关闭所有模态视图
+                showingFormatHelp = false
+                securitySheet = nil
+                securityDialog = nil
+                showingCompactConfirm = false
+            }
             .sheet(isPresented: $showingFormatHelp) {
                 TextBookFormatView()
             }

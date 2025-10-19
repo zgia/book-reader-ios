@@ -15,18 +15,19 @@ struct BookReaderApp: App {
     @StateObject private var appSettings = AppSettings()
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var isUnlocked: Bool = false
-    @State private var isAuthenticating: Bool = false
-    @State private var hasRequestedInitialAuth: Bool = false
-    @State private var activeModals: Set<String> = []
-    @State private var externalOpenMessage: String? = nil
-    @State private var failedAttempts: Int = 0
-    @State private var attemptsToLock: Int = 3
-    @State private var firstLockedSeconds: Double = 60
-    @State private var secondLockedSeconds: Double = 600
-    @State private var lockUntil: Date? = nil
-    @State private var failureNonce: Int = 0
-    @State private var lockWorkItem: DispatchWorkItem? = nil
+    @State private var isUnlocked = false
+    @State private var isAuthenticating = false
+    @State private var hasRequestedInitialAuth = false
+    @State private var externalOpenMessage: String?
+    @State private var failedAttempts = 0
+    @State private var lockUntil: Date?
+    @State private var failureNonce = 0
+    @State private var lockWorkItem: DispatchWorkItem?
+
+    // 密码锁定策略常量
+    private let attemptsToLock = 3
+    private let firstLockedSeconds: TimeInterval = 60
+    private let secondLockedSeconds: TimeInterval = 600
 
     init() {
         // 调试用，打印沙盒路径
@@ -71,7 +72,7 @@ struct BookReaderApp: App {
                         )
                         .ignoresSafeArea()
                         .transition(.opacity)
-                        .zIndex(999)
+                        .zIndex(10000)
                     }
                 }
             }
@@ -100,8 +101,8 @@ struct BookReaderApp: App {
                     }
                 }
             }
-            .onChange(of: scenePhase) { previousPhase, _ in
-                switch previousPhase {
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
                 case .active:
                     // 回到前台时如果未解锁则再次验证（防抖）
                     if PasscodeManager.shared.isPasscodeSet && !isUnlocked
@@ -117,13 +118,21 @@ struct BookReaderApp: App {
                             }
                         }
                     }
-                case .background:
-                    // 进入后台时立即上锁
+                case .inactive:
+                    // 进入非活跃状态时（按Home键、切换App等），立即关闭所有模态视图
+                    // 这样可以确保安全遮罩层能正确覆盖内容，而不是被sheet或menu挡住
                     if PasscodeManager.shared.isPasscodeSet {
+                        dismissAllModals()
+                        // 立即上锁，显示遮罩层
                         isUnlocked = false
                     }
-                    // 取消所有活动的模态视图
-                    dismissAllModals()
+                case .background:
+                    // 进入后台时再次确保上锁状态
+                    if PasscodeManager.shared.isPasscodeSet {
+                        isUnlocked = false
+                        // 再次发送通知，确保所有模态视图都已关闭
+                        dismissAllModals()
+                    }
                 default:
                     break
                 }
@@ -132,12 +141,13 @@ struct BookReaderApp: App {
                 NotificationCenter.default.publisher(for: .passcodeDidChange)
             ) { _ in
                 // 密码变更后立即刷新状态：
-                // 若设置了密码，不立刻上锁；若移除了密码，直接解锁
-                if PasscodeManager.shared.isPasscodeSet {
-                    isUnlocked = true
-                } else {
-                    isUnlocked = true
-                }
+                // 若设置了密码，保持解锁状态（刚设置完密码不应该立即要求输入）
+                // 若移除了密码，直接解锁
+                isUnlocked = true
+                // 重置失败计数和锁定状态
+                failedAttempts = 0
+                lockUntil = nil
+                lockWorkItem?.cancel()
             }
         }
     }
@@ -180,9 +190,10 @@ struct BookReaderApp: App {
 
     private func uniqueDestination(in dir: URL, for sourceURL: URL) -> URL {
         let fileName = sourceURL.lastPathComponent
+        let name = sourceURL.deletingPathExtension().lastPathComponent
+        let ext = sourceURL.pathExtension
+
         var candidate = dir.appendingPathComponent(fileName)
-        let name = (fileName as NSString).deletingPathExtension
-        let ext = (fileName as NSString).pathExtension
         var index = 1
         while FileManager.default.fileExists(atPath: candidate.path) {
             let newName = "\(name)-\(index).\(ext.isEmpty ? "txt" : ext)"
@@ -209,31 +220,21 @@ struct BookReaderApp: App {
 
     // 取消所有活动的模态视图
     private func dismissAllModals() {
-
         // 通过发送通知来取消所有活动的模态视图
         NotificationCenter.default.post(name: .dismissAllModals, object: nil)
-        activeModals.removeAll()
     }
 
     // 确保 SecurityOverlayView 正确消失
     private func ensureSecurityOverlayDismissed() {
-        // 如果当前场景是活跃状态且已解锁，但仍有 SecurityOverlayView 显示问题
-        // 可以在这里添加额外的清理逻辑
+        // 如果当前场景是活跃状态且已解锁，强制更新视图状态
+        // 这可以解决在某些边缘情况下 SecurityOverlayView 卡住的问题
         guard scenePhase == .active && isUnlocked else { return }
 
-        // 强制更新视图状态，确保 SecurityOverlayView 正确消失
-        // 这可以解决在某些边缘情况下 SecurityOverlayView 卡住的问题
-        let currentIsUnlocked = isUnlocked
-        let currentScenePhase = scenePhase
-
-        // 如果状态正确但仍有显示问题，短暂重置状态再恢复
-        if currentIsUnlocked && currentScenePhase == .active {
+        DispatchQueue.main.async {
+            // 触发视图更新
+            self.isUnlocked = false
             DispatchQueue.main.async {
-                // 触发视图更新
-                self.isUnlocked = false
-                DispatchQueue.main.async {
-                    self.isUnlocked = true
-                }
+                self.isUnlocked = true
             }
         }
     }
@@ -286,17 +287,17 @@ private struct ShakeEffect: GeometryEffect {
 }
 
 private struct SecurityOverlayView: View {
-    var showBlur: Bool
-    var isUnlocked: Bool
-    var onVerify: (String) -> Void
-    var failedAttempts: Int = 0
-    var lockedUntil: Date? = nil
-    var failureNonce: Int = 0
+    let showBlur: Bool
+    let isUnlocked: Bool
+    let onVerify: (String) -> Void
+    let failedAttempts: Int
+    let lockedUntil: Date?
+    let failureNonce: Int
 
-    @State private var input: String = ""
+    @State private var input = ""
     @FocusState private var isFieldFocused: Bool
 
-    private let shakeDuration: Double = 0.28
+    private let shakeDuration: TimeInterval = 0.28
 
     private var isLockedNow: Bool {
         if let lockedUntil, lockedUntil > Date() { return true }
@@ -335,23 +336,17 @@ private struct SecurityOverlayView: View {
         }
         .onAppear {
             input = ""
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                if !isLockedNow { isFieldFocused = true }
-            }
+            restoreFocus(after: 0.15)
         }
         .onChange(of: isUnlocked) { oldValue, _ in
             if !oldValue {
                 input = ""
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    if !isLockedNow { isFieldFocused = true }
-                }
+                restoreFocus(after: 0.05)
             }
         }
         .onChange(of: lockedUntil) { _, _ in
             if !isLockedNow {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isFieldFocused = true
-                }
+                restoreFocus(after: 0.05)
             }
         }
         .onChange(of: failureNonce) { _, _ in
@@ -368,13 +363,13 @@ private struct SecurityOverlayView: View {
                 }
             }
         }
-        .onChange(of: failedAttempts) { oldValue, newValue in
-            guard newValue > oldValue else { return }
-            // 触感与清空由 failureNonce 处理，这里仅恢复焦点
+    }
+
+    // 辅助函数：延迟恢复输入焦点
+    private func restoreFocus(after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             if !isLockedNow {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isFieldFocused = true
-                }
+                isFieldFocused = true
             }
         }
     }
