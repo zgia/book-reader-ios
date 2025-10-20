@@ -75,147 +75,149 @@ struct ReaderView: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .top) {
-                leftPreviewView(geo: geo)
-                contentScrollView(geo: geo)
-                rightPreviewView(geo: geo)
-            }
-            .toolbar(.hidden, for: .navigationBar)
-            .background(reading.backgroundColor)
-            .overlay(alignment: .top) {
-                if showControls {
-                    topControlsView()
+            GlassEffectContainer {
+                ZStack(alignment: .top) {
+                    leftPreviewView(geo: geo)
+                    contentScrollView(geo: geo)
+                    rightPreviewView(geo: geo)
                 }
-            }
-            .overlay(alignment: .bottom) {
-                if showControls {
-                    bottomControlsView(geo: geo)
-                }
-            }
-            .overlay {
-                if showAddFavoriteDialog {
-                    TextFieldDialog(
-                        title: String(localized: "favorite.add_to_favorites"),
-                        placeholder: String(
-                            localized: "favorite.add_to_favorites_placeholder"
-                        ),
-                        text: $draftExcerpt,
-                        onCancel: {
-                            showAddFavoriteDialog = false
-                        },
-                        onSave: {
-                            let pageIdx =
-                                draftFavoritePageIndex
-                                ?? currentVisiblePageIndex
-                            addFavorite(
-                                excerpt: draftExcerpt,
-                                pageIndex: pageIdx
-                            )
-                            showAddFavoriteDialog = false
-                        }
-                    )
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: showControls)
-            .sheet(isPresented: $showCatalog) {
-                NavigationStack {
-                    if let book = currentBook {
-                        ChapterListView(
-                            book: book,
-                            onSelect: { ch in
-                                currentChapter = ch
-                                loadContent(for: ch)
-                                // 从目录跳转时立即触达
-                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
-                                showCatalog = false
-                            },
-                            initialChapterId: currentChapter.id
-                        )
-                    } else {
-                        Text(String(localized: "reading.book_index_loading"))
+                .toolbar(.hidden, for: .navigationBar)
+                .background(reading.backgroundColor)
+                .overlay(alignment: .top) {
+                    if showControls {
+                        topControlsView()
                     }
                 }
-            }
-            .sheet(isPresented: $showSettings) {
-                ReaderSettingsView()
-            }
-            .sheet(isPresented: $showFavorites) {
-                FavoritesView(bookId: currentChapter.bookid) { fav in
-                    jump(to: fav)
-                    showFavorites = false
+                .overlay(alignment: .bottom) {
+                    if showControls {
+                        bottomControlsView(geo: geo)
+                    }
                 }
-            }
-            .sheet(isPresented: $showBookInfo) {
-                if let book = currentBook {
-                    BookInfoView(
-                        book: book,
-                        progressText: progressText(for: book)
+                .overlay {
+                    if showAddFavoriteDialog {
+                        TextFieldDialog(
+                            title: String(localized: "favorite.add_to_favorites"),
+                            placeholder: String(
+                                localized: "favorite.add_to_favorites_placeholder"
+                            ),
+                            text: $draftExcerpt,
+                            onCancel: {
+                                showAddFavoriteDialog = false
+                            },
+                            onSave: {
+                                let pageIdx =
+                                draftFavoritePageIndex
+                                ?? currentVisiblePageIndex
+                                addFavorite(
+                                    excerpt: draftExcerpt,
+                                    pageIndex: pageIdx
+                                )
+                                showAddFavoriteDialog = false
+                            }
+                        )
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: showControls)
+                .sheet(isPresented: $showCatalog) {
+                    NavigationStack {
+                        if let book = currentBook {
+                            ChapterListView(
+                                book: book,
+                                onSelect: { ch in
+                                    currentChapter = ch
+                                    loadContent(for: ch)
+                                    // 从目录跳转时立即触达
+                                    touchCurrentBookUpdatedAt(throttleSeconds: 0)
+                                    showCatalog = false
+                                },
+                                initialChapterId: currentChapter.id
+                            )
+                        } else {
+                            Text(String(localized: "reading.book_index_loading"))
+                        }
+                    }
+                }
+                .sheet(isPresented: $showSettings) {
+                    ReaderSettingsView()
+                }
+                .sheet(isPresented: $showFavorites) {
+                    FavoritesView(bookId: currentChapter.bookid) { fav in
+                        jump(to: fav)
+                        showFavorites = false
+                    }
+                }
+                .sheet(isPresented: $showBookInfo) {
+                    if let book = currentBook {
+                        BookInfoView(
+                            book: book,
+                            progressText: progressText(for: book)
+                        )
+                    } else {
+                        ProgressView()
+                            .padding()
+                    }
+                }
+                .alert(isPresented: $showEdgeAlert) {
+                    Alert(
+                        title: Text(edgeAlertMessage),
+                        dismissButton: .default(Text(String(localized: "btn.ok")))
                     )
-                } else {
-                    ProgressView()
-                        .padding()
                 }
-            }
-            .alert(isPresented: $showEdgeAlert) {
-                Alert(
-                    title: Text(edgeAlertMessage),
-                    dismissButton: .default(Text(String(localized: "btn.ok")))
-                )
-            }
-            .contentShape(Rectangle())
-            .highPriorityGesture(spatialDoubleTapGesture(geo: geo))
-            .simultaneousGesture(horizontalSwipeGesture(geo.size))
-            .onTapGesture {
-                withAnimation { showControls.toggle() }
-            }
-            .onAppear {
-                let perf = PerfTimer(
-                    "ReaderView.onAppear",
-                    category: .performance
-                )
-                Log.debug(
-                    "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))",
-                    category: .reader
-                )
-
-                screenSize = geo.size
-
-                loadContent(for: currentChapter)
-                loadCurrentBook()
-                updateAdjacentRefs()
-                if needsInitialRestore {
-                    restoreLastProgressIfNeeded()
+                .contentShape(Rectangle())
+                .highPriorityGesture(spatialDoubleTapGesture(geo: geo))
+                .simultaneousGesture(horizontalSwipeGesture(geo.size))
+                .onTapGesture {
+                    withAnimation { showControls.toggle() }
                 }
-                // 进入阅读页即触达一次（节流保护）
-                touchCurrentBookUpdatedAt(throttleSeconds: 30)
-
-                // 首帧后小延时扩大预取半径并进行二次预取（避免首屏压力）
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    prefetchRadius = 3
-                    prefetchAroundCurrent()
+                .onAppear {
+                    let perf = PerfTimer(
+                        "ReaderView.onAppear",
+                        category: .performance
+                    )
+                    Log.debug(
+                        "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))",
+                        category: .reader
+                    )
+                    
+                    screenSize = geo.size
+                    
+                    loadContent(for: currentChapter)
+                    loadCurrentBook()
+                    updateAdjacentRefs()
+                    if needsInitialRestore {
+                        restoreLastProgressIfNeeded()
+                    }
+                    // 进入阅读页即触达一次（节流保护）
+                    touchCurrentBookUpdatedAt(throttleSeconds: 30)
+                    
+                    // 首帧后小延时扩大预取半径并进行二次预取（避免首屏压力）
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        prefetchRadius = 3
+                        prefetchAroundCurrent()
+                    }
+                    perf.end()
                 }
-                perf.end()
-            }
-            .onChange(of: geo.size) { _, newSize in
-                screenSize = newSize
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .dismissAllModals)
-            ) { _ in
-                // 关闭所有模态视图和控制条
-                showCatalog = false
-                showSettings = false
-                showFavorites = false
-                showAddFavoriteDialog = false
-                showBookInfo = false
-                showControls = false
-                allowContextMenu = false
-            }
-            .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .active {
-                    // 重新激活时，延迟恢复上下文菜单，确保 UI 已稳定
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        allowContextMenu = true
+                .onChange(of: geo.size) { _, newSize in
+                    screenSize = newSize
+                }
+                .onReceive(
+                    NotificationCenter.default.publisher(for: .dismissAllModals)
+                ) { _ in
+                    // 关闭所有模态视图和控制条
+                    showCatalog = false
+                    showSettings = false
+                    showFavorites = false
+                    showAddFavoriteDialog = false
+                    showBookInfo = false
+                    showControls = false
+                    allowContextMenu = false
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        // 重新激活时，延迟恢复上下文菜单，确保 UI 已稳定
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            allowContextMenu = true
+                        }
                     }
                 }
             }
@@ -517,117 +519,113 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
-        GlassEffectContainer {
-            HStack(spacing: 0) {
-                // Left: Previous chapter
+        HStack(spacing: 0) {
+            // Left: Previous chapter
+            circularButton(
+                systemName: "arrow.backward",
+                title: "btn.prev",
+                namespace: controlsNamespace
+            ) {
+                navigateToAdjacentChapter(
+                    isNext: false,
+                    containerWidth: geo.size.width
+                )
+            }
+
+            Spacer(minLength: 16)
+
+            // Center: Toolbar with three actions
+            HStack(spacing: 16) {
                 circularButton(
-                    systemName: "arrow.backward",
-                    title: "btn.prev",
-                    namespace: controlsNamespace
+                    systemName: "list.bullet",
+                    title: "btn.index",
+                    namespace: controlsNamespace,
+                    applyGlass: false
                 ) {
-                    navigateToAdjacentChapter(
-                        isNext: false,
-                        containerWidth: geo.size.width
-                    )
+                    showCatalog = true
                 }
 
-                Spacer(minLength: 16)
-
-                // Center: Toolbar with three actions
-                HStack(spacing: 16) {
-                    circularButton(
-                        systemName: "list.bullet",
-                        title: "btn.index",
-                        namespace: controlsNamespace,
-                        applyGlass: false
-                    ) {
-                        showCatalog = true
-                    }
-
-                    circularButton(
-                        systemName: "bookmark",
-                        title: "btn.favorite",
-                        namespace: controlsNamespace,
-                        applyGlass: false
-                    ) {
-                        showFavorites = true
-                    }
-
-                    circularButton(
-                        systemName: "gear",
-                        title: "btn.setting",
-                        namespace: controlsNamespace,
-                        applyGlass: false
-                    ) {
-                        showSettings = true
-                    }
-                }
-                .padding(.horizontal)
-                .background(reading.backgroundColor.opacity(0.5))
-                .glassEffect(.clear.interactive())
-                .cornerRadius(22)
-
-                Spacer(minLength: 16)
-
-                // Right: Next chapter
                 circularButton(
-                    systemName: "arrow.forward",
-                    title: "btn.next",
-                    namespace: controlsNamespace
+                    systemName: "bookmark",
+                    title: "btn.favorite",
+                    namespace: controlsNamespace,
+                    applyGlass: false
                 ) {
-                    navigateToAdjacentChapter(
-                        isNext: true,
-                        containerWidth: geo.size.width
-                    )
+                    showFavorites = true
+                }
+
+                circularButton(
+                    systemName: "gear",
+                    title: "btn.setting",
+                    namespace: controlsNamespace,
+                    applyGlass: false
+                ) {
+                    showSettings = true
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 10)
-            .padding(.bottom, 10)
-            .background(.clear)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal)
-            .padding(.bottom, 5)
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .background(reading.backgroundColor.opacity(0.5))
+            .glassEffect(.clear.interactive())
+            .cornerRadius(22)
+
+            Spacer(minLength: 16)
+
+            // Right: Next chapter
+            circularButton(
+                systemName: "arrow.forward",
+                title: "btn.next",
+                namespace: controlsNamespace
+            ) {
+                navigateToAdjacentChapter(
+                    isNext: true,
+                    containerWidth: geo.size.width
+                )
+            }
         }
+        .padding(.horizontal)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
+        .background(.clear)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal)
+        .padding(.bottom, 5)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     @ViewBuilder
     private func topControlsView() -> some View {
-        GlassEffectContainer {
-            HStack {
-                circularButton(
-                    systemName: "chevron.left",
-                    title: "btn.back",
-                    namespace: controlsNamespace
-                ) {
-                    dismiss()
-                }
-
-                Text(currentChapter.title)
-                    .font(.headline)
-                    .foregroundColor(reading.textColor)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 11)
-                    .background(reading.backgroundColor.opacity(0.8))
-                    .cornerRadius(22)
-                    .glassEffect(.clear.interactive())
-
-                circularButton(
-                    systemName: "book",
-                    title: "book_info.title",
-                    namespace: controlsNamespace
-                ) {
-                    showBookInfo = true
-                }
+        HStack {
+            circularButton(
+                systemName: "chevron.left",
+                title: "btn.back",
+                namespace: controlsNamespace
+            ) {
+                dismiss()
             }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
-            .transition(.move(edge: .top).combined(with: .opacity))
+
+            Text(currentChapter.title)
+                .font(.headline)
+                .foregroundColor(reading.textColor)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 11)
+                .background(reading.backgroundColor.opacity(0.8))
+                .cornerRadius(22)
+                .glassEffect(.clear.interactive())
+
+            circularButton(
+                systemName: "book",
+                title: "book_info.title",
+                namespace: controlsNamespace
+            ) {
+                showBookInfo = true
+            }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     private func loadContent(for chapter: Chapter) {
