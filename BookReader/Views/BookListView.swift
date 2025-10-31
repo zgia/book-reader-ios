@@ -48,7 +48,10 @@ struct BookListView: View {
                 linkingBookView(bookRow: bookRow)
             }
             .animation(.default, value: books)
-            .searchable(text: $searchText)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .automatic)
+            )
             .onChange(of: searchText) { oldValue, newValue in
                 // 防抖：避免输入法组合期间频繁刷新
                 searchDebounceTask?.cancel()
