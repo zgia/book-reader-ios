@@ -15,6 +15,7 @@ struct BookListView: View {
     @State private var selectedCategoryId: Int? = nil  // nil: 全部分类
     @State private var showCategoryMenu: Bool = false
     @State private var categoriesVersion: Int = 0
+    @State private var listVersion: Int = 0
 
     var body: some View {
         Group {
@@ -48,10 +49,12 @@ struct BookListView: View {
                 linkingBookView(bookRow: bookRow)
             }
             .animation(.default, value: books)
+            .id(listVersion)
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic)
             )
+            .scrollDismissesKeyboard(.immediately)
             .onChange(of: searchText) { oldValue, newValue in
                 // 防抖：避免输入法组合期间频繁刷新
                 searchDebounceTask?.cancel()
@@ -75,6 +78,10 @@ struct BookListView: View {
             }
             .onAppear {
                 loadBooks(search: searchText)
+                // 轻微延迟后强制重建 List，规避底部区域命中异常
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    listVersion &+= 1
+                }
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: .dismissAllModals)
@@ -92,42 +99,41 @@ struct BookListView: View {
                 categoriesVersion += 1
                 loadBooks(search: searchText)
             }
-            // 基于目的地闭包的导航，已不再使用基于值的目的地
-            .overlay {
-                renamingView()
-            }
             .onChange(of: showDeleteConfirm) { _, newValue in
                 if !newValue { deletingBook = nil }
             }
-        }
-        .confirmationDialog(
-            String(localized: "book.confirm_deleting"),
-            isPresented: $showDeleteConfirm,
-            presenting: deletingBook
-        ) { target in
-            Button(
-                String(localized: "btn.delete"),
-                role: .destructive
-            ) {
-                withAnimation {
-                    db.deleteBook(bookId: target.book.id)
-                    progressStore.clear(forBook: target.book.id)
-                    loadBooks(search: searchText)
+            .confirmationDialog(
+                String(localized: "book.confirm_deleting"),
+                isPresented: $showDeleteConfirm,
+                presenting: deletingBook
+            ) { target in
+                Button(
+                    String(localized: "btn.delete"),
+                    role: .destructive
+                ) {
+                    withAnimation {
+                        db.deleteBook(bookId: target.book.id)
+                        progressStore.clear(forBook: target.book.id)
+                        loadBooks(search: searchText)
+                        deletingBook = nil
+                    }
+                }
+                Button(String(localized: "btn.cancel"), role: .cancel) {
                     deletingBook = nil
                 }
-            }
-            Button(String(localized: "btn.cancel"), role: .cancel) {
-                deletingBook = nil
-            }
-        } message: { target in
-            Text(
-                String(
-                    format: String(
-                        localized: "book.confirm_deleting_x_message"
-                    ),
-                    target.book.title
+            } message: { target in
+                Text(
+                    String(
+                        format: String(
+                            localized: "book.confirm_deleting_x_message"
+                        ),
+                        target.book.title
+                    )
                 )
-            )
+            }
+        }
+        .if(renamingBook != nil) { v in
+            v.overlay { renamingView() }
         }
     }
 

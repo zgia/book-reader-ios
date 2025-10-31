@@ -2,3 +2,4 @@
 
 * 本项目使用Xcode 26 开发的 iOS 26 App。实现功能时，请优先选择 iOS 26 的实现。
 * 请使用中文回复问题
+* 请根据需要，自动加载相应的MCP：`Context7`, `Sequential-Thinking`, `fetch`, `Playwright`
