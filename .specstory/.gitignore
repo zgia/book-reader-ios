@@ -1,3 +1,5 @@
 # SpecStory explanation file
 /.what-is-this.md
 /chat-history.md
+# SpecStory project identity file
+/.project.json

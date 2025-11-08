@@ -1256,7 +1256,7 @@ struct ReaderView: View {
     }
 
     private func horizontalSwipeGesture(_ size: CGSize) -> some Gesture {
-        DragGesture(minimumDistance: 5)
+        DragGesture(minimumDistance: 12)
             .onChanged { value in
                 if abs(value.translation.width) > abs(value.translation.height)
                 {
