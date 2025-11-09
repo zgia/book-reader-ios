@@ -52,7 +52,7 @@ struct BookListView: View {
             .id(listVersion)
             .searchable(
                 text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .automatic)
+                //placement: .navigationBarDrawer(displayMode: .automatic)
             )
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: searchText) { oldValue, newValue in
