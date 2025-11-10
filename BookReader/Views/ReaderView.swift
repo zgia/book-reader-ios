@@ -2,16 +2,16 @@ import GRDB
 import SwiftUI
 
 struct ReaderView: View {
+    // MARK: - Dependencies
     @EnvironmentObject private var db: DatabaseManager
-    @State private var currentBook: Book?
-    @State private var currentChapter: Chapter
-    @State private var content: Content?
+    @StateObject private var viewModel: ReaderViewModel
     @EnvironmentObject var progressStore: ProgressStore
     @EnvironmentObject private var reading: ReadingSettings
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
 
+    // MARK: - UI State
     // 目录
     @State private var showCatalog: Bool = false
     // 阅读设置
@@ -26,29 +26,7 @@ struct ReaderView: View {
     @State private var chapterTitleTopPadding: CGFloat = 12
     @State private var chapterTitleBottomPadding: CGFloat = 10
 
-    // 段落渲染与缓存
-    @State private var screenSize: CGSize = .zero
-    @State private var paragraphs: [String] = []
-    @State private var paragraphsCache: [Int: [String]] = [:]  // chapterId -> paragraphs
-    @State private var contentCache: [Int: Content] = [:]  // chapterId -> content
-    // 分页渲染状态
-    @State private var pages: [String] = []
-    @State private var pagesCache: [Int: [String]] = [:]  // chapterId -> pages
-    @State private var currentVisiblePageIndex: Int = 0
     @State private var showControls: Bool = false
-    @State private var prevChapterRef: Chapter?
-    @State private var nextChapterRef: Chapter?
-    @State private var prefetchRadius: Int = 1
-    private static let prefetchSemaphore: DispatchSemaphore = DispatchSemaphore(
-        value: 2
-    )
-    // 首次进入时用于恢复进度
-    @State private var needsInitialRestore: Bool = true
-    @State private var pendingRestorePercent: Double? = nil
-    @State private var pendingRestorePageIndex: Int? = nil
-    @State private var pendingRestoreChapterId: Int? = nil
-    // 触达书籍更新时间节流
-    @State private var lastBookUpdatedAtTouchUnixTime: Int = 0
 
     // 收藏
     @State private var showFavorites: Bool = false
@@ -61,18 +39,20 @@ struct ReaderView: View {
     @State private var showEdgeAlert: Bool = false
     @State private var edgeAlertMessage: String = ""
 
-    // 仅用于从书籍列表首次进入时显示骨架占位，章节切换不使用
-    @State private var showInitialSkeleton: Bool = false
-
     @State private var allowContextMenu = true
 
     @Namespace private var controlsNamespace
 
     init(chapter: Chapter, isInitialFromBookList: Bool = false) {
-        _currentChapter = State(initialValue: chapter)
-        _showInitialSkeleton = State(initialValue: isInitialFromBookList)
+        _viewModel = StateObject(
+            wrappedValue: ReaderViewModel(
+                initialChapter: chapter,
+                isInitialFromBookList: isInitialFromBookList
+            )
+        )
     }
 
+    // MARK: - Body
     var body: some View {
         GeometryReader { geo in
             GlassEffectContainer {
@@ -96,9 +76,12 @@ struct ReaderView: View {
                 .overlay {
                     if showAddFavoriteDialog {
                         TextFieldDialog(
-                            title: String(localized: "favorite.add_to_favorites"),
+                            title: String(
+                                localized: "favorite.add_to_favorites"
+                            ),
                             placeholder: String(
-                                localized: "favorite.add_to_favorites_placeholder"
+                                localized:
+                                    "favorite.add_to_favorites_placeholder"
                             ),
                             text: $draftExcerpt,
                             onCancel: {
@@ -106,8 +89,8 @@ struct ReaderView: View {
                             },
                             onSave: {
                                 let pageIdx =
-                                draftFavoritePageIndex
-                                ?? currentVisiblePageIndex
+                                    draftFavoritePageIndex
+                                    ?? viewModel.currentVisiblePageIndex
                                 addFavorite(
                                     excerpt: draftExcerpt,
                                     pageIndex: pageIdx
@@ -120,20 +103,27 @@ struct ReaderView: View {
                 .animation(.easeInOut(duration: 0.2), value: showControls)
                 .sheet(isPresented: $showCatalog) {
                     NavigationStack {
-                        if let book = currentBook {
+                        if let book = viewModel.currentBook {
                             ChapterListView(
                                 book: book,
                                 onSelect: { ch in
-                                    currentChapter = ch
-                                    loadContent(for: ch)
+                                    viewModel.currentChapter = ch
+                                    viewModel.loadContent(
+                                        for: ch,
+                                        reading: reading
+                                    )
                                     // 从目录跳转时立即触达
-                                    touchCurrentBookUpdatedAt(throttleSeconds: 0)
+                                    viewModel.touchBookUpdatedAt(
+                                        throttleSeconds: 0
+                                    )
                                     showCatalog = false
                                 },
-                                initialChapterId: currentChapter.id
+                                initialChapterId: viewModel.currentChapter.id
                             )
                         } else {
-                            Text(String(localized: "reading.book_index_loading"))
+                            Text(
+                                String(localized: "reading.book_index_loading")
+                            )
                         }
                     }
                 }
@@ -141,16 +131,21 @@ struct ReaderView: View {
                     ReaderSettingsView()
                 }
                 .sheet(isPresented: $showFavorites) {
-                    FavoritesView(bookId: currentChapter.bookid) { fav in
+                    FavoritesView(bookId: viewModel.currentChapter.bookid) {
+                        fav in
                         jump(to: fav)
                         showFavorites = false
                     }
                 }
                 .sheet(isPresented: $showBookInfo) {
-                    if let book = currentBook {
+                    if let book = viewModel.currentBook {
                         BookInfoView(
                             book: book,
-                            progressText: progressText(for: book)
+                            progressText: viewModel.readingProgressText(
+                                for: book.id,
+                                progressStore: progressStore,
+                                includePercent: true
+                            )
                         )
                     } else {
                         ProgressView()
@@ -160,45 +155,58 @@ struct ReaderView: View {
                 .alert(isPresented: $showEdgeAlert) {
                     Alert(
                         title: Text(edgeAlertMessage),
-                        dismissButton: .default(Text(String(localized: "btn.ok")))
+                        dismissButton: .default(
+                            Text(String(localized: "btn.ok"))
+                        )
                     )
                 }
                 .contentShape(Rectangle())
                 .highPriorityGesture(spatialDoubleTapGesture(geo: geo))
-                .simultaneousGesture(horizontalSwipeGesture(geo.size))
+                .simultaneousGesture(horizontalSwipeGesture(geo: geo))
                 .onTapGesture {
                     withAnimation { showControls.toggle() }
                 }
                 .onAppear {
+                    // 初始化依赖、首屏加载、预取与进度恢复
                     let perf = PerfTimer(
                         "ReaderView.onAppear",
                         category: .performance
                     )
+                    viewModel.attachDatabase(db)
                     Log.debug(
-                        "📖 ReaderView.onAppear enter chapterId=\(currentChapter.id) bookId=\(currentChapter.bookid) pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex))",
+                        "📖 ReaderView.onAppear enter chapterId=\(viewModel.currentChapter.id) bookId=\(viewModel.currentChapter.bookid) pages=\(viewModel.pages.count) needsInitialRestore=\(viewModel.needsInitialRestore) pendingRestorePercent=\(String(describing: viewModel.pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: viewModel.pendingRestorePageIndex))",
                         category: .reader
                     )
-                    
-                    screenSize = geo.size
-                    
-                    loadContent(for: currentChapter)
-                    loadCurrentBook()
-                    updateAdjacentRefs()
-                    if needsInitialRestore {
-                        restoreLastProgressIfNeeded()
+
+                    viewModel.setScreenSize(geo.size)
+
+                    viewModel.loadContent(
+                        for: viewModel.currentChapter,
+                        reading: reading
+                    )
+                    viewModel.loadCurrentBook()
+                    viewModel.updateAdjacentRefs()
+                    if viewModel.needsInitialRestore {
+                        viewModel.restoreLastProgressIfNeeded(
+                            progressStore: progressStore
+                        )
                     }
                     // 进入阅读页即触达一次（节流保护）
-                    touchCurrentBookUpdatedAt(throttleSeconds: 30)
-                    
+                    viewModel.touchBookUpdatedAt(throttleSeconds: 30)
+
                     // 首帧后小延时扩大预取半径并进行二次预取（避免首屏压力）
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        prefetchRadius = 3
-                        prefetchAroundCurrent()
+                        viewModel.prefetchRadius = 3
+                        viewModel.prefetchAroundCurrent(
+                            config: viewModel.snapshotPaginationConfig(
+                                reading: reading
+                            )
+                        )
                     }
                     perf.end()
                 }
                 .onChange(of: geo.size) { _, newSize in
-                    screenSize = newSize
+                    viewModel.setScreenSize(newSize)
                 }
                 .onReceive(
                     NotificationCenter.default.publisher(for: .dismissAllModals)
@@ -224,23 +232,72 @@ struct ReaderView: View {
         }
     }
 
-    // 列表展示的阅读进度文案（含百分比）
-    private func progressText(for book: Book) -> String {
-        db.readingProgressText(
-            forBookId: book.id,
-            progressStore: progressStore,
-            includePercent: true
-        )
+    private func geoSize() -> CGSize {
+        let bounds = viewModel.screenSize
+        // 减去大致的安全区/导航区和内边距
+        return CGSize(width: bounds.width - 32, height: bounds.height - 140)
     }
 
-    // MARK: - Extracted Views
+    // MARK: - Extracted Views (左右预览/中间内容)
+    @ViewBuilder
+    private func chapterContentView(pagesArray: [[String]], title: String)
+        -> some View
+    {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(pagesArray.indices, id: \.self) { idx in
+                    let parts = pagesArray[idx]
+                    VStack(
+                        alignment: .leading,
+                        spacing: reading.paragraphSpacing
+                    ) {
+                        if idx == 0 {
+                            Text(title)
+                                .font(.system(size: reading.fontSize * 1.2))
+                                .foregroundColor(reading.textColor)
+                                .lineSpacing(reading.lineSpacing)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .textSelection(.disabled)
+                                .padding(.top, chapterTitleTopPadding)
+                                .padding(.bottom, chapterTitleBottomPadding)
+                        }
+                        ForEach(parts.indices, id: \.self) { pIdx in
+                            Text(parts[pIdx])
+                                .font(.system(size: reading.fontSize))
+                                .foregroundColor(reading.textColor)
+                                .lineSpacing(reading.lineSpacing)
+                                .multilineTextAlignment(.leading)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+        .background(reading.backgroundColor)
+        .scrollIndicators(.hidden)
+    }
+
     @ViewBuilder
     private func leftPreviewView(geo: GeometryProxy) -> some View {
+        // 左侧上一章预览（横滑时展示）
         if abs(dragOffset) > 0.1,
-            let prev = prevChapterRef,
-            let prevPages = pagesCache[prev.id]
+            let prev = viewModel.prevChapterRef,
+            let prevPages = viewModel.pagesCache[prev.id]
         {
-            chapterContentView(pagesArray: prevPages, title: prev.title)
+            let parts =
+                viewModel.pagesPartsCache[prev.id]
+                ?? prevPages.map {
+                    $0.split(separator: "\n", omittingEmptySubsequences: false)
+                        .map(String.init)
+                }
+            chapterContentView(pagesArray: parts, title: prev.title)
                 .offset(x: -geo.size.width + dragOffset)
                 .accessibilityHidden(true)
         }
@@ -248,11 +305,18 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func rightPreviewView(geo: GeometryProxy) -> some View {
+        // 右侧下一章预览（横滑时展示）
         if abs(dragOffset) > 0.1,
-            let next = nextChapterRef,
-            let nextPages = pagesCache[next.id]
+            let next = viewModel.nextChapterRef,
+            let nextPages = viewModel.pagesCache[next.id]
         {
-            chapterContentView(pagesArray: nextPages, title: next.title)
+            let parts =
+                viewModel.pagesPartsCache[next.id]
+                ?? nextPages.map {
+                    $0.split(separator: "\n", omittingEmptySubsequences: false)
+                        .map(String.init)
+                }
+            chapterContentView(pagesArray: parts, title: next.title)
                 .offset(x: geo.size.width + dragOffset)
                 .accessibilityHidden(true)
         }
@@ -260,18 +324,18 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func contentScrollView(geo: GeometryProxy) -> some View {
-        // 中间：当前章节
+        // 中间：当前章节的内容滚动与分页恢复
         ScrollViewReader { proxy in
             ScrollView {
-                if !pages.isEmpty {
+                if !viewModel.pages.isEmpty {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(pages.indices, id: \.self) { idx in
+                        ForEach(viewModel.pages.indices, id: \.self) { idx in
                             pageView(pageIndex: idx)
                                 .id(pageAnchorId(idx))
                         }
                     }
                 } else {
-                    if showInitialSkeleton {
+                    if viewModel.showInitialSkeleton {
                         initialSkeletonView
                     } else {
                         loadingView
@@ -280,205 +344,87 @@ struct ReaderView: View {
             }
             .background(reading.backgroundColor)
             .scrollIndicators(isHorizontalSwiping ? .hidden : .visible)
-            .id(currentChapter.id)
+            .id(viewModel.currentChapter.id)
             .offset(x: dragOffset)
-            .onChange(of: pages) { oldPages, newPages in
+            .onChange(of: viewModel.pages) { oldPages, newPages in
                 Log.debug(
-                    "📖 onChange pages: old=\(oldPages.count) new=\(newPages.count) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex)) chapterId=\(currentChapter.id)"
+                    "📖 onChange pages: old=\(oldPages.count) new=\(newPages.count) pendingRestorePercent=\(String(describing: viewModel.pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: viewModel.pendingRestorePageIndex)) chapterId=\(viewModel.currentChapter.id)"
                 )
                 guard !newPages.isEmpty else {
                     Log.debug("📖 onChange pages: pages empty, skip")
                     return
                 }
-                if showInitialSkeleton { showInitialSkeleton = false }
-                // 仅当目标章节就是当前章节时才应用恢复
-                let shouldApplyRestore =
-                    (pendingRestoreChapterId == nil)
-                    || (pendingRestoreChapterId == currentChapter.id)
-                guard shouldApplyRestore else {
-                    Log.debug(
-                        "📖 onChange pages: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
-                    )
-                    return
+                if viewModel.showInitialSkeleton {
+                    viewModel.showInitialSkeleton = false
                 }
-                if let idx0 = pendingRestorePageIndex {
-                    let idx = max(0, min(newPages.count - 1, idx0))
-                    Log.debug(
-                        "📖 restore via onChange (pageIndex) → scrollTo pageIndex=\(idx)"
-                    )
-                    scrollToPage(idx, using: proxy, animated: true)
-                    pendingRestorePageIndex = nil
-                    pendingRestorePercent = nil
-                    pendingRestoreChapterId = nil
-                    currentVisiblePageIndex = idx
-                    let computedPercent =
-                        newPages.count > 1
-                        ? Double(idx) / Double(newPages.count - 1) : 0
-                    saveProgress(
-                        percent: computedPercent,
-                        pageIndex: idx
-                    )
-                } else if let percent = pendingRestorePercent {
-                    let idx = restorePageIndex(
-                        for: percent,
-                        pagesCount: newPages.count
-                    )
-                    Log.debug(
-                        "📖 restore via onChange (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
-                    )
-                    scrollToPage(idx, using: proxy, animated: true)
-                    pendingRestorePercent = nil
-                    pendingRestoreChapterId = nil
-                    currentVisiblePageIndex = idx
-                    let computedPercent =
-                        newPages.count > 1
-                        ? Double(idx) / Double(newPages.count - 1) : 0
-                    saveProgress(
-                        percent: computedPercent,
-                        pageIndex: idx
-                    )
-                } else {
-                    Log.debug(
-                        "📖 onChange pages: no pending restore, skip"
-                    )
+                // 统一恢复入口（根据 pending 状态恢复至指定页/百分比）
+                let restored = applyPendingRestoreIfPossible(
+                    using: proxy,
+                    pagesCount: newPages.count,
+                    animated: true
+                )
+                if !restored {
+                    Log.debug("📖 onChange pages: no pending restore, skip")
                 }
             }
             // 收藏跳转：同章节情况下也能立即滚动
-            .onChange(of: pendingRestorePageIndex) { oldValue, newValue in
-                guard let idx0 = newValue, !pages.isEmpty else { return }
-                let shouldApplyRestore =
-                    (pendingRestoreChapterId == nil)
-                    || (pendingRestoreChapterId == currentChapter.id)
-                guard shouldApplyRestore else {
-                    Log.debug(
-                        "📖 onChange pendingRestorePageIndex: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
-                    )
-                    return
-                }
-                let idx = max(0, min(pages.count - 1, idx0))
-                Log.debug(
-                    "📖 onChange pendingRestorePageIndex → scrollTo pageIndex=\(idx)"
+            .onChange(of: viewModel.pendingRestorePageIndex) {
+                oldValue,
+                newValue in
+                guard newValue != nil, !viewModel.pages.isEmpty else { return }
+                let restored = applyPendingRestoreIfPossible(
+                    using: proxy,
+                    pagesCount: viewModel.pages.count,
+                    animated: true
                 )
-                scrollToPage(idx, using: proxy, animated: true)
-                pendingRestorePageIndex = nil
-                pendingRestorePercent = nil
-                pendingRestoreChapterId = nil
-                currentVisiblePageIndex = idx
-                let computedPercent =
-                    pages.count > 1 ? Double(idx) / Double(pages.count - 1) : 0
-                saveProgress(percent: computedPercent, pageIndex: idx)
+                if !restored {
+                    Log.debug("📖 onChange pendingRestorePageIndex: no-op")
+                }
             }
-            .onChange(of: pendingRestorePercent) { oldValue, newValue in
-                guard let percent = newValue, !pages.isEmpty else { return }
-                let shouldApplyRestore =
-                    (pendingRestoreChapterId == nil)
-                    || (pendingRestoreChapterId == currentChapter.id)
-                guard shouldApplyRestore else {
-                    Log.debug(
-                        "📖 onChange pendingRestorePercent: pending for chapterId=\(String(describing: pendingRestoreChapterId)), current=\(currentChapter.id), skip"
-                    )
-                    return
+            .onChange(of: viewModel.pendingRestorePercent) {
+                oldValue,
+                newValue in
+                guard newValue != nil, !viewModel.pages.isEmpty else { return }
+                let restored = applyPendingRestoreIfPossible(
+                    using: proxy,
+                    pagesCount: viewModel.pages.count,
+                    animated: true
+                )
+                if !restored {
+                    Log.debug("📖 onChange pendingRestorePercent: no-op")
                 }
-                let idx = restorePageIndex(
-                    for: percent,
-                    pagesCount: pages.count
-                )
-                Log.debug(
-                    "📖 onChange pendingRestorePercent → scrollTo pageIndex=\(idx) percent=\(percent)"
-                )
-                scrollToPage(idx, using: proxy, animated: true)
-                pendingRestorePercent = nil
-                pendingRestoreChapterId = nil
-                currentVisiblePageIndex = idx
-                let computedPercent =
-                    pages.count > 1 ? Double(idx) / Double(pages.count - 1) : 0
-                saveProgress(percent: computedPercent, pageIndex: idx)
             }
             // 章节切换完成的兜底：若目标章与当前章一致且 pages 已就绪，则立即恢复
-            .onChange(of: currentChapter.id) { oldId, newId in
+            .onChange(of: viewModel.currentChapter.id) { oldId, newId in
                 Log.debug(
-                    "📖 onChange currentChapterId old=\(oldId) new=\(newId) pendingChapter=\(String(describing: pendingRestoreChapterId)) pendingPageIndex=\(String(describing: pendingRestorePageIndex)) pendingPercent=\(String(describing: pendingRestorePercent)) pages=\(pages.count)"
+                    "📖 onChange currentChapterId old=\(oldId) new=\(newId) pendingChapter=\(String(describing: viewModel.pendingRestoreChapterId)) pendingPageIndex=\(String(describing: viewModel.pendingRestorePageIndex)) pendingPercent=\(String(describing: viewModel.pendingRestorePercent)) pages=\(viewModel.pages.count)"
                 )
-                guard let targetChapterId = pendingRestoreChapterId,
+                guard let targetChapterId = viewModel.pendingRestoreChapterId,
                     targetChapterId == newId
                 else { return }
-                if let idx0 = pendingRestorePageIndex, !pages.isEmpty {
-                    let idx = max(0, min(pages.count - 1, idx0))
-                    Log.debug(
-                        "📖 restore via onChange(currentChapterId) (pageIndex) → scrollTo pageIndex=\(idx)"
-                    )
-                    scrollToPage(idx, using: proxy, animated: true)
-                    pendingRestorePageIndex = nil
-                    pendingRestorePercent = nil
-                    pendingRestoreChapterId = nil
-                    currentVisiblePageIndex = idx
-                    let computedPercent =
-                        pages.count > 1
-                        ? Double(idx) / Double(pages.count - 1) : 0
-                    saveProgress(percent: computedPercent, pageIndex: idx)
-                } else if let percent = pendingRestorePercent, !pages.isEmpty {
-                    let idx = restorePageIndex(
-                        for: percent,
-                        pagesCount: pages.count
-                    )
-                    Log.debug(
-                        "📖 restore via onChange(currentChapterId) (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
-                    )
-                    scrollToPage(idx, using: proxy, animated: true)
-                    pendingRestorePercent = nil
-                    pendingRestoreChapterId = nil
-                    currentVisiblePageIndex = idx
-                    let computedPercent =
-                        pages.count > 1
-                        ? Double(idx) / Double(pages.count - 1) : 0
-                    saveProgress(percent: computedPercent, pageIndex: idx)
-                } else {
-                    // pages 还未就绪，等待 onChange(pages) 处理
-                }
+                guard !viewModel.pages.isEmpty else { return }
+                _ = applyPendingRestoreIfPossible(
+                    using: proxy,
+                    pagesCount: viewModel.pages.count,
+                    animated: true
+                )
             }
             .onAppear {
                 Log.debug(
-                    "📖 ScrollViewReader.onAppear pages=\(pages.count) needsInitialRestore=\(needsInitialRestore) pendingRestorePercent=\(String(describing: pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: pendingRestorePageIndex)) chapterId=\(currentChapter.id)"
+                    "📖 ScrollViewReader.onAppear pages=\(viewModel.pages.count) needsInitialRestore=\(viewModel.needsInitialRestore) pendingRestorePercent=\(String(describing: viewModel.pendingRestorePercent)) pendingRestorePageIndex=\(String(describing: viewModel.pendingRestorePageIndex)) chapterId=\(viewModel.currentChapter.id)"
                 )
-                if needsInitialRestore {
-                    restoreLastProgressIfNeeded()
+                if viewModel.needsInitialRestore {
+                    viewModel.restoreLastProgressIfNeeded(
+                        progressStore: progressStore
+                    )
                 }
-                if !pages.isEmpty {
-                    if let idx0 = pendingRestorePageIndex {
-                        let idx = max(0, min(pages.count - 1, idx0))
-                        Log.debug(
-                            "📖 immediate restore on appear (pageIndex) → scrollTo pageIndex=\(idx)"
-                        )
-                        scrollToPage(idx, using: proxy, animated: false)
-                        pendingRestorePageIndex = nil
-                        pendingRestorePercent = nil
-                        currentVisiblePageIndex = idx
-                        let computedPercent =
-                            pages.count > 1
-                            ? Double(idx) / Double(pages.count - 1) : 0
-                        saveProgress(
-                            percent: computedPercent,
-                            pageIndex: idx
-                        )
-                    } else if let percent = pendingRestorePercent {
-                        let idx = restorePageIndex(
-                            for: percent,
-                            pagesCount: pages.count
-                        )
-                        Log.debug(
-                            "📖 immediate restore on appear (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
-                        )
-                        scrollToPage(idx, using: proxy, animated: false)
-                        pendingRestorePercent = nil
-                        currentVisiblePageIndex = idx
-                        let computedPercent =
-                            pages.count > 1
-                            ? Double(idx) / Double(pages.count - 1) : 0
-                        saveProgress(
-                            percent: computedPercent,
-                            pageIndex: idx
-                        )
-                    } else {
+                if !viewModel.pages.isEmpty {
+                    let restored = applyPendingRestoreIfPossible(
+                        using: proxy,
+                        pagesCount: viewModel.pages.count,
+                        animated: false
+                    )
+                    if !restored {
                         Log.debug(
                             "📖 ScrollViewReader.onAppear: no pending restore, skip"
                         )
@@ -500,6 +446,7 @@ struct ReaderView: View {
         applyGlass: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
+        // 圆形图标按钮（带玻璃效果）
         Button(action: action) {
             Image(systemName: systemName)
                 .foregroundColor(reading.textColor)
@@ -519,6 +466,7 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func bottomControlsView(geo: GeometryProxy) -> some View {
+        // 底部控制条（上一章 / 目录 / 收藏 / 设置 / 下一章）
         HStack(spacing: 0) {
             // Left: Previous chapter
             circularButton(
@@ -594,6 +542,7 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func topControlsView() -> some View {
+        // 顶部控制条（返回 / 章节标题 / 书籍信息）
         HStack {
             circularButton(
                 systemName: "chevron.left",
@@ -603,7 +552,7 @@ struct ReaderView: View {
                 dismiss()
             }
 
-            Text(currentChapter.title)
+            Text(viewModel.currentChapter.title)
                 .font(.headline)
                 .foregroundColor(reading.textColor)
                 .lineLimit(1)
@@ -628,172 +577,11 @@ struct ReaderView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    private func loadContent(for chapter: Chapter) {
-        // 命中缓存则直接返回，避免阻塞主线程
-        if let cachedContent = contentCache[chapter.id],
-            let cachedParas = paragraphsCache[chapter.id]
-        {
-            Log.debug(
-                "📚 loadContent cache hit chapterId=\(chapter.id)",
-                category: .reader
-            )
-            content = cachedContent
-            paragraphs = cachedParas
-            if let cachedPages = pagesCache[chapter.id] {
-                Log.debug(
-                    "📚 use cached pages count=\(cachedPages.count)",
-                    category: .reader
-                )
-                pages = cachedPages
-                if showInitialSkeleton { showInitialSkeleton = false }
-            } else {
-                let txt = cachedContent.txt ?? ""
-                Log.debug(
-                    "📚 paginate cached content length=\(txt.count)",
-                    category: .pagination
-                )
-                let perfPg = PerfTimer(
-                    "paginate.cached",
-                    category: .performance
-                )
-                let newPages = paginate(
-                    text: txt,
-                    screen: geoSize(),
-                    fontSize: CGFloat(reading.fontSize),
-                    lineSpacing: CGFloat(reading.lineSpacing)
-                )
-                pages = newPages
-                pagesCache[chapter.id] = newPages
-                if showInitialSkeleton && !newPages.isEmpty {
-                    showInitialSkeleton = false
-                }
-                perfPg.end(
-                    extra: "chapterId=\(chapter.id) pages=\(newPages.count)"
-                )
-            }
-            return
-        }
-
-        guard let dbQueue = DatabaseManager.shared.dbQueue else { return }
-        let chapterId = chapter.id
-
-        let perfAll = PerfTimer("loadContent", category: .performance)
-        DispatchQueue.global(qos: .userInitiated).async {
-            let tDB = PerfTimer("loadContent.dbRead", category: .performance)
-            let fetched: Content? = try? dbQueue.read { db in
-                try Content
-                    .filter(Column("chapterid") == chapter.id)
-                    .fetchOne(db)
-            }
-            let txt = fetched?.txt ?? ""
-            tDB.end(extra: "chapterId=\(chapter.id) textLen=\(txt.count)")
-            Log.debug(
-                "📚 loadContent from DB chapterId=\(chapter.id) textLen=\(txt.count)",
-                category: .database
-            )
-            let tPara = PerfTimer(
-                "loadContent.processParagraphs",
-                category: .performance
-            )
-            let computedParas = processParagraphs(txt)
-            tPara.end(extra: "paras=\(computedParas.count)")
-            let tPaginate = PerfTimer(
-                "loadContent.paginate",
-                category: .performance
-            )
-            let computedPages = paginate(
-                text: txt,
-                screen: geoSize(),
-                fontSize: CGFloat(reading.fontSize),
-                lineSpacing: CGFloat(reading.lineSpacing)
-            )
-            tPaginate.end(extra: "pages=\(computedPages.count)")
-
-            DispatchQueue.main.async {
-                Log.debug(
-                    "📚 loadContent finish on main chapterId=\(chapterId) pages=\(computedPages.count)",
-                    category: .reader
-                )
-                let tApply = PerfTimer(
-                    "loadContent.applyMain",
-                    category: .performance
-                )
-                content = fetched
-                paragraphs = computedParas
-                contentCache[chapterId] = fetched
-                paragraphsCache[chapterId] = computedParas
-                pages = computedPages
-                pagesCache[chapterId] = computedPages
-                if showInitialSkeleton && !computedPages.isEmpty {
-                    showInitialSkeleton = false
-                }
-                updateAdjacentRefs()
-                prefetchAroundCurrent()
-                tApply.end()
-                perfAll.end(extra: "chapterId=\(chapterId)")
-            }
-        }
-    }
-
-    private func processParagraphs(_ text: String) -> [String] {
-        // 先尝试按双换行符分割，如果没有则按单换行符分割
-        var paragraphs: [String]
-
-        if text.contains("\n\n") {
-            // 有双换行符，按双换行符分割
-            paragraphs = text.components(separatedBy: "\n\n")
-        } else if text.contains("\n") {
-            // 没有双换行符，按单换行符分割
-            paragraphs = text.components(separatedBy: "\n")
-        } else {
-            // 没有换行符，整个文本作为一个段落
-            paragraphs = [text]
-        }
-
-        // 处理每个段落，保留开头的空格
-        paragraphs =
-            paragraphs
-            .map { paragraph in
-                // 只删除结尾的空白字符，保留开头的空格
-                paragraph.replacingOccurrences(
-                    of: "\\s+$",
-                    with: "",
-                    options: .regularExpression
-                )
-            }
-            .filter { !$0.isEmpty }
-
-        // Log.debug("分割出 \(paragraphs.count) 个段落")
-        // Log.debug("文本长度: \(text.count), 包含换行符: \(text.contains("\n"))")
-        return paragraphs
-    }
-
-    private func fetchAdjacentChapter(isNext: Bool) -> Chapter? {
-        guard let dbQueue = DatabaseManager.shared.dbQueue else { return nil }
-        return try? dbQueue.read { db in
-            var request = Chapter.filter(
-                Column("bookid") == currentChapter.bookid
-            )
-            if isNext {
-                request =
-                    request
-                    .filter(Column("id") > currentChapter.id)
-                    .order(Column("id"))
-            } else {
-                request =
-                    request
-                    .filter(Column("id") < currentChapter.id)
-                    .order(Column("id").desc)
-            }
-            return try request.fetchOne(db)
-        }
-    }
-
     private func navigateToAdjacentChapter(
         isNext: Bool,
         containerWidth: CGFloat
     ) {
-        guard let target = fetchAdjacentChapter(isNext: isNext) else {
+        guard let target = viewModel.fetchAdjacentChapter(isNext: isNext) else {
             edgeAlertMessage =
                 isNext
                 ? String(localized: "reading.is_last_chapter")
@@ -812,283 +600,29 @@ struct ReaderView: View {
         }
 
         // 并行准备目标章节内容（优先命中缓存；未命中则后台加载）
-        ensurePrepared(for: target, isCritical: true) {
+        viewModel.ensurePrepared(
+            for: target,
+            isCritical: true,
+            config: viewModel.snapshotPaginationConfig(reading: reading)
+        ) {
             // 在移出动画结束后切换章节，并无动画归零偏移，避免“再次滑入”的闪烁
             let deadline = DispatchTime.now() + animDuration
             DispatchQueue.main.asyncAfter(deadline: deadline) {
-                currentChapter = target
-                loadContent(for: target)
-                updateAdjacentRefs()
-                prefetchAroundCurrent()
+                viewModel.currentChapter = target
+                viewModel.loadContent(for: target, reading: reading)
+                viewModel.updateAdjacentRefs()
+                viewModel.prefetchAroundCurrent(
+                    config: viewModel.snapshotPaginationConfig(reading: reading)
+                )
                 // 重置偏移（无动画），此时右侧/左侧预览已参与过滑动，不再二次滑入
                 dragOffset = 0
                 // 按钮切章也触达
-                touchCurrentBookUpdatedAt(throttleSeconds: 0)
+                viewModel.touchBookUpdatedAt(throttleSeconds: 0)
             }
         }
     }
 
-    // 确保某章内容已准备（命中缓存或后台填充缓存），完成后回调主线程
-    private func ensurePrepared(
-        for chapter: Chapter,
-        isCritical: Bool = false,
-        completion: @escaping () -> Void
-    ) {
-        let cid = chapter.id
-        let hasCaches =
-            (contentCache[cid] != nil)
-            && (paragraphsCache[cid] != nil)
-            && (pagesCache[cid] != nil)
-        if hasCaches {
-            Log.debug(
-                "✅ ensurePrepared cache hit chapterId=\(cid)",
-                category: .prefetch
-            )
-            DispatchQueue.main.async { completion() }
-            return
-        }
-        guard let dbQueue = DatabaseManager.shared.dbQueue else {
-            DispatchQueue.main.async { completion() }
-            return
-        }
-        let perf = PerfTimer("ensurePrepared", category: .performance)
-        DispatchQueue.global(qos: .userInitiated).async {
-            if !isCritical {
-                Self.prefetchSemaphore.wait()
-            }
-            defer {
-                if !isCritical { Self.prefetchSemaphore.signal() }
-            }
-            let tDB = PerfTimer("ensurePrepared.dbRead", category: .performance)
-            let fetched: Content? = try? dbQueue.read { db in
-                try Content
-                    .filter(Column("chapterid") == chapter.id)
-                    .fetchOne(db)
-            }
-            let txt = fetched?.txt ?? ""
-            tDB.end(extra: "chapterId=\(chapter.id) textLen=\(txt.count)")
-            let tPara = PerfTimer(
-                "ensurePrepared.processParagraphs",
-                category: .performance
-            )
-            let computedParas = processParagraphs(txt)
-            tPara.end(extra: "paras=\(computedParas.count)")
-            let tPaginate = PerfTimer(
-                "ensurePrepared.paginate",
-                category: .performance
-            )
-            let computedPages = paginate(
-                text: txt,
-                screen: geoSize(),
-                fontSize: CGFloat(reading.fontSize),
-                lineSpacing: CGFloat(reading.lineSpacing)
-            )
-            tPaginate.end(extra: "pages=\(computedPages.count)")
-            DispatchQueue.main.async {
-                contentCache[cid] = fetched
-                paragraphsCache[cid] = computedParas
-                pagesCache[cid] = computedPages
-                Log.debug(
-                    "✅ ensurePrepared ready chapterId=\(cid) pages=\(computedPages.count)",
-                    category: .prefetch
-                )
-                completion()
-                perf.end(extra: "chapterId=\(cid)")
-            }
-        }
-    }
-
-    // 预取前后多章，提升左右滑动时的秒开体验
-    private func prefetchAroundCurrent() {
-        let perf = PerfTimer("prefetchAroundCurrent", category: .performance)
-        let prevs = fetchChapters(
-            isNext: false,
-            from: currentChapter,
-            limit: prefetchRadius
-        )
-        let nexts = fetchChapters(
-            isNext: true,
-            from: currentChapter,
-            limit: prefetchRadius
-        )
-        Log.debug(
-            "🚚 prefetch candidates prev=\(prevs.count) next=\(nexts.count) radius=\(prefetchRadius)",
-            category: .prefetch
-        )
-        for ch in prevs + nexts {
-            if paragraphsCache[ch.id] == nil || pagesCache[ch.id] == nil
-                || contentCache[ch.id] == nil
-            {
-                ensurePrepared(for: ch, isCritical: false) {}
-            }
-        }
-        perf.end()
-    }
-
-    private func fetchChapters(isNext: Bool, from chapter: Chapter, limit: Int)
-        -> [Chapter]
-    {
-        guard let dbQueue = DatabaseManager.shared.dbQueue else { return [] }
-        return
-            (try? dbQueue.read { db -> [Chapter] in
-                var request = Chapter.filter(Column("bookid") == chapter.bookid)
-                if isNext {
-                    request = request.filter(Column("id") > chapter.id).order(
-                        Column("id")
-                    ).limit(limit)
-                } else {
-                    request = request.filter(Column("id") < chapter.id).order(
-                        Column("id").desc
-                    ).limit(limit)
-                }
-                return try request.fetchAll(db)
-            }) ?? []
-    }
-
-    private func updateAdjacentRefs() {
-        prevChapterRef = fetchAdjacentChapter(isNext: false)
-        nextChapterRef = fetchAdjacentChapter(isNext: true)
-    }
-
-    // MARK: - Pagination helpers
-    private func geoSize() -> CGSize {
-        let bounds = screenSize
-        // 减去大致的安全区/导航区和内边距
-        return CGSize(width: bounds.width - 32, height: bounds.height - 140)
-    }
-
-    private func paginate(
-        text: String,
-        screen: CGSize,
-        fontSize: CGFloat,
-        lineSpacing: CGFloat
-    ) -> [String] {
-        Paginator.paginate(
-            text: text,
-            fontSize: Double(fontSize),
-            screen: screen,
-            lineSpacing: Double(lineSpacing)
-        )
-    }
-
-    private func loadCurrentBook() {
-        guard currentBook == nil else { return }
-        guard let dbQueue = DatabaseManager.shared.dbQueue else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
-            let t = PerfTimer("loadCurrentBook.dbRead", category: .performance)
-            let loaded: Book? = try? dbQueue.read { db in
-                let sql = """
-                        SELECT b.id, b.title, a.name AS author, c.title AS category,
-                               b.latest, b.wordcount, b.isfinished, b.updatedat
-                        FROM book b
-                        LEFT JOIN category c ON c.id = b.categoryid
-                        LEFT JOIN author a ON a.id = b.authorid
-                        WHERE b.id = ?
-                    """
-                if let row = try Row.fetchOne(
-                    db,
-                    sql: sql,
-                    arguments: [currentChapter.bookid]
-                ) {
-                    let id: Int = row["id"]
-                    let title: String = (row["title"] as String?) ?? ""
-                    let author: String = (row["author"] as String?) ?? ""
-                    let category: String = (row["category"] as String?) ?? ""
-                    let latest: String = (row["latest"] as String?) ?? ""
-                    let wordcount: Int = (row["wordcount"] as Int?) ?? 0
-                    let isfinished: Int = (row["isfinished"] as Int?) ?? 0
-                    let updatedat: Int = (row["updatedat"] as Int?) ?? 0
-
-                    return Book(
-                        id: id,
-                        category: category,
-                        title: title,
-                        author: author,
-                        latest: latest,
-                        wordcount: wordcount,
-                        isfinished: isfinished,
-                        updatedat: updatedat
-                    )
-                } else {
-                    return Book(
-                        id: currentChapter.bookid,
-                        category: "",
-                        title: "",
-                        author: "",
-                        latest: "",
-                        wordcount: 0,
-                        isfinished: 0,
-                        updatedat: 0
-                    )
-                }
-            }
-            t.end()
-            DispatchQueue.main.async {
-                currentBook = loaded
-            }
-        }
-    }
-
-    private func saveProgress(percent: Double = 0, pageIndex: Int? = nil) {
-        let progress = ReadingProgress(
-            bookId: currentChapter.bookid,
-            chapterId: currentChapter.id,
-            percent: percent,
-            pageIndex: pageIndex
-        )
-        progressStore.update(progress)
-    }
-
-    // 根据记录恢复进度：必要时切换章节，并在分页后滚动到对应百分比
-    private func restoreLastProgressIfNeeded() {
-        guard needsInitialRestore else { return }
-        guard
-            let last = progressStore.lastProgress(
-                forBook: currentChapter.bookid
-            )
-        else {
-            Log.debug(
-                "📖 restore: no last progress for bookId=\(currentChapter.bookid)"
-            )
-            needsInitialRestore = false
-            return
-        }
-
-        Log.debug(
-            "📖 restore: last chapterId=\(last.chapterId) percent=\(last.percent) pageIndex=\(String(describing: last.pageIndex)) currentChapterId=\(currentChapter.id)"
-        )
-        pendingRestorePercent = last.percent
-        pendingRestorePageIndex = last.pageIndex
-
-        if last.chapterId != currentChapter.id {
-            if let target = fetchChapter(by: last.chapterId) {
-                if target.bookid == currentChapter.bookid {
-                    Log.debug("📖 restore: switch chapter to \(target.id)")
-                    currentChapter = target
-                    loadContent(for: target)
-                    updateAdjacentRefs()
-                    prefetchAroundCurrent()
-                } else {
-                    Log.debug(
-                        "📖 restore: skip mismatched book for chapterId=\(last.chapterId) currentBookId=\(currentChapter.bookid) targetBookId=\(target.bookid)"
-                    )
-                }
-            }
-        }
-
-        needsInitialRestore = false
-    }
-
-    private func fetchChapter(by id: Int) -> Chapter? {
-        guard let dbQueue = DatabaseManager.shared.dbQueue else { return nil }
-        return try? dbQueue.read { db in
-            try Chapter
-                .filter(Column("id") == id)
-                .fetchOne(db)
-        }
-    }
-
-    // MARK: - View helpers
+    // MARK: - 骨架/分页页视图
     private var loadingView: some View {
         Text(String(localized: "reading.loading"))
             .font(.system(size: reading.fontSize))
@@ -1152,6 +686,7 @@ struct ReaderView: View {
 
     @ViewBuilder
     private func pageView(pageIndex: Int) -> some View {
+        // 单页内容渲染（包含第一页的章节标题）
         let parts = paragraphsInPage(pageIndex)
         let pageContent = VStack(
             alignment: .leading,
@@ -1159,7 +694,7 @@ struct ReaderView: View {
         ) {
             // 显示章节标题
             if pageIndex == 0 {
-                Text(currentChapter.title)
+                Text(viewModel.currentChapter.title)
                     .font(.system(size: reading.fontSize * 1.2))
                     .foregroundColor(reading.textColor)
                     .lineSpacing(reading.lineSpacing)
@@ -1209,24 +744,28 @@ struct ReaderView: View {
     }
 
     private func paragraphsInPage(_ index: Int) -> [String] {
-        if index < 0 || index >= pages.count { return [] }
-        return pages[index]
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map(String.init)
+        // 从预切分缓存中读取指定页的段落数组
+        if index < 0 || index >= viewModel.pagesParts.count { return [] }
+        return viewModel.pagesParts[index]
     }
 
     private func onPageAppear(_ pageIndex: Int) {
-        currentVisiblePageIndex = pageIndex
+        // 单页出现时更新可见页索引、保存进度并做节流触达
+        viewModel.currentVisiblePageIndex = pageIndex
         let percent =
-            pages.count > 1
-            ? Double(pageIndex) / Double(pages.count - 1)
+            viewModel.pages.count > 1
+            ? Double(pageIndex) / Double(viewModel.pages.count - 1)
             : 0
         Log.debug(
-            "📝 onPageAppear pageIndex=\(pageIndex) percent=\(percent) pages=\(pages.count) chapterId=\(currentChapter.id)"
+            "📝 onPageAppear pageIndex=\(pageIndex) percent=\(percent) pages=\(viewModel.pages.count) chapterId=\(viewModel.currentChapter.id)"
         )
-        saveProgress(percent: percent, pageIndex: pageIndex)
+        viewModel.saveProgress(
+            progressStore: progressStore,
+            percent: percent,
+            pageIndex: pageIndex
+        )
         // 阅读中触达更新时间（节流）
-        touchCurrentBookUpdatedAt(throttleSeconds: 30)
+        viewModel.touchBookUpdatedAt(throttleSeconds: 30)
     }
 
     private func pageAnchorId(_ index: Int) -> String { "page-\(index)" }
@@ -1237,6 +776,7 @@ struct ReaderView: View {
         using proxy: ScrollViewProxy,
         animated: Bool
     ) {
+        // 封装滚动并加极短延时兜底，提升真机稳定性
         let anchorId = pageAnchorId(index)
         let perform = {
             if animated {
@@ -1250,24 +790,76 @@ struct ReaderView: View {
     }
 
     private func restorePageIndex(for percent: Double, pagesCount: Int) -> Int {
+        // 将 0~1 百分比映射为页索引
         let clamped = max(0, min(1, percent))
         guard pagesCount > 1 else { return 0 }
         return Int(round(clamped * Double(pagesCount - 1)))
     }
 
-    private func horizontalSwipeGesture(_ size: CGSize) -> some Gesture {
+    // 统一的恢复助手：根据 pendingRestore* 决定是否恢复并落盘
+    private func applyPendingRestoreIfPossible(
+        using proxy: ScrollViewProxy,
+        pagesCount: Int,
+        animated: Bool
+    ) -> Bool {
+        let shouldApplyRestore =
+            (viewModel.pendingRestoreChapterId == nil)
+            || (viewModel.pendingRestoreChapterId == viewModel.currentChapter.id)
+        guard shouldApplyRestore, pagesCount > 0 else { return false }
+
+        if let idx0 = viewModel.pendingRestorePageIndex {
+            let idx = max(0, min(pagesCount - 1, idx0))
+            Log.debug(
+                "📖 restore via helper (pageIndex) → scrollTo pageIndex=\(idx)"
+            )
+            scrollToPage(idx, using: proxy, animated: animated)
+            viewModel.pendingRestorePageIndex = nil
+            viewModel.pendingRestorePercent = nil
+            viewModel.pendingRestoreChapterId = nil
+            viewModel.currentVisiblePageIndex = idx
+            let computedPercent =
+                pagesCount > 1 ? Double(idx) / Double(pagesCount - 1) : 0
+            viewModel.saveProgress(
+                progressStore: progressStore,
+                percent: computedPercent,
+                pageIndex: idx
+            )
+            return true
+        } else if let percent = viewModel.pendingRestorePercent {
+            let idx = restorePageIndex(for: percent, pagesCount: pagesCount)
+            Log.debug(
+                "📖 restore via helper (percent) → scrollTo pageIndex=\(idx) percent=\(percent)"
+            )
+            scrollToPage(idx, using: proxy, animated: animated)
+            viewModel.pendingRestorePercent = nil
+            viewModel.pendingRestoreChapterId = nil
+            viewModel.currentVisiblePageIndex = idx
+            let computedPercent =
+                pagesCount > 1 ? Double(idx) / Double(pagesCount - 1) : 0
+            viewModel.saveProgress(
+                progressStore: progressStore,
+                percent: computedPercent,
+                pageIndex: idx
+            )
+            return true
+        }
+        return false
+    }
+
+    // MARK: - Gestures
+    private func horizontalSwipeGesture(geo: GeometryProxy) -> some Gesture {
         DragGesture(minimumDistance: 12)
             .onChanged { value in
                 if abs(value.translation.width) > abs(value.translation.height)
                 {
                     if !isHorizontalSwiping { isHorizontalSwiping = true }
-                    let limit = size.width
+                    let limit = geo.size.width
                     let proposed = value.translation.width
                     dragOffset = max(-limit, min(limit, proposed))
                 }
             }
             .onEnded { value in
-                let threshold = min(120, size.width * 0.18)
+                let threshold = min(120, geo.size.width * 0.18)
                 if abs(value.translation.width) <= abs(value.translation.height)
                 {
                     withAnimation(.easeInOut) { dragOffset = 0 }
@@ -1276,23 +868,36 @@ struct ReaderView: View {
                 }
                 if value.translation.width < -threshold {
                     // 左滑：下一章
-                    if let next = fetchAdjacentChapter(isNext: true) {
+                    if let next = viewModel.fetchAdjacentChapter(isNext: true) {
                         let animDuration: Double = 0.2
                         withAnimation(.easeInOut(duration: animDuration)) {
-                            dragOffset = -size.width
+                            dragOffset = -geo.size.width
                         }
-                        ensurePrepared(for: next, isCritical: true) {
+                        viewModel.ensurePrepared(
+                            for: next,
+                            isCritical: true,
+                            config: viewModel.snapshotPaginationConfig(
+                                reading: reading
+                            )
+                        ) {
                             let deadline = DispatchTime.now() + animDuration
                             DispatchQueue.main.asyncAfter(deadline: deadline) {
-                                currentChapter = next
-                                loadContent(for: next)
-                                updateAdjacentRefs()
-                                prefetchAroundCurrent()
+                                viewModel.currentChapter = next
+                                viewModel.loadContent(
+                                    for: next,
+                                    reading: reading
+                                )
+                                viewModel.updateAdjacentRefs()
+                                viewModel.prefetchAroundCurrent(
+                                    config: viewModel.snapshotPaginationConfig(
+                                        reading: reading
+                                    )
+                                )
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
                                 isHorizontalSwiping = false
                                 // 切章立即触达一次
-                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
+                                viewModel.touchBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
@@ -1301,23 +906,37 @@ struct ReaderView: View {
                     }
                 } else if value.translation.width > threshold {
                     // 右滑：上一章
-                    if let prev = fetchAdjacentChapter(isNext: false) {
+                    if let prev = viewModel.fetchAdjacentChapter(isNext: false)
+                    {
                         let animDuration: Double = 0.2
                         withAnimation(.easeInOut(duration: animDuration)) {
-                            dragOffset = size.width
+                            dragOffset = geo.size.width
                         }
-                        ensurePrepared(for: prev, isCritical: true) {
+                        viewModel.ensurePrepared(
+                            for: prev,
+                            isCritical: true,
+                            config: viewModel.snapshotPaginationConfig(
+                                reading: reading
+                            )
+                        ) {
                             let deadline = DispatchTime.now() + animDuration
                             DispatchQueue.main.asyncAfter(deadline: deadline) {
-                                currentChapter = prev
-                                loadContent(for: prev)
-                                updateAdjacentRefs()
-                                prefetchAroundCurrent()
+                                viewModel.currentChapter = prev
+                                viewModel.loadContent(
+                                    for: prev,
+                                    reading: reading
+                                )
+                                viewModel.updateAdjacentRefs()
+                                viewModel.prefetchAroundCurrent(
+                                    config: viewModel.snapshotPaginationConfig(
+                                        reading: reading
+                                    )
+                                )
                                 // 无动画复位，避免二次滑入闪烁
                                 dragOffset = 0
                                 isHorizontalSwiping = false
                                 // 切章立即触达一次
-                                touchCurrentBookUpdatedAt(throttleSeconds: 0)
+                                viewModel.touchBookUpdatedAt(throttleSeconds: 0)
                             }
                         }
                     } else {
@@ -1359,24 +978,11 @@ struct ReaderView: View {
             }
     }
 
-    // 触达当前书籍的 updatedat（节流）
-    private func touchCurrentBookUpdatedAt(throttleSeconds: Int) {
-        let now = Int(Date().timeIntervalSince1970)
-        if throttleSeconds <= 0
-            || now - lastBookUpdatedAtTouchUnixTime >= throttleSeconds
-        {
-            DatabaseManager.shared.touchBookUpdatedAt(
-                bookId: currentChapter.bookid,
-                at: now
-            )
-            lastBookUpdatedAtTouchUnixTime = now
-        }
-    }
-
-    // MARK: - 收藏相关
+    // MARK: - Favorites
     private func prepareAddFavorite(from pageIndex: Int) {
+        // 打开收藏对话框并生成默认摘录预览
         draftFavoritePageIndex = pageIndex
-        let raw = pages[pageIndex]
+        let raw = viewModel.pages[pageIndex]
         let condensed = raw.replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(
                 of: "\\s+",
@@ -1393,40 +999,38 @@ struct ReaderView: View {
     }
 
     private func addFavorite(excerpt: String, pageIndex: Int) {
+        // 调用 VM 写入收藏
         let percent =
-            pages.count > 1
-            ? Double(pageIndex) / Double(pages.count - 1)
+            viewModel.pages.count > 1
+            ? Double(pageIndex) / Double(viewModel.pages.count - 1)
             : 0
         Log.debug(
-            "⭐️ addFavorite bookId=\(currentChapter.bookid) chapterId=\(currentChapter.id) pageIndex=\(pageIndex) percent=\(percent) pages=\(pages.count)"
+            "⭐️ addFavorite bookId=\(viewModel.currentChapter.bookid) chapterId=\(viewModel.currentChapter.id) pageIndex=\(pageIndex) percent=\(percent) pages=\(viewModel.pages.count)"
         )
-        _ = DatabaseManager.shared.insertFavorite(
-            bookId: currentChapter.bookid,
-            chapterId: currentChapter.id,
-            pageIndex: pageIndex,
-            percent: percent,
-            excerpt: excerpt.trimmingCharacters(in: .whitespacesAndNewlines)
-        )
+        viewModel.addFavorite(excerpt: excerpt, pageIndex: pageIndex)
     }
 
     private func jump(to fav: Favorite) {
+        // 从收藏跳转到指定章节与位置（优先 pageIndex，退化到 percent）
         Log.debug(
-            "🎯 jump favorite id=\(fav.id) bookId=\(fav.bookid) chapterId=\(fav.chapterid) pageIndex=\(String(describing: fav.pageindex)) percent=\(String(describing: fav.percent)) currentChapterId=\(currentChapter.id) pages=\(pages.count)"
+            "🎯 jump favorite id=\(fav.id) bookId=\(fav.bookid) chapterId=\(fav.chapterid) pageIndex=\(String(describing: fav.pageindex)) percent=\(String(describing: fav.percent)) currentChapterId=\(viewModel.currentChapter.id) pages=\(viewModel.pages.count)"
         )
         // 记录恢复意图：优先使用明确的页索引，其次才使用百分比，避免重复触发
-        pendingRestorePageIndex = fav.pageindex
-        pendingRestorePercent = fav.pageindex == nil ? fav.percent : nil
-        pendingRestoreChapterId = fav.chapterid
+        viewModel.pendingRestorePageIndex = fav.pageindex
+        viewModel.pendingRestorePercent =
+            fav.pageindex == nil ? fav.percent : nil
+        viewModel.pendingRestoreChapterId = fav.chapterid
 
-        if fav.chapterid == currentChapter.id {
+        if fav.chapterid == viewModel.currentChapter.id {
             // 当前章，直接触发分页恢复逻辑
-            if let idx = fav.pageindex, !pages.isEmpty {
+            if let idx = fav.pageindex, !viewModel.pages.isEmpty {
                 DispatchQueue.main.async {
                     withAnimation {
                         // 使用 ScrollViewReader 的 anchor id 恢复
                         // 设置 pending 索引，交由 onChange/pages 执行；此处直接赋值也可
-                        pendingRestorePageIndex = idx
-                        pendingRestoreChapterId = currentChapter.id
+                        viewModel.pendingRestorePageIndex = idx
+                        viewModel.pendingRestoreChapterId =
+                            viewModel.currentChapter.id
                     }
                 }
             }
@@ -1434,62 +1038,18 @@ struct ReaderView: View {
         }
 
         // 目标章，切换并加载后由 onChange 恢复
-        if let target = fetchChapter(by: fav.chapterid) {
-            currentChapter = target
-            loadContent(for: target)
-            updateAdjacentRefs()
-            prefetchAroundCurrent()
+        if let target = viewModel.fetchChapter(by: fav.chapterid) {
+            viewModel.currentChapter = target
+            viewModel.pendingRestorePageIndex = fav.pageindex
+            viewModel.pendingRestorePercent =
+                fav.pageindex == nil ? fav.percent : nil
+            viewModel.pendingRestoreChapterId = fav.chapterid
+            viewModel.loadContent(for: target, reading: reading)
+            viewModel.updateAdjacentRefs()
+            viewModel.prefetchAroundCurrent(
+                config: viewModel.snapshotPaginationConfig(reading: reading)
+            )
         }
     }
 
-    // 渲染某一章的内容（用于左右两侧的预览/滑入）
-    @ViewBuilder
-    private func chapterContentView(pagesArray: [String], title: String)
-        -> some View
-    {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(pagesArray.indices, id: \.self) { idx in
-                    let parts = pagesArray[idx]
-                        .split(
-                            separator: "\n",
-                            omittingEmptySubsequences: false
-                        )
-                        .map(String.init)
-                    VStack(
-                        alignment: .leading,
-                        spacing: reading.paragraphSpacing
-                    ) {
-                        if idx == 0 {
-                            Text(title)
-                                .font(.system(size: reading.fontSize * 1.2))
-                                .foregroundColor(reading.textColor)
-                                .lineSpacing(reading.lineSpacing)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(nil)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .textSelection(.disabled)
-                                .padding(.top, chapterTitleTopPadding)
-                                .padding(.bottom, chapterTitleBottomPadding)
-                        }
-                        ForEach(parts.indices, id: \.self) { pIdx in
-                            Text(parts[pIdx])
-                                .font(.system(size: reading.fontSize))
-                                .foregroundColor(reading.textColor)
-                                .lineSpacing(reading.lineSpacing)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(nil)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                }
-            }
-        }
-        .background(reading.backgroundColor)
-        .scrollIndicators(.hidden)
-    }
 }
